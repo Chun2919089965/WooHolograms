@@ -119,7 +119,7 @@
 | 格式 | 描述 | 示例 |
 |------|------|------|
 | 普通文本 | 显示文本内容 | `&a欢迎来到服务器！` |
-| 多行文本 | 使用 `/n` 或 `\n` 换行 | `&a第一行/n&b第二行` |
+| 多行文本 | 使用 `\n` 换行 | `&a第一行\n&b第二行` |
 | `#ICON:<物品>` | 显示物品图标 | `#ICON:DIAMOND` |
 | `#HEAD:<类型>:<值>` | 显示玩家头颅 | `#HEAD:PLAYER:Notch` |
 | `#HEAD:URL:<Base64>` | 显示自定义皮肤头颅 | `#HEAD:URL:eyJ0ZXh0...` |
@@ -293,6 +293,50 @@ public void onHologramClick(HologramClickEvent event) {
 | `wooholograms.delete` | 删除全息图权限 |
 | `wooholograms.edit` | 编辑全息图权限 |
 | `wooholograms.reload` | 重载配置权限 |
+
+## DecentHolograms 配置兼容
+
+WooHolograms 支持读取 DecentHolograms 的配置文件格式，方便从 DH 迁移：
+
+- 首次启动时自动检测 `plugins/DecentHolograms/holograms/` 目录下的 `.yml` 文件
+- 自动将 DH 格式数据迁移到 `plugins/WooHolograms/holograms/` 目录
+- 迁移后使用 WooHolograms 原生格式存储，后续编辑自动保存为新格式
+- 支持读取 DH 的 kebab-case 键名（如 `facing-direction`）和 WH 的 camelCase 键名（如 `facingDirection`）
+
+### 配置文件格式
+
+每个全息图一个 `.yml` 文件，存储在 `plugins/WooHolograms/holograms/` 目录下：
+
+```yaml
+location: world,100.0,64.0,200.0,0.0,0.0
+enabled: true
+display-range: 48
+update-range: 48
+update-interval: 20
+facing: 0.0
+down-origin: false
+billboard: CENTER
+double-sided: false
+permission: null
+pages:
+  '1':
+    lines:
+      '1':
+        content: '&a欢迎来到服务器！'
+        height: 0.3
+        offsetX: 0.0
+        offsetY: 0.0
+        offsetZ: 0.0
+      '2':
+        content: '#ICON:DIAMOND'
+        height: 0.6
+      '3':
+        content: '#NEXT 下一页'
+        height: 0.3
+    actions:
+      ANY:
+        - 'MESSAGE:&a你点击了全息图！'
+```
 
 ---
 

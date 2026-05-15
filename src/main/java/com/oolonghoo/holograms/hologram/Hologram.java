@@ -1871,6 +1871,7 @@ public class Hologram {
         hide(player);
         removeShowPlayer(player);
         removeHidePlayer(player);
+        viewerPages.remove(player.getUniqueId());
     }
 
     /*

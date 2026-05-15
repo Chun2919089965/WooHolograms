@@ -1,6 +1,5 @@
 package com.oolonghoo.holograms.nms.versions.renderer;
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
+import com.oolonghoo.holograms.hologram.HeadTexture;
 import com.oolonghoo.holograms.hologram.HologramLine;
 import com.oolonghoo.holograms.nms.NmsAdapter;
 import com.oolonghoo.holograms.nms.NmsHologramPartData;
@@ -17,13 +16,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
@@ -141,6 +137,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void destroy(Player player) {
+        this.destroyed = true;
         hide(player);
     }
 
@@ -209,7 +206,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
                     skullValue = PlaceholderUtil.replace(skullValue, player);
                 }
                 if (skullValue.length() > 50) {
-                    return createHeadFromBase64(skullValue);
+                    return HeadTexture.createHeadFromBase64(skullValue);
                 }
                 return createPlayerHead(skullValue);
             }
@@ -271,33 +268,6 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
             meta.setOwner(playerName);
             head.setItemMeta(meta);
         }
-        return head;
-    }
-    
-    private ItemStack createHeadFromBase64(String base64) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        
-        if (meta != null && base64 != null && !base64.isEmpty()) {
-            GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-            profile.getProperties().put("textures", new Property("textures", base64));
-            
-            try {
-                Field profileField = meta.getClass().getDeclaredField("profile");
-                profileField.setAccessible(true);
-                profileField.set(meta, profile);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                try {
-                    Method setProfileMethod = meta.getClass().getDeclaredMethod("setProfile", GameProfile.class);
-                    setProfileMethod.setAccessible(true);
-                    setProfileMethod.invoke(meta, profile);
-                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
-                }
-            }
-            
-            head.setItemMeta(meta);
-        }
-        
         return head;
     }
 }

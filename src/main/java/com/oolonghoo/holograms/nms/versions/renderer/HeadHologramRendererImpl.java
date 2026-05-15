@@ -1,6 +1,4 @@
 package com.oolonghoo.holograms.nms.versions.renderer;
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import com.oolonghoo.holograms.hologram.Billboard;
 import com.oolonghoo.holograms.hologram.HeadTexture;
 import com.oolonghoo.holograms.hologram.Hologram;
@@ -20,12 +18,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
@@ -218,7 +214,7 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
         }
 
         return switch (headTexture.getType()) {
-            case BASE64 -> createHeadFromBase64(headTexture.getValue());
+            case BASE64 -> HeadTexture.createHeadFromBase64(headTexture.getValue());
             case PLAYER -> createHeadFromPlayerName(headTexture.getValue());
             case HDB -> createHeadFromHDB(headTexture.getValue());
             default -> new ItemStack(Material.PLAYER_HEAD);
@@ -244,38 +240,11 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
         }
 
         return switch (headTexture.getType()) {
-            case BASE64 -> createHeadFromBase64(value);
+            case BASE64 -> HeadTexture.createHeadFromBase64(value);
             case PLAYER -> createHeadFromPlayerName(value);
             case HDB -> createHeadFromHDB(value);
             default -> new ItemStack(Material.PLAYER_HEAD);
         };
-    }
-
-    protected ItemStack createHeadFromBase64(String base64) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        
-        if (meta != null && base64 != null && !base64.isEmpty()) {
-            GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-            profile.getProperties().put("textures", new Property("textures", base64));
-            
-            try {
-                Field profileField = meta.getClass().getDeclaredField("profile");
-                profileField.setAccessible(true);
-                profileField.set(meta, profile);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                try {
-                    Method setProfileMethod = meta.getClass().getDeclaredMethod("setProfile", GameProfile.class);
-                    setProfileMethod.setAccessible(true);
-                    setProfileMethod.invoke(meta, profile);
-                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
-                }
-            }
-            
-            head.setItemMeta(meta);
-        }
-        
-        return head;
     }
 
     protected ItemStack createHeadFromPlayerName(String playerName) {

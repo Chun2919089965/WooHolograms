@@ -9,73 +9,74 @@ import com.oolonghoo.holograms.hologram.HologramLine;
 import com.oolonghoo.holograms.hologram.HologramPage;
 import com.oolonghoo.holograms.util.ColorUtil;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class LineActionManageGui extends GuiScreen {
+public class LineActionManageGui extends AbstractActionManageGui {
 
-    private final WooHolograms plugin;
-    private final GuiManager guiManager;
-    private final ChatInputManager chatInputManager;
-    private final String hologramName;
-    private final int pageIndex;
     private final int lineIndex;
-    private ClickType currentClickType;
 
     public LineActionManageGui(WooHolograms plugin, GuiManager guiManager, ChatInputManager chatInputManager,
                                String hologramName, int pageIndex, int lineIndex) {
-        super("line_action_manage", ColorUtil.colorize("&8行动作管理"), 54);
-        this.plugin = plugin;
-        this.guiManager = guiManager;
-        this.chatInputManager = chatInputManager;
-        this.hologramName = hologramName;
-        this.pageIndex = pageIndex;
+        super("line_action_manage", "&8行动作管理", 54,
+                plugin, guiManager, chatInputManager, hologramName, pageIndex, ClickType.ANY);
         this.lineIndex = lineIndex;
-        this.currentClickType = ClickType.ANY;
-        
         render();
     }
 
-    private void render() {
-        clearButtons();
-        
-        Hologram hologram = plugin.getHologramManager().getHologram(hologramName);
-        if (hologram == null) {
-            setButton(22, GuiButton.builder(Material.BARRIER)
-                    .name("&f全息图不存在")
-                    .lore(Arrays.asList("", "&7该全息图已被删除", "", "&e点击返回列表"))
-                    .onClick(context -> {
-                        guiManager.openGui(context.getPlayer(), new HologramListGui(plugin, guiManager, chatInputManager, 0));
-                    })
-                    .build());
-            return;
-        }
-        
+    @Override
+    protected Map<ClickType, List<Action>> getActions() {
+        Hologram hologram = getHologram();
+        if (hologram == null) return new HashMap<>();
+
         HologramPage page = hologram.getPage(pageIndex);
-        if (page == null || lineIndex >= page.size()) {
-            setButton(22, GuiButton.builder(Material.BARRIER)
-                    .name("&f行不存在")
-                    .lore(Arrays.asList("", "&7该行已被删除", "", "&e点击返回详情"))
-                    .onClick(context -> {
-                        guiManager.openGui(context.getPlayer(), new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, 0));
-                    })
-                    .build());
-            return;
-        }
-        
+        if (page == null || lineIndex >= page.size()) return new HashMap<>();
+
         HologramLine line = page.getLine(lineIndex);
-        
-        // 返回按钮
-        setButton(0, GuiButton.builder(Material.BOOK)
-                .name("&f返回")
-                .lore(Arrays.asList("&7返回行编辑", "", "&e点击返回"))
+        if (line == null) return new HashMap<>();
+
+        return line.getActions();
+    }
+
+    @Override
+    protected void setActions(Map<ClickType, List<Action>> actions) {
+    }
+
+    @Override
+    protected String getTargetDescription() {
+        return "行编辑";
+    }
+
+    @Override
+    protected void goBack(Player player) {
+        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+    }
+
+    @Override
+    protected void onNullTarget(Player player) {
+        setButton(22, GuiButton.builder(Material.BARRIER)
+                .name("&f行不存在")
+                .lore(Arrays.asList("", "&7该行已被删除", "", "&e点击返回详情"))
                 .onClick(context -> {
-                    guiManager.openGui(context.getPlayer(), new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    guiManager.openGui(context.getPlayer(), new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, 0));
                 })
                 .build());
-        
-        // 点击类型选择
+    }
+
+    @Override
+    protected boolean hasTarget() {
+        Hologram hologram = getHologram();
+        if (hologram == null) return false;
+        HologramPage page = hologram.getPage(pageIndex);
+        return page != null && lineIndex < page.size();
+    }
+
+    @Override
+    protected void renderClickTypeButtons() {
         setButton(4, GuiButton.builder(Material.STONE_BUTTON)
                 .name("&f点击类型: &e" + currentClickType.name())
                 .lore(Arrays.asList(
@@ -105,15 +106,15 @@ public class LineActionManageGui extends GuiScreen {
                     guiManager.openGui(context.getPlayer(), this);
                 })
                 .build());
-        
-        // 显示当前点击类型的动作列表
-        List<Action> actions = line.getActions(currentClickType);
-        
+    }
+
+    @Override
+    protected void renderActionList(List<Action> actions) {
         for (int i = 0; i < Math.min(actions.size(), 36); i++) {
             Action action = actions.get(i);
             int slot = 9 + i;
             final int actionIndex = i;
-            
+
             setButton(slot, GuiButton.builder(Material.PAPER)
                     .name("&f动作 #" + (i + 1))
                     .lore(Arrays.asList(
@@ -127,27 +128,30 @@ public class LineActionManageGui extends GuiScreen {
                     .onClick(context -> {
                         org.bukkit.event.inventory.ClickType bukkitClick = context.getClickType();
                         if (bukkitClick == org.bukkit.event.inventory.ClickType.RIGHT || bukkitClick == org.bukkit.event.inventory.ClickType.SHIFT_RIGHT) {
-                            // 右键删除
-                            line.removeAction(currentClickType, actionIndex);
-                            hologram.save();
-                            context.getPlayer().sendMessage(ColorUtil.colorize("&c动作已删除！"));
-                            guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                            HologramLine line = getLine();
+                            if (line != null) {
+                                line.removeAction(currentClickType, actionIndex);
+                                getHologram().save();
+                                context.getPlayer().sendMessage(ColorUtil.colorize("&c动作已删除！"));
+                            }
+                            reopenGui(context.getPlayer());
                         } else {
-                            // 左键编辑动作数据
                             context.getPlayer().closeInventory();
-                            chatInputManager.requestInput(context.getPlayer(), "&a请输入新的动作数据:", 
+                            chatInputManager.requestInput(context.getPlayer(), "&a请输入新的动作数据:",
                                     ChatInputManager.InputType.ACTION_VALUE, hologramName, lineIndex, pageIndex, input -> {
                                         action.setData(input);
-                                        hologram.save();
+                                        getHologram().save();
                                         context.getPlayer().sendMessage(ColorUtil.colorize("&a动作数据已更新！"));
-                                        guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                        reopenGui(context.getPlayer());
                                     });
                         }
                     })
                     .build());
         }
-        
-        // 添加动作按钮
+    }
+
+    @Override
+    protected void renderBottomButtons() {
         setButton(45, GuiButton.builder(Material.EMERALD)
                 .name("&a添加动作")
                 .lore(Arrays.asList(
@@ -168,23 +172,25 @@ public class LineActionManageGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     context.getPlayer().closeInventory();
-                    chatInputManager.requestInput(context.getPlayer(), "&a请输入动作 (格式: TYPE:DATA):", 
+                    chatInputManager.requestInput(context.getPlayer(), "&a请输入动作 (格式: TYPE:DATA):",
                             ChatInputManager.InputType.ACTION_VALUE, hologramName, lineIndex, pageIndex, input -> {
                                 try {
                                     Action action = new Action(input);
                                     action.setClickType(currentClickType);
-                                    line.addAction(currentClickType, action);
-                                    hologram.save();
-                                    context.getPlayer().sendMessage(ColorUtil.colorize("&a动作已添加！"));
+                                    HologramLine line = getLine();
+                                    if (line != null) {
+                                        line.addAction(currentClickType, action);
+                                        getHologram().save();
+                                        context.getPlayer().sendMessage(ColorUtil.colorize("&a动作已添加！"));
+                                    }
                                 } catch (IllegalArgumentException e) {
                                     context.getPlayer().sendMessage(ColorUtil.colorize("&c无效的动作格式: " + e.getMessage()));
                                 }
-                                guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                reopenGui(context.getPlayer());
                             });
                 })
                 .build());
-        
-        // 清空当前点击类型动作
+
         setButton(47, GuiButton.builder(Material.BARRIER)
                 .name("&c清空当前类型动作")
                 .lore(Arrays.asList(
@@ -193,14 +199,16 @@ public class LineActionManageGui extends GuiScreen {
                         "&c点击清空"
                 ))
                 .onClick(context -> {
-                    line.clearActions(currentClickType);
-                    hologram.save();
-                    context.getPlayer().sendMessage(ColorUtil.colorize("&c已清空 " + currentClickType.name() + " 类型的所有动作！"));
-                    guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    HologramLine line = getLine();
+                    if (line != null) {
+                        line.clearActions(currentClickType);
+                        getHologram().save();
+                        context.getPlayer().sendMessage(ColorUtil.colorize("&c已清空 " + currentClickType.name() + " 类型的所有动作！"));
+                    }
+                    reopenGui(context.getPlayer());
                 })
                 .build());
-        
-        // 清空所有动作
+
         setButton(49, GuiButton.builder(Material.TNT)
                 .name("&4清空所有动作")
                 .lore(Arrays.asList(
@@ -209,49 +217,48 @@ public class LineActionManageGui extends GuiScreen {
                         "&c点击清空"
                 ))
                 .onClick(context -> {
-                    line.clearAllActions();
-                    hologram.save();
-                    context.getPlayer().sendMessage(ColorUtil.colorize("&c已清空所有动作！"));
-                    guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    HologramLine line = getLine();
+                    if (line != null) {
+                        line.clearAllActions();
+                        getHologram().save();
+                        context.getPlayer().sendMessage(ColorUtil.colorize("&c已清空所有动作！"));
+                    }
+                    reopenGui(context.getPlayer());
                 })
                 .build());
-        
-        // 快速添加翻页动作
+
         setButton(51, GuiButton.builder(Material.ARROW)
                 .name("&e快速添加: 下一页")
-                .lore(Arrays.asList(
-                        "&7添加 NEXT_PAGE 动作",
-                        "",
-                        "&e点击添加"
-                ))
+                .lore(Arrays.asList("&7添加 NEXT_PAGE 动作", "", "&e点击添加"))
                 .onClick(context -> {
-                    Action action = new Action(ActionType.NEXT_PAGE, hologramName);
-                    action.setClickType(currentClickType);
-                    line.addAction(currentClickType, action);
-                    hologram.save();
-                    context.getPlayer().sendMessage(ColorUtil.colorize("&a已添加下一页动作！"));
-                    guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    HologramLine line = getLine();
+                    if (line != null) {
+                        Action action = new Action(ActionType.NEXT_PAGE, hologramName);
+                        action.setClickType(currentClickType);
+                        line.addAction(currentClickType, action);
+                        getHologram().save();
+                        context.getPlayer().sendMessage(ColorUtil.colorize("&a已添加下一页动作！"));
+                    }
+                    reopenGui(context.getPlayer());
                 })
                 .build());
-        
+
         setButton(52, GuiButton.builder(Material.ARROW)
                 .name("&e快速添加: 上一页")
-                .lore(Arrays.asList(
-                        "&7添加 PREV_PAGE 动作",
-                        "",
-                        "&e点击添加"
-                ))
+                .lore(Arrays.asList("&7添加 PREV_PAGE 动作", "", "&e点击添加"))
                 .onClick(context -> {
-                    Action action = new Action(ActionType.PREV_PAGE, hologramName);
-                    action.setClickType(currentClickType);
-                    line.addAction(currentClickType, action);
-                    hologram.save();
-                    context.getPlayer().sendMessage(ColorUtil.colorize("&a已添加上一页动作！"));
-                    guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    HologramLine line = getLine();
+                    if (line != null) {
+                        Action action = new Action(ActionType.PREV_PAGE, hologramName);
+                        action.setClickType(currentClickType);
+                        line.addAction(currentClickType, action);
+                        getHologram().save();
+                        context.getPlayer().sendMessage(ColorUtil.colorize("&a已添加上一页动作！"));
+                    }
+                    reopenGui(context.getPlayer());
                 })
                 .build());
-        
-        // 帮助信息
+
         setButton(53, GuiButton.builder(Material.KNOWLEDGE_BOOK)
                 .name("&f动作类型帮助")
                 .lore(Arrays.asList(
@@ -268,5 +275,37 @@ public class LineActionManageGui extends GuiScreen {
                         "&7变量: {player} = 玩家名"
                 ))
                 .build());
+    }
+
+    @Override
+    protected void removeAction(int actionIndex) {
+        HologramLine line = getLine();
+        if (line != null) {
+            line.removeAction(currentClickType, actionIndex);
+        }
+    }
+
+    @Override
+    protected void updateAction(int actionIndex, Action newAction) {
+        HologramLine line = getLine();
+        if (line != null) {
+            List<Action> actions = line.getActions(currentClickType);
+            if (actionIndex < actions.size()) {
+                actions.set(actionIndex, newAction);
+            }
+        }
+    }
+
+    @Override
+    protected void reopenGui(Player player) {
+        guiManager.openGui(player, new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+    }
+
+    private HologramLine getLine() {
+        Hologram hologram = getHologram();
+        if (hologram == null) return null;
+        HologramPage page = hologram.getPage(pageIndex);
+        if (page == null || lineIndex >= page.size()) return null;
+        return page.getLine(lineIndex);
     }
 }

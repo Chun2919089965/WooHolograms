@@ -75,10 +75,10 @@ public class CustomTextAnimation extends TextAnimation {
 
         // 获取配置
         int speed = config.getInt("speed", 5);
+        if (speed <= 0) speed = 1;
         int pause = config.getInt("pause", 0);
         List<String> frames = config.getStringList("frames");
 
-        // 验证配置
         if (frames.isEmpty()) {
             throw new IllegalArgumentException("动画 '" + name + "' 没有定义帧");
         }
@@ -95,6 +95,7 @@ public class CustomTextAnimation extends TextAnimation {
      */
     public static CustomTextAnimation fromConfig(String name, YamlConfiguration config) {
         int speed = config.getInt("speed", 5);
+        if (speed <= 0) speed = 1;
         int pause = config.getInt("pause", 0);
         List<String> frames = config.getStringList("frames");
 

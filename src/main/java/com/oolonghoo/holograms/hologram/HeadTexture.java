@@ -1,5 +1,13 @@
 package com.oolonghoo.holograms.hologram;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -99,7 +107,13 @@ public class HeadTexture {
         if (data == null || data.isEmpty()) {
             return false;
         }
-        return data.length() > 50;
+        if (data.contains("=")) {
+            return true;
+        }
+        if (data.length() > 100 && !data.matches("^[a-zA-Z0-9_]+$")) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean isHeadTexture(String input) {
@@ -108,6 +122,33 @@ public class HeadTexture {
         }
         String upperInput = input.toUpperCase(Locale.ROOT);
         return upperInput.startsWith("#HEAD:") || upperInput.startsWith("#SMALLHEAD:");
+    }
+
+    public static ItemStack createHeadFromBase64(String base64) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+
+        if (meta != null && base64 != null && !base64.isEmpty()) {
+            GameProfile profile = new GameProfile(UUID.randomUUID(), null);
+            profile.getProperties().put("textures", new Property("textures", base64));
+
+            try {
+                Field profileField = meta.getClass().getDeclaredField("profile");
+                profileField.setAccessible(true);
+                profileField.set(meta, profile);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                try {
+                    Method setProfileMethod = meta.getClass().getDeclaredMethod("setProfile", GameProfile.class);
+                    setProfileMethod.setAccessible(true);
+                    setProfileMethod.invoke(meta, profile);
+                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
+                }
+            }
+
+            head.setItemMeta(meta);
+        }
+
+        return head;
     }
 
     @Override

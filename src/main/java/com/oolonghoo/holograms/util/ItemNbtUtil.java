@@ -37,13 +37,14 @@ public class ItemNbtUtil {
         
         // 尝试解析 NBT 格式
         Matcher nbtMatcher = NBT_PATTERN.matcher(input);
+        String remaining;
         if (nbtMatcher.find()) {
             String nbtContent = nbtMatcher.group(1);
             parseNbtFormat(nbtContent, result);
+            remaining = input.substring(nbtMatcher.end()).trim();
+        } else {
+            remaining = input;
         }
-        
-        // 解析键值对格式
-        String remaining = nbtMatcher.find() ? input.substring(nbtMatcher.end()).trim() : input;
         parseKeyValueFormat(remaining, result);
         
         return result;

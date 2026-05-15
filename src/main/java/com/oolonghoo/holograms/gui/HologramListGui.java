@@ -23,17 +23,24 @@ public class HologramListGui extends GuiScreen {
     private static final int ITEMS_PER_PAGE = 45;
     private static final int START_SLOT = 9;
 
+    private final Player viewer;
+
     public HologramListGui(WooHolograms plugin, GuiManager guiManager, ChatInputManager chatInputManager, int page) {
-        this(plugin, guiManager, chatInputManager, page, SortType.NAME);
+        this(plugin, guiManager, chatInputManager, page, SortType.NAME, null);
     }
 
     public HologramListGui(WooHolograms plugin, GuiManager guiManager, ChatInputManager chatInputManager, int page, SortType sortType) {
+        this(plugin, guiManager, chatInputManager, page, sortType, null);
+    }
+
+    public HologramListGui(WooHolograms plugin, GuiManager guiManager, ChatInputManager chatInputManager, int page, SortType sortType, Player viewer) {
         super("hologram_list", ColorUtil.colorize("&8全息图列表"), 54);
         this.plugin = plugin;
         this.guiManager = guiManager;
         this.chatInputManager = chatInputManager;
         this.currentPage = page;
         this.sortType = sortType;
+        this.viewer = viewer;
         
         render();
     }
@@ -56,7 +63,7 @@ public class HologramListGui extends GuiScreen {
                     plugin.getHologramManager().reload();
                     
                     player.sendMessage(ColorUtil.colorize("&a配置已重新加载！"));
-                    guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType));
+                    guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType, viewer));
                 })
                 .build());
         
@@ -74,7 +81,7 @@ public class HologramListGui extends GuiScreen {
                     chatInputManager.requestInput(player, "&a请输入全息图名称:", ChatInputManager.InputType.HOLOGRAM_NAME, input -> {
                         if (plugin.getHologramManager().containsHologram(input)) {
                             player.sendMessage(ColorUtil.colorize("&c全息图 " + input + " 已存在！"));
-                            guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType));
+                            guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType, viewer));
                             return;
                         }
                         
@@ -93,7 +100,7 @@ public class HologramListGui extends GuiScreen {
                             guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, input, 0));
                         } else {
                             player.sendMessage(ColorUtil.colorize("&c创建全息图失败！"));
-                            guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType));
+                            guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType, viewer));
                         }
                     });
                 })
@@ -127,7 +134,7 @@ public class HologramListGui extends GuiScreen {
         fillFirstRow();
         
         List<Hologram> holograms = new ArrayList<>(plugin.getHologramManager().getHolograms());
-        sortHolograms(holograms);
+        sortHolograms(holograms, viewer);
         
         int totalPages = (int) Math.ceil((double) holograms.size() / ITEMS_PER_PAGE);
         if (totalPages == 0) totalPages = 1;
@@ -155,7 +162,7 @@ public class HologramListGui extends GuiScreen {
                     ))
                     .onClick(context -> {
                         Player player = context.getPlayer();
-                        guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage - 1, sortType));
+                        guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage - 1, sortType, viewer));
                     })
                     .build());
         }
@@ -170,7 +177,7 @@ public class HologramListGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     SortType nextSortType = sortType.next();
-                    guiManager.openGui(context.getPlayer(), new HologramListGui(plugin, guiManager, chatInputManager, 0, nextSortType));
+                    guiManager.openGui(context.getPlayer(), new HologramListGui(plugin, guiManager, chatInputManager, 0, nextSortType, viewer));
                 })
                 .build());
         
@@ -191,7 +198,7 @@ public class HologramListGui extends GuiScreen {
                     ))
                     .onClick(context -> {
                         Player player = context.getPlayer();
-                        guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage + 1, sortType));
+                        guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage + 1, sortType, viewer));
                     })
                     .build());
         }
@@ -199,13 +206,12 @@ public class HologramListGui extends GuiScreen {
         fillLastRow();
     }
     
-    private void sortHolograms(List<Hologram> holograms) {
+    private void sortHolograms(List<Hologram> holograms, Player viewer) {
         switch (sortType) {
             case NAME -> holograms.sort(Comparator.comparing(Hologram::getName, String.CASE_INSENSITIVE_ORDER));
             case DISTANCE -> {
-                Player nearestPlayer = plugin.getServer().getOnlinePlayers().stream().findFirst().orElse(null);
-                if (nearestPlayer != null) {
-                    Location playerLoc = nearestPlayer.getLocation();
+                if (viewer != null) {
+                    Location playerLoc = viewer.getLocation();
                     holograms.sort((h1, h2) -> {
                         Location loc1 = h1.getLocation();
                         Location loc2 = h2.getLocation();

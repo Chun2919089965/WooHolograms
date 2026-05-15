@@ -358,17 +358,25 @@ public class HologramLine {
         synchronized (renderMutex) {
             hidePreviousIfNecessary();
 
-            List<Player> playerList = (players != null && players.length > 0) 
-                    ? Arrays.asList(players) 
-                    : new ArrayList<>(getViewerPlayers());
-
-            for (Player player : playerList) {
-                if (renderer != null) {
-                    renderer.destroy(player);
+            if (players != null && players.length > 0) {
+                for (Player player : players) {
+                    if (renderer != null) {
+                        renderer.destroy(player);
+                    }
+                    viewers.remove(player.getUniqueId());
+                    playerTextCache.remove(player.getUniqueId());
+                    lastTextCache.remove(player.getUniqueId());
                 }
-                viewers.remove(player.getUniqueId());
-                playerTextCache.remove(player.getUniqueId());
-                lastTextCache.remove(player.getUniqueId());
+            } else {
+                for (UUID uuid : viewers) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && player.isOnline() && renderer != null) {
+                        renderer.destroy(player);
+                    }
+                }
+                viewers.clear();
+                playerTextCache.clear();
+                lastTextCache.clear();
             }
         }
     }
@@ -396,14 +404,18 @@ public class HologramLine {
 
             hidePreviousIfNecessary();
 
-            List<Player> playerList = (players != null && players.length > 0) 
-                    ? Arrays.asList(players) 
-                    : new ArrayList<>(getViewerPlayers());
-
-            for (Player player : playerList) {
-                if (renderer != null && (containsPlaceholders || force)) {
-                    // 更新文本
-                    updateTextIfNecessary(player, true);
+            if (players != null && players.length > 0) {
+                for (Player player : players) {
+                    if (renderer != null && (containsPlaceholders || force)) {
+                        updateTextIfNecessary(player, true);
+                    }
+                }
+            } else {
+                for (UUID uuid : viewers) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && player.isOnline() && renderer != null && (containsPlaceholders || force)) {
+                        updateTextIfNecessary(player, true);
+                    }
                 }
             }
         }
@@ -422,12 +434,17 @@ public class HologramLine {
 
             hidePreviousIfNecessary();
 
-            List<Player> playerList = (players != null && players.length > 0) 
-                    ? Arrays.asList(players) 
-                    : new ArrayList<>(getViewerPlayers());
-
-            for (Player player : playerList) {
-                updateTextIfNecessary(player, false);
+            if (players != null && players.length > 0) {
+                for (Player player : players) {
+                    updateTextIfNecessary(player, false);
+                }
+            } else {
+                for (UUID uuid : viewers) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && player.isOnline()) {
+                        updateTextIfNecessary(player, false);
+                    }
+                }
             }
         }
     }
@@ -446,13 +463,18 @@ public class HologramLine {
 
             hidePreviousIfNecessary();
 
-            List<Player> playerList = (players != null && players.length > 0) 
-                    ? Arrays.asList(players) 
-                    : new ArrayList<>(getViewerPlayers());
-
-            for (Player player : playerList) {
-                if (renderer != null) {
-                    renderer.teleport(player, getLocation());
+            if (players != null && players.length > 0) {
+                for (Player player : players) {
+                    if (renderer != null) {
+                        renderer.teleport(player, getLocation());
+                    }
+                }
+            } else {
+                for (UUID uuid : viewers) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && player.isOnline() && renderer != null) {
+                        renderer.teleport(player, getLocation());
+                    }
                 }
             }
         }
@@ -467,7 +489,12 @@ public class HologramLine {
                 return;
             }
 
-            getViewerPlayers().forEach(previousRenderer::destroy);
+            for (UUID uuid : viewers) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null && player.isOnline()) {
+                    previousRenderer.destroy(player);
+                }
+            }
             previousRenderer = null;
         }
     }
@@ -905,21 +932,32 @@ public class HologramLine {
      * 销毁此行
      */
     public void destroy() {
-        hide();
-        if (renderer != null) {
-            renderer.destroy(getViewerPlayers());
-            WooHolograms plugin = WooHolograms.getInstance();
-            HologramRendererPool pool = plugin.getRendererPool();
-            pool.release(renderer);
-            renderer = null;
+        synchronized (renderMutex) {
+            if (renderer != null) {
+                for (UUID uuid : viewers) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && player.isOnline()) {
+                        renderer.destroy(player);
+                    }
+                }
+                WooHolograms plugin = WooHolograms.getInstance();
+                HologramRendererPool pool = plugin.getRendererPool();
+                pool.release(renderer);
+                renderer = null;
+            }
+            if (previousRenderer != null) {
+                for (UUID uuid : viewers) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && player.isOnline()) {
+                        previousRenderer.destroy(player);
+                    }
+                }
+                previousRenderer = null;
+            }
+            viewers.clear();
+            playerTextCache.clear();
+            lastTextCache.clear();
         }
-        if (previousRenderer != null) {
-            previousRenderer.destroy(getViewerPlayers());
-            previousRenderer = null;
-        }
-        viewers.clear();
-        playerTextCache.clear();
-        lastTextCache.clear();
     }
 
     /*
@@ -944,9 +982,12 @@ public class HologramLine {
             this.location = location != null ? location.clone() : null;
             
             if (renderer != null && oldLocation != null && !oldLocation.equals(location)) {
-                for (Player viewer : getViewerPlayers()) {
-                    renderer.destroy(viewer);
-                    renderer.render(viewer, this.location, this);
+                for (UUID uuid : viewers) {
+                    Player viewer = Bukkit.getPlayer(uuid);
+                    if (viewer != null && viewer.isOnline()) {
+                        renderer.destroy(viewer);
+                        renderer.render(viewer, this.location, this);
+                    }
                 }
             }
         }

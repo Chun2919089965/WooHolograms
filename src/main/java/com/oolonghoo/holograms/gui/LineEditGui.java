@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * 行编辑 GUI
@@ -381,7 +382,7 @@ public class LineEditGui extends GuiScreen {
                                     if (l != null) {
                                         // 构建新的内容
                                         String prefix = lineType == HologramType.HEAD ? "#HEAD:" : "#SMALLHEAD:";
-                                        String newContent = prefix + input.toUpperCase();
+                                        String newContent = prefix.toUpperCase(Locale.ROOT) + input;
                                         l.setContent(newContent);
                                         h.save();
                                         h.showToNearby();

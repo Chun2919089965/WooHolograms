@@ -2,6 +2,7 @@ package com.oolonghoo.holograms.gui;
 
 import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.util.ColorUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -167,19 +168,26 @@ public class ChatInputManager implements Listener {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
         
-        InputContext context = pendingInputs.remove(playerId);
-        if (context != null) {
-            event.setCancelled(true);
-            cancelTimeoutTask(playerId);
+        if (!pendingInputs.containsKey(playerId)) {
+            return;
+        }
+        
+        event.setCancelled(true);
+        String input = event.getMessage();
+        
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            InputContext context = pendingInputs.remove(playerId);
+            if (context == null) {
+                return;
+            }
             
-            String input = event.getMessage();
+            cancelTimeoutTask(playerId);
             
             if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("取消")) {
                 player.sendMessage(ColorUtil.colorize("&c输入已取消！"));
                 return;
             }
             
-            // 输入验证
             String validationError = validateInput(input, context.getType());
             if (validationError != null) {
                 player.sendMessage(ColorUtil.colorize(validationError));
@@ -198,14 +206,8 @@ public class ChatInputManager implements Listener {
                 return;
             }
             
-            final String finalInput = input;
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    context.callback.accept(finalInput);
-                }
-            }.runTask(plugin);
-        }
+            context.callback.accept(input);
+        });
     }
     
     /**

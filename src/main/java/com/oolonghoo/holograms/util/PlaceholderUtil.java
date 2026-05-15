@@ -19,7 +19,7 @@ public class PlaceholderUtil {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([^}]+)}|%([^%]+)%");
     
-    private static final Map<String, Function<Player, String>> BUILTIN_PLACEHOLDERS = new HashMap<>();
+    public static final Map<String, Function<Player, String>> BUILTIN_PLACEHOLDERS = new HashMap<>();
     
     static {
         BUILTIN_PLACEHOLDERS.put("player", Player::getName);

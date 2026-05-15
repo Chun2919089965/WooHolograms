@@ -28,19 +28,12 @@ public class TabCompleteUtil {
             "#PREV"
     );
 
-    // 常用变量
+    // 常用变量（从 PlaceholderUtil 派生）
     public static final Map<String, String> PLACEHOLDERS = new HashMap<>();
     static {
-        PLACEHOLDERS.put("{player}", "玩家名称");
-        PLACEHOLDERS.put("{player_name}", "玩家名称");
-        PLACEHOLDERS.put("{player_uuid}", "玩家 UUID");
-        PLACEHOLDERS.put("{player_displayname}", "玩家显示名称");
-        PLACEHOLDERS.put("{player_x}", "玩家 X 坐标");
-        PLACEHOLDERS.put("{player_y}", "玩家 Y 坐标");
-        PLACEHOLDERS.put("{player_z}", "玩家 Z 坐标");
-        PLACEHOLDERS.put("{player_world}", "玩家所在世界");
-        PLACEHOLDERS.put("{player_health}", "玩家生命值");
-        PLACEHOLDERS.put("{player_level}", "玩家等级");
+        for (String key : PlaceholderUtil.BUILTIN_PLACEHOLDERS.keySet()) {
+            PLACEHOLDERS.put("{" + key + "}", "");
+        }
     }
 
     // 物品参数

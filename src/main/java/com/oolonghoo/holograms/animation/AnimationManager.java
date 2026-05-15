@@ -125,7 +125,11 @@ public class AnimationManager {
         }
 
         Matcher matcher = ANIMATION_PATTERN.matcher(string);
+        StringBuffer sb = new StringBuffer();
+        boolean found = false;
+
         while (matcher.find()) {
+            found = true;
             String animationName = matcher.group(1);
             String args = matcher.group(2);
             String text = matcher.group(3);
@@ -133,11 +137,18 @@ public class AnimationManager {
             TextAnimation animation = getAnimation(animationName);
             if (animation != null) {
                 String[] argsArray = args == null ? new String[0] : args.substring(1).split(",");
-                string = string.replace(matcher.group(), animation.animate(text, getStep(), argsArray));
+                matcher.appendReplacement(sb, Matcher.quoteReplacement(animation.animate(text, getStep(), argsArray)));
+            } else {
+                matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group()));
             }
         }
 
-        return string;
+        if (!found) {
+            return string;
+        }
+
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     /**

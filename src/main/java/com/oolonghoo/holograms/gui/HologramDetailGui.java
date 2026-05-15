@@ -1,7 +1,6 @@
 package com.oolonghoo.holograms.gui;
 
 import com.oolonghoo.holograms.WooHolograms;
-import com.oolonghoo.holograms.action.Action;
 import com.oolonghoo.holograms.action.ClickType;
 import com.oolonghoo.holograms.hologram.Billboard;
 import com.oolonghoo.holograms.hologram.Hologram;
@@ -440,44 +439,10 @@ public class HologramDetailGui extends GuiScreen {
                             return;
                         }
                         
-                        Hologram source = plugin.getHologramManager().getHologram(hologramName);
-                        Hologram target = plugin.getHologramManager().createHologram(input, source.getLocation());
+                        Hologram target = plugin.getHologramManager().cloneHologram(hologramName, input, null, false);
                         
                         if (target != null) {
-                            target.setDisplayRange(source.getDisplayRange());
-                            target.setUpdateRange(source.getUpdateRange());
-                            target.setUpdateInterval(source.getUpdateInterval());
-                            target.setPermission(source.getPermission());
-                            target.setDefaultVisibleState(source.isDefaultVisibleState());
-                            target.setDownOrigin(source.isDownOrigin());
-                            target.setFacing(source.getFacing());
-                            
-                            for (int i = 0; i < source.getPageCount(); i++) {
-                                HologramPage sourcePage = source.getPage(i);
-                                HologramPage targetPage = i == 0 ? target.getPage(0) : target.addPage();
-                                
-                                if (sourcePage != null && targetPage != null) {
-                                    for (HologramLine sourceLine : sourcePage.getLines()) {
-                                        HologramLine targetLine = targetPage.addLine(sourceLine.getContent());
-                                        if (targetLine != null) {
-                                            targetLine.setOffsetX(sourceLine.getOffsetX());
-                                            targetLine.setOffsetY(sourceLine.getOffsetY());
-                                            targetLine.setOffsetZ(sourceLine.getOffsetZ());
-                                            targetLine.setHeight(sourceLine.getHeight());
-                                            targetLine.setPermission(sourceLine.getPermission());
-                                        }
-                                    }
-                                    
-                                    for (ClickType clickType : ClickType.values()) {
-                                        for (Action action : sourcePage.getActions(clickType)) {
-                                            targetPage.addAction(clickType, action);
-                                        }
-                                    }
-                                }
-                            }
-                            
                             target.save();
-                            target.showToNearby();
                             player.sendMessage(ColorUtil.colorize("&a成功克隆到 " + input + "！"));
                             guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, input, 0));
                         } else {

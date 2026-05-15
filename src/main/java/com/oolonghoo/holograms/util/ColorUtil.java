@@ -49,8 +49,9 @@ public class ColorUtil {
     // 十六进制颜色模式：&#RRGGBB
     private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("&#([0-9a-fA-F]{6})");
 
-    // 传统颜色代码模式
     private static final Pattern LEGACY_COLOR_PATTERN = Pattern.compile("[&§]([0-9a-fA-Fk-oK-OrR])");
+
+    private static final Pattern MINI_MESSAGE_TAG_PATTERN = Pattern.compile("<[a-z_/!]+>");
 
     /**
      * 将颜色代码转换为实际颜色
@@ -64,19 +65,16 @@ public class ColorUtil {
             return "";
         }
 
-        // 处理转义的换行符
         text = text.replace("\\n", "\n");
 
-        // 检查是否包含 MiniMessage 标签
+        if (text.indexOf('&') >= 0 || text.indexOf('§') >= 0) {
+            text = ChatColor.translateAlternateColorCodes('&', text);
+            text = translateHexColors(text);
+        }
+
         if (containsMiniMessageTags(text)) {
             return processMiniMessage(text);
         }
-
-        // 处理传统颜色代码
-        text = ChatColor.translateAlternateColorCodes('&', text);
-
-        // 处理十六进制颜色
-        text = translateHexColors(text);
 
         return text;
     }
@@ -91,21 +89,7 @@ public class ColorUtil {
         if (text == null) {
             return false;
         }
-
-        // 检查常见的 MiniMessage 标签
-        return text.contains("<") && text.contains(">") && (
-                text.contains("<gradient:") ||
-                text.contains("<rainbow") ||
-                text.contains("<color:") ||
-                text.contains("<#") ||
-                text.contains("<click:") ||
-                text.contains("<hover:") ||
-                text.contains("<bold>") ||
-                text.contains("<italic>") ||
-                text.contains("<underlined>") ||
-                text.contains("<strikethrough>") ||
-                text.contains("<obfuscated>")
-        );
+        return MINI_MESSAGE_TAG_PATTERN.matcher(text).find();
     }
 
     /**

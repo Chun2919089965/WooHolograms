@@ -2,7 +2,6 @@ package com.oolonghoo.holograms.util;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -13,7 +12,6 @@ import java.util.regex.Pattern;
 public class TextUtil {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([^}]+)}");
-    private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9a-fA-F]{6})");
 
     /**
      * 替换文本中的占位符
@@ -88,20 +86,7 @@ public class TextUtil {
      * @return 无颜色文本
      */
     public static String stripColor(String text) {
-        if (text == null) {
-            return "";
-        }
-        
-        // 移除 & 颜色代码
-        text = text.replaceAll("&[0-9a-fA-Fk-oK-OrR]", "");
-        
-        // 移除 § 颜色代码
-        text = text.replaceAll("§[0-9a-fA-Fk-oK-OrR]", "");
-        
-        // 移除 hex 颜色
-        text = HEX_PATTERN.matcher(text).replaceAll("");
-        
-        return text;
+        return ColorUtil.stripColor(text);
     }
 
     /**

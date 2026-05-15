@@ -86,6 +86,7 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
 
     @Override
     public void destroy(Player player) {
+        this.destroyed = true;
         EntityPacketsBuilder.create()
                 .withRemoveEntity(entityId)
                 .sendTo(player);

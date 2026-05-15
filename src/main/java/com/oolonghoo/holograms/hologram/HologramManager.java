@@ -27,8 +27,9 @@ public class HologramManager {
     private final WooHolograms plugin;
     private final HologramStorage storage;
 
-    // 全息图缓存
     private final Map<String, Hologram> holograms;
+
+    private final Map<String, List<Hologram>> hologramsByWorld;
 
     // 更新任务
     private UpdateTask updateTask;
@@ -47,6 +48,7 @@ public class HologramManager {
         this.plugin = plugin;
         this.storage = storage;
         this.holograms = new ConcurrentHashMap<>();
+        this.hologramsByWorld = new ConcurrentHashMap<>();
     }
 
     /*
@@ -106,10 +108,41 @@ public class HologramManager {
 
         holograms.put(name, hologram);
 
-        // 显示给附近玩家
+        addToWorldCache(hologram);
+
         showToNearby(hologram);
 
         return hologram;
+    }
+
+    public Hologram cloneHologram(String sourceName, String targetName, Location location, boolean temp) {
+        Hologram source = holograms.get(sourceName);
+        if (source == null) {
+            return null;
+        }
+
+        if (holograms.containsKey(targetName)) {
+            return null;
+        }
+
+        if (location == null) {
+            location = source.getLocation();
+        }
+
+        Hologram cloned = source.clone(targetName, location, temp);
+        cloned.setStorage(storage);
+
+        HologramCreateEvent event = new HologramCreateEvent(cloned);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return null;
+        }
+
+        holograms.put(targetName, cloned);
+        showToNearby(cloned);
+
+        return cloned;
     }
     
     /**
@@ -198,14 +231,8 @@ public class HologramManager {
      * @return 全息图列表
      */
     public List<Hologram> getHologramsInWorld(String worldName) {
-        List<Hologram> result = new ArrayList<>();
-        for (Hologram hologram : holograms.values()) {
-            Location loc = hologram.getLocation();
-            if (loc != null && loc.getWorld() != null && loc.getWorld().getName().equals(worldName)) {
-                result.add(hologram);
-            }
-        }
-        return result;
+        List<Hologram> cached = hologramsByWorld.get(worldName);
+        return cached != null ? Collections.unmodifiableList(cached) : Collections.emptyList();
     }
 
     /**
@@ -233,7 +260,8 @@ public class HologramManager {
             return false;
         }
 
-        // 触发事件
+        removeFromWorldCache(hologram);
+
         HologramDeleteEvent event = new HologramDeleteEvent(hologram);
         Bukkit.getPluginManager().callEvent(event);
 
@@ -255,6 +283,7 @@ public class HologramManager {
     public Hologram removeHologram(String name) {
         Hologram hologram = holograms.remove(name);
         if (hologram != null) {
+            removeFromWorldCache(hologram);
             hologram.hideAll();
         }
         return hologram;
@@ -275,8 +304,8 @@ public class HologramManager {
             Hologram hologram = entry.getValue();
 
             holograms.put(name, hologram);
-            
-            // 显示给附近玩家
+            addToWorldCache(hologram);
+
             showToNearby(hologram);
         }
 
@@ -318,8 +347,7 @@ public class HologramManager {
             hologram.hideAll();
         }
         holograms.clear();
-
-        // 重新加载
+        hologramsByWorld.clear();
         loadAll();
     }
 
@@ -334,6 +362,7 @@ public class HologramManager {
         }
 
         holograms.clear();
+        hologramsByWorld.clear();
     }
 
     /*
@@ -373,11 +402,14 @@ public class HologramManager {
      * @param player 玩家
      */
     public void onPlayerJoin(Player player) {
-        for (Hologram hologram : holograms.values()) {
+        List<Hologram> worldHolograms = hologramsByWorld.get(player.getWorld().getName());
+        if (worldHolograms == null) {
+            return;
+        }
+        for (Hologram hologram : worldHolograms) {
             if (hologram.isEnabled()) {
                 Location loc = hologram.getLocation();
-                if (loc != null && loc.getWorld() != null && 
-                    loc.getWorld().equals(player.getWorld())) {
+                if (loc != null) {
                     double displayRange = hologram.getDisplayRange();
                     if (player.getLocation().distanceSquared(loc) <= displayRange * displayRange) {
                         hologram.show(player, 0);
@@ -404,14 +436,17 @@ public class HologramManager {
      * @param player 玩家
      */
     public void onPlayerMove(Player player) {
-        for (Hologram hologram : holograms.values()) {
+        List<Hologram> worldHolograms = hologramsByWorld.get(player.getWorld().getName());
+        if (worldHolograms == null) {
+            return;
+        }
+        for (Hologram hologram : worldHolograms) {
             if (!hologram.isEnabled()) {
                 continue;
             }
 
             Location loc = hologram.getLocation();
-            if (loc == null || loc.getWorld() == null || 
-                !loc.getWorld().equals(player.getWorld())) {
+            if (loc == null) {
                 continue;
             }
 
@@ -433,15 +468,28 @@ public class HologramManager {
      * @param player 玩家
      */
     public void onPlayerTeleport(Player player) {
-        // 先隐藏所有
         for (Hologram hologram : holograms.values()) {
             if (hologram.isVisible(player)) {
                 hologram.hide(player);
             }
         }
 
-        // 延迟显示（等待客户端加载世界）
-        Bukkit.getScheduler().runTaskLater(plugin, () -> onPlayerJoin(player), TELEPORT_DELAY_TICKS);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            List<Hologram> worldHolograms = hologramsByWorld.get(player.getWorld().getName());
+            if (worldHolograms != null) {
+                for (Hologram hologram : worldHolograms) {
+                    if (hologram.isEnabled()) {
+                        Location loc = hologram.getLocation();
+                        if (loc != null) {
+                            double displayRange = hologram.getDisplayRange();
+                            if (player.getLocation().distanceSquared(loc) <= displayRange * displayRange) {
+                                hologram.show(player, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        }, TELEPORT_DELAY_TICKS);
     }
 
     /*
@@ -538,32 +586,66 @@ public class HologramManager {
     }
     
     private void updateVisibilityForAllPlayers() {
-        for (Hologram hologram : holograms.values()) {
-            if (!hologram.isEnabled()) {
+        for (Map.Entry<String, List<Hologram>> entry : hologramsByWorld.entrySet()) {
+            org.bukkit.World world = Bukkit.getWorld(entry.getKey());
+            if (world == null) {
                 continue;
             }
-            
-            Location holoLoc = hologram.getLocation();
-            if (holoLoc == null || holoLoc.getWorld() == null) {
+
+            List<Player> players = world.getPlayers();
+            if (players.isEmpty()) {
                 continue;
             }
-            
-            double displayRange = hologram.getDisplayRange();
-            double displayRangeSq = displayRange * displayRange;
-            
-            for (Player player : holoLoc.getWorld().getPlayers()) {
-                if (!player.isOnline()) {
+
+            for (Hologram hologram : entry.getValue()) {
+                if (!hologram.isEnabled()) {
                     continue;
                 }
-                
-                boolean inRange = player.getLocation().distanceSquared(holoLoc) <= displayRangeSq;
-                boolean isVisible = hologram.isVisible(player);
-                
-                if (inRange && !isVisible) {
-                    hologram.show(player, 0);
-                } else if (!inRange && isVisible) {
-                    hologram.hide(player);
+
+                Location holoLoc = hologram.getLocation();
+                if (holoLoc == null) {
+                    continue;
                 }
+
+                double displayRange = hologram.getDisplayRange();
+                double displayRangeSq = displayRange * displayRange;
+
+                for (Player player : players) {
+                    if (!player.isOnline()) {
+                        continue;
+                    }
+
+                    boolean inRange = player.getLocation().distanceSquared(holoLoc) <= displayRangeSq;
+                    boolean isVisible = hologram.isVisible(player);
+
+                    if (inRange && !isVisible) {
+                        hologram.show(player, 0);
+                    } else if (!inRange && isVisible) {
+                        hologram.hide(player);
+                    }
+                }
+            }
+        }
+    }
+
+    private void addToWorldCache(Hologram hologram) {
+        Location loc = hologram.getLocation();
+        if (loc == null || loc.getWorld() == null) {
+            return;
+        }
+        hologramsByWorld.computeIfAbsent(loc.getWorld().getName(), k -> new ArrayList<>()).add(hologram);
+    }
+
+    private void removeFromWorldCache(Hologram hologram) {
+        Location loc = hologram.getLocation();
+        if (loc == null || loc.getWorld() == null) {
+            return;
+        }
+        List<Hologram> list = hologramsByWorld.get(loc.getWorld().getName());
+        if (list != null) {
+            list.remove(hologram);
+            if (list.isEmpty()) {
+                hologramsByWorld.remove(loc.getWorld().getName());
             }
         }
     }

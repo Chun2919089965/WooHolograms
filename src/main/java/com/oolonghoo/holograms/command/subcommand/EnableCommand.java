@@ -5,29 +5,25 @@ import com.oolonghoo.holograms.command.Subcommand;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.util.ColorUtil;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TeleportCommand extends Subcommand {
+public class EnableCommand extends Subcommand {
 
     private final WooHolograms plugin;
 
-    public TeleportCommand(WooHolograms plugin) {
-        super("teleport", "传送到全息图位置", "/wh teleport <名称>", "wooholograms.admin", Arrays.asList("tp"));
+    public EnableCommand(WooHolograms plugin) {
+        super("enable", "启用一个全息图", "/wh enable <名称>", "wooholograms.admin", Arrays.asList("on"));
         this.plugin = plugin;
-        setPlayerOnly(true);
     }
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
-        Player player = (Player) sender;
-
         if (args.length < 1) {
-            player.sendMessage(ColorUtil.colorize("&c用法: " + getUsage()));
+            sender.sendMessage(ColorUtil.colorize("&c用法: " + getUsage()));
             return true;
         }
 
@@ -35,12 +31,20 @@ public class TeleportCommand extends Subcommand {
         Hologram hologram = plugin.getHologramManager().getHologram(name);
 
         if (hologram == null) {
-            player.sendMessage(ColorUtil.colorize("&c全息图 " + name + " 不存在！"));
+            sender.sendMessage(ColorUtil.colorize("&c全息图 " + name + " 不存在！"));
             return true;
         }
 
-        player.teleport(hologram.getLocation());
-        player.sendMessage(ColorUtil.colorize("&a已传送到全息图 " + name + "！"));
+        if (hologram.isEnabled()) {
+            sender.sendMessage(ColorUtil.colorize("&e全息图 " + name + " 已经是启用状态！"));
+            return true;
+        }
+
+        hologram.setEnabled(true);
+        hologram.save();
+        hologram.showToNearby();
+
+        sender.sendMessage(ColorUtil.colorize("&a已启用全息图 " + name + "！"));
         return true;
     }
 

@@ -78,6 +78,7 @@ public class WooHolograms extends JavaPlugin {
         
         // 初始化存储器
         storage = new YamlHologramStorage(this);
+        ((YamlHologramStorage) storage).migrateFromOldFormat();
         
         // 初始化渲染器工厂
         EntityIdGenerator entityIdGenerator = new EntityIdGenerator();

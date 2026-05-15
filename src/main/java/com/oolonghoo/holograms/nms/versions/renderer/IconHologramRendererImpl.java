@@ -29,7 +29,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     private final int itemEntityId;
     private final int armorStandEntityId;
-    private final boolean destroyed = false;
+    private boolean destroyed = false;
 
     public IconHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.itemEntityId = entityIdGenerator.getFreeEntityId();

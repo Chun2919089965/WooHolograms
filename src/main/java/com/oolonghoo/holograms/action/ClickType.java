@@ -62,6 +62,9 @@ public enum ClickType {
      * @return 点击类型，如果不存在返回 ANY
      */
     public static ClickType fromId(String id) {
+        if (id == null) {
+            return ANY;
+        }
         for (ClickType type : values()) {
             if (type.id.equalsIgnoreCase(id)) {
                 return type;

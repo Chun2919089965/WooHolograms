@@ -64,9 +64,6 @@ public class ColorUtil {
             return "";
         }
 
-        // 处理换行符（支持 /n 和 \n）
-        text = text.replace("/n", "\n");
-        
         // 处理转义的换行符
         text = text.replace("\\n", "\n");
 

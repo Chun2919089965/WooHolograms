@@ -11,8 +11,8 @@ public class Brightness {
     private final int blockLight;
 
     private Brightness(int skyLight, int blockLight) {
-        this.skyLight = clamp(skyLight);
-        this.blockLight = clamp(blockLight);
+        this.skyLight = skyLight;
+        this.blockLight = blockLight;
     }
 
     public static Brightness of(int sky, int block) {
@@ -28,11 +28,11 @@ public class Brightness {
     }
 
     public int getSkyLight() {
-        return skyLight;
+        return isDefault() ? 0 : clamp(skyLight);
     }
 
     public int getBlockLight() {
-        return blockLight;
+        return isDefault() ? 0 : clamp(blockLight);
     }
 
     public boolean isDefault() {

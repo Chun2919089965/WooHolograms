@@ -198,7 +198,9 @@ public class TextUtil {
         if (text == null || text.length() <= maxLength) {
             return text;
         }
-        
+        if (suffix == null || suffix.length() >= maxLength) {
+            return text.substring(0, maxLength);
+        }
         return text.substring(0, maxLength - suffix.length()) + suffix;
     }
 }

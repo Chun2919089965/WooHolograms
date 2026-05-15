@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -69,8 +68,8 @@ public class Hologram {
     // 可点击实体渲染器
     private final List<NmsHologramRenderer> clickableRenderers;
 
-    // 锁
-    protected final ReentrantLock saveLock = new ReentrantLock();
+    // 可点击实体渲染器
+
     protected final Object visibilityMutex = new Object();
 
     // 存储器
@@ -1825,57 +1824,6 @@ public class Hologram {
     }
 
     /**
-     * 处理点击（带行索引）
-     * 
-     * @param player 玩家
-     * @param entityId 实体 ID
-     * @param clickType 点击类型
-     * @param lineIndex 行索引（-1 表示点击的是可点击实体而非行）
-     * @return 是否处理成功
-     */
-    public boolean onClick(Player player, int entityId, ClickType clickType, int lineIndex) {
-        // 1. 检查全息图是否启用
-        if (!enabled) {
-            return false;
-        }
-
-        // 2. 检查玩家是否正在查看
-        if (!isVisible(player)) {
-            return false;
-        }
-
-        // 3. 获取玩家当前页面
-        HologramPage page = getPage(player);
-        if (page == null) {
-            return false;
-        }
-
-        // 4. 检查 entityId 是否属于此全息图
-        if (!page.hasEntity(entityId)) {
-            return false;
-        }
-
-        // 5. 触发 HologramClickEvent 事件
-        HologramClickEvent event = new HologramClickEvent(this, page, player, clickType, entityId);
-        Bukkit.getPluginManager().callEvent(event);
-
-        // 6. 检查事件是否被取消
-        if (event.isCancelled()) {
-            return false;
-        }
-
-        // 7. 检查是否禁用动作
-        if (hasFlag(EnumFlag.DISABLE_ACTIONS)) {
-            return true;
-        }
-
-        // 8. 执行动作
-        page.executeActions(player, clickType);
-
-        return true;
-    }
-
-    /**
      * 检查实体 ID 是否属于此全息图
      * 
      * @param entityId 实体 ID
@@ -1923,7 +1871,6 @@ public class Hologram {
         hide(player);
         removeShowPlayer(player);
         removeHidePlayer(player);
-        viewerPages.remove(player.getUniqueId());
     }
 
     /*

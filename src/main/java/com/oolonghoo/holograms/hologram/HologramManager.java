@@ -33,9 +33,6 @@ public class HologramManager {
     // 更新任务
     private UpdateTask updateTask;
 
-    // 全息图缓存（API 用）
-    private static final Map<String, Hologram> CACHED_HOLOGRAMS = new ConcurrentHashMap<>();
-
     /*
      * 构造函数
      */
@@ -50,38 +47,6 @@ public class HologramManager {
         this.plugin = plugin;
         this.storage = storage;
         this.holograms = new ConcurrentHashMap<>();
-    }
-
-    /*
-     * 静态缓存方法
-     */
-
-    /**
-     * 获取缓存的全息图
-     * 
-     * @param name 名称
-     * @return 全息图
-     */
-    public static Hologram getCachedHologram(String name) {
-        return CACHED_HOLOGRAMS.get(name);
-    }
-
-    /**
-     * 获取所有缓存的全息图名称
-     * 
-     * @return 名称集合
-     */
-    public static Set<String> getCachedHologramNames() {
-        return CACHED_HOLOGRAMS.keySet();
-    }
-
-    /**
-     * 获取所有缓存的全息图
-     * 
-     * @return 全息图集合
-     */
-    public static Collection<Hologram> getCachedHolograms() {
-        return CACHED_HOLOGRAMS.values();
     }
 
     /*
@@ -140,7 +105,6 @@ public class HologramManager {
         }
 
         holograms.put(name, hologram);
-        CACHED_HOLOGRAMS.put(name, hologram);
 
         // 显示给附近玩家
         showToNearby(hologram);
@@ -273,11 +237,11 @@ public class HologramManager {
         HologramDeleteEvent event = new HologramDeleteEvent(hologram);
         Bukkit.getPluginManager().callEvent(event);
 
-        // 从缓存移除
-        CACHED_HOLOGRAMS.remove(name);
-
         // 销毁全息图
         hologram.destroy();
+
+        // 删除对应的存储文件
+        storage.delete(name);
 
         return true;
     }
@@ -291,7 +255,6 @@ public class HologramManager {
     public Hologram removeHologram(String name) {
         Hologram hologram = holograms.remove(name);
         if (hologram != null) {
-            CACHED_HOLOGRAMS.remove(name);
             hologram.hideAll();
         }
         return hologram;
@@ -312,7 +275,6 @@ public class HologramManager {
             Hologram hologram = entry.getValue();
 
             holograms.put(name, hologram);
-            CACHED_HOLOGRAMS.put(name, hologram);
             
             // 显示给附近玩家
             showToNearby(hologram);
@@ -356,7 +318,6 @@ public class HologramManager {
             hologram.hideAll();
         }
         holograms.clear();
-        CACHED_HOLOGRAMS.clear();
 
         // 重新加载
         loadAll();
@@ -373,7 +334,6 @@ public class HologramManager {
         }
 
         holograms.clear();
-        CACHED_HOLOGRAMS.clear();
     }
 
     /*

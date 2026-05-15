@@ -26,7 +26,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
  
     private final int frontEntityId;
     private final int backEntityId;
-    private final boolean destroyed = false;
+    private boolean destroyed = false;
     private float currentYaw = 0.0f;
     private float currentPitch = 0.0f;
     private boolean currentDoubleSided = false;

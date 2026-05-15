@@ -458,18 +458,10 @@ public class LineEditGui extends GuiScreen {
                         if (h != null) {
                             HologramPage p = h.getPage(pageIndex);
                             if (p != null && lineIndex > 0) {
-                                HologramLine current = p.getLine(lineIndex);
-                                HologramLine above = p.getLine(lineIndex - 1);
-                                
-                                if (current != null && above != null) {
-                                    String tempContent = current.getContent();
-                                    current.setContent(above.getContent());
-                                    above.setContent(tempContent);
-                                    
-                                    h.save();
-                                    h.showToNearby();
-                                    player.sendMessage(ColorUtil.colorize("&a已上移！"));
-                                }
+                                p.swapLines(lineIndex, lineIndex - 1);
+                                h.save();
+                                h.showToNearby();
+                                player.sendMessage(ColorUtil.colorize("&a已上移！"));
                             }
                         }
                         guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex - 1));
@@ -492,18 +484,10 @@ public class LineEditGui extends GuiScreen {
                         if (h != null) {
                             HologramPage p = h.getPage(pageIndex);
                             if (p != null && lineIndex < p.size() - 1) {
-                                HologramLine current = p.getLine(lineIndex);
-                                HologramLine below = p.getLine(lineIndex + 1);
-                                
-                                if (current != null && below != null) {
-                                    String tempContent = current.getContent();
-                                    current.setContent(below.getContent());
-                                    below.setContent(tempContent);
-                                    
-                                    h.save();
-                                    h.showToNearby();
-                                    player.sendMessage(ColorUtil.colorize("&a已下移！"));
-                                }
+                                p.swapLines(lineIndex, lineIndex + 1);
+                                h.save();
+                                h.showToNearby();
+                                player.sendMessage(ColorUtil.colorize("&a已下移！"));
                             }
                         }
                         guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex + 1));

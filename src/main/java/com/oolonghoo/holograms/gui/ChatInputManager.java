@@ -184,6 +184,17 @@ public class ChatInputManager implements Listener {
             if (validationError != null) {
                 player.sendMessage(ColorUtil.colorize(validationError));
                 pendingInputs.put(playerId, context);
+                BukkitTask retryTask = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (pendingInputs.containsKey(playerId) && pendingInputs.get(playerId) == context) {
+                            pendingInputs.remove(playerId);
+                            timeoutTasks.remove(playerId);
+                            player.sendMessage(ColorUtil.colorize("&c输入已超时取消！"));
+                        }
+                    }
+                }.runTaskLater(plugin, INPUT_TIMEOUT);
+                timeoutTasks.put(playerId, retryTask);
                 return;
             }
             

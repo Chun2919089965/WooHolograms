@@ -10,8 +10,8 @@ import com.oolonghoo.holograms.animation.text.WaveAnimation;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +52,7 @@ public class AnimationManager {
      */
     public AnimationManager(WooHolograms plugin) {
         this.plugin = plugin;
-        this.animationMap = new HashMap<>();
+        this.animationMap = new ConcurrentHashMap<>();
         this.step = new AtomicLong(0);
         this.reload();
     }

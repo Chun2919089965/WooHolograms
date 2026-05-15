@@ -293,7 +293,7 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
     protected ItemStack createHeadFromHDB(String hdbId) {
         if (Bukkit.getPluginManager().getPlugin("HeadDatabase") != null) {
             try {
-                Object api = Class.forName("ar.com.zir.libs.headdatabase.api.HeadDatabaseAPI").newInstance();
+                Object api = Class.forName("ar.com.zir.libs.headdatabase.api.HeadDatabaseAPI").getDeclaredConstructor().newInstance();
                 Method getItemMethod = api.getClass().getMethod("getItem", String.class);
                 ItemStack head = (ItemStack) getItemMethod.invoke(api, hdbId);
                 if (head != null) {

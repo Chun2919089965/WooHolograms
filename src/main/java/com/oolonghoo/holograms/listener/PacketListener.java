@@ -14,8 +14,8 @@ import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 数据包监听器
@@ -38,7 +38,7 @@ public class PacketListener {
 
     public PacketListener(WooHolograms plugin) {
         this.plugin = plugin;
-        this.playerChannels = new HashMap<>();
+        this.playerChannels = new ConcurrentHashMap<>();
         initReflection();
     }
     
@@ -277,7 +277,8 @@ public class PacketListener {
             }
             
             // 触发事件
-            HologramClickEvent event = new HologramClickEvent(hologram, player, clickType);
+            HologramPage page = hologram.getPageByEntityId(entityId);
+            HologramClickEvent event = new HologramClickEvent(hologram, page, player, clickType, entityId);
             Bukkit.getPluginManager().callEvent(event);
             
             if (event.isCancelled()) {
@@ -285,7 +286,6 @@ public class PacketListener {
             }
             
             // 查找被点击的行
-            HologramPage page = hologram.getPageByEntityId(entityId);
             if (page != null) {
                 HologramLine line = page.getLineByEntityId(entityId);
                 if (line != null && line.hasActions()) {

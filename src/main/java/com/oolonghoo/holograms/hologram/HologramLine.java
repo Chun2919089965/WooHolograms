@@ -180,7 +180,7 @@ public class HologramLine {
                     this.previousRenderer = this.renderer;
                     this.renderer = null;
                 }
-                // 自动添加 NEXT_PAGE 动作
+                this.actions.remove(ClickType.ANY);
                 Hologram hologram = getHologram();
                 if (hologram != null) {
                     this.actions.computeIfAbsent(ClickType.ANY, k -> new ArrayList<>())
@@ -193,7 +193,7 @@ public class HologramLine {
                     this.previousRenderer = this.renderer;
                     this.renderer = null;
                 }
-                // 自动添加 PREV_PAGE 动作
+                this.actions.remove(ClickType.ANY);
                 Hologram hologram = getHologram();
                 if (hologram != null) {
                     this.actions.computeIfAbsent(ClickType.ANY, k -> new ArrayList<>())
@@ -574,23 +574,7 @@ public class HologramLine {
      * @return 处理后的文本
      */
     public String getDisplayText(Player player) {
-        if (type != HologramType.TEXT) {
-            return "";
-        }
-        
-        String text = content == null ? "" : content;
-        
-        // 解析占位符
-        if (!hasFlag(EnumFlag.DISABLE_PLACEHOLDERS)) {
-            text = parsePlaceholders(text, player);
-        }
-        
-        // 解析动画
-        if (containsAnimations && !hasFlag(EnumFlag.DISABLE_ANIMATIONS)) {
-            text = parseAnimations(text);
-        }
-        
-        return ColorUtil.colorize(text);
+        return getText(player, true);
     }
 
     /*

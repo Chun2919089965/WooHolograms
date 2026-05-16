@@ -37,12 +37,14 @@ public class Action {
             throw new IllegalArgumentException("动作字符串不能为空");
         }
 
-        if (string.contains(":")) {
-            String[] spl = string.split(":", 2);
+        String normalized = normalizeActionString(string);
+
+        if (normalized.contains(":")) {
+            String[] spl = normalized.split(":", 2);
             this.type = ActionType.getByName(spl[0]);
             this.data = spl.length > 1 ? spl[1] : "";
         } else {
-            this.type = ActionType.getByName(string);
+            this.type = ActionType.getByName(normalized);
             this.data = null;
         }
 
@@ -51,6 +53,16 @@ public class Action {
         }
 
         this.clickType = ClickType.ANY;
+    }
+
+    private static String normalizeActionString(String s) {
+        if (s.startsWith("[") && s.contains("]")) {
+            int end = s.indexOf(']');
+            String typeName = s.substring(1, end);
+            String rest = s.substring(end + 1).trim();
+            return rest.isEmpty() ? typeName : typeName + ":" + rest;
+        }
+        return s;
     }
 
     /**

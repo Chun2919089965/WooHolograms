@@ -312,14 +312,14 @@ public class YamlHologramStorage implements HologramStorage {
         hologram.setStorage(this);
 
         hologram.setEnabled(section.getBoolean("enabled", true));
-        String typeId = getCompatString(section, "type", "type");
+        String typeId = section.getString("type");
         if (typeId != null && !typeId.isEmpty()) {
             hologram.setType(HologramType.fromId(typeId));
         }
-        hologram.setVisible(getCompatBoolean(section, "visible", "visible", true));
-        hologram.setPersistent(getCompatBoolean(section, "persistent", "persistent", true));
+        hologram.setVisible(section.getBoolean("visible", true));
+        hologram.setPersistent(section.getBoolean("persistent", true));
         hologram.setLineHeight(getCompatDouble(section, "line-height", "lineHeight", 0.25));
-        hologram.setBillboard(Billboard.fromId(getCompatString(section, "billboard", "billboard")));
+        hologram.setBillboard(Billboard.fromId(section.getString("billboard")));
         hologram.setFacing((float) section.getDouble("facing", 0));
         hologram.setDoubleSided(getCompatBoolean(section, "double-sided", "doubleSided", false));
         hologram.setDisplayRange(getCompatDouble(section, "display-range", "displayRange", 48.0));
@@ -358,16 +358,29 @@ public class YamlHologramStorage implements HologramStorage {
                 if (pageSection != null) {
                     loadPageActions(pageSection.getConfigurationSection("actions"), page);
 
-                    ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
-                    if (linesSection != null) {
-                        Set<String> lineKeys = linesSection.getKeys(false);
-                        for (String lineIndex : lineKeys) {
-                            ConfigurationSection lineSection = linesSection.getConfigurationSection(lineIndex);
-                            if (lineSection != null) {
-                                loadHologramLine(lineSection, page);
-                            }
+                    if (pageSection.isList("lines")) {
+                        List<String> lineContents = pageSection.getStringList("lines");
+                        for (String content : lineContents) {
+                            page.addLine(content);
                         }
                         page.realignLines();
+                    } else {
+                        ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
+                        if (linesSection != null) {
+                            Set<String> lineKeys = linesSection.getKeys(false);
+                            for (String lineIndex : lineKeys) {
+                                ConfigurationSection lineSection = linesSection.getConfigurationSection(lineIndex);
+                                if (lineSection != null) {
+                                    loadHologramLine(lineSection, page);
+                                } else {
+                                    String content = linesSection.getString(lineIndex);
+                                    if (content != null) {
+                                        page.addLine(content);
+                                    }
+                                }
+                            }
+                            page.realignLines();
+                        }
                     }
                 }
             }
@@ -522,67 +535,9 @@ public class YamlHologramStorage implements HologramStorage {
                 continue;
             }
 
-            Location location = loadLocation(holoSection);
-            if (location == null) {
+            Hologram hologram = loadHologram(id, holoSection);
+            if (hologram == null) {
                 continue;
-            }
-
-            Hologram hologram = new Hologram(id, location, true);
-            hologram.setStorage(this);
-
-            hologram.setEnabled(holoSection.getBoolean("enabled", true));
-            hologram.setType(HologramType.fromId(holoSection.getString("type", "TEXT")));
-            hologram.setVisible(holoSection.getBoolean("visible", true));
-            hologram.setPersistent(holoSection.getBoolean("persistent", true));
-            hologram.setLineHeight(holoSection.getDouble("lineHeight", 0.25));
-            hologram.setBillboard(Billboard.fromId(holoSection.getString("billboard", "center")));
-            hologram.setFacing((float) holoSection.getDouble("facing", 0));
-            hologram.setDoubleSided(holoSection.getBoolean("doubleSided", false));
-            hologram.setDisplayRange(holoSection.getDouble("displayRange", 48.0));
-            hologram.setUpdateRange(holoSection.getDouble("updateRange", 48.0));
-            hologram.setUpdateInterval(holoSection.getInt("updateInterval", 3));
-            hologram.setDownOrigin(holoSection.getBoolean("downOrigin", true));
-
-            String permission = holoSection.getString("permission");
-            if (permission != null && !permission.isEmpty()) {
-                hologram.setPermission(permission);
-            }
-
-            if (holoSection.contains("flags")) {
-                List<String> flagList = holoSection.getStringList("flags");
-                for (String flagStr : flagList) {
-                    try {
-                        EnumFlag flag = EnumFlag.valueOf(flagStr.toUpperCase());
-                        hologram.addFlags(flag);
-                    } catch (IllegalArgumentException ignored) {
-                    }
-                }
-            }
-
-            ConfigurationSection pagesSection = holoSection.getConfigurationSection("pages");
-            if (pagesSection != null) {
-                hologram.removePage(0);
-
-                Set<String> pageKeys = pagesSection.getKeys(false);
-                for (String pageIndex : pageKeys) {
-                    HologramPage page = hologram.addPage();
-                    ConfigurationSection pageSection = pagesSection.getConfigurationSection(pageIndex);
-
-                    if (pageSection != null) {
-                        loadPageActions(pageSection.getConfigurationSection("actions"), page);
-
-                        ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
-                        if (linesSection != null) {
-                            Set<String> lineKeys = linesSection.getKeys(false);
-                            for (String lineIndex : lineKeys) {
-                                ConfigurationSection lineSection = linesSection.getConfigurationSection(lineIndex);
-                                if (lineSection != null) {
-                                    loadHologramLine(lineSection, page);
-                                }
-                            }
-                        }
-                    }
-                }
             }
 
             if (save(hologram)) {

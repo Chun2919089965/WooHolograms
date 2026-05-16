@@ -22,16 +22,16 @@ public final class NmsVersionDetector {
 
     public static boolean isSupported() {
         String version = getMinecraftVersion();
-        if (version.startsWith("1.21")) {
-            return true;
-        }
         try {
             String[] parts = version.split("\\.");
-            if (parts.length >= 1) {
+            if (parts.length >= 2) {
                 int major = Integer.parseInt(parts[0]);
-                if (major >= 26) {
-                    return true;
-                }
+                int minor = Integer.parseInt(parts[1]);
+                if (major > 1) return true;
+                if (major == 1 && minor >= 21) return true;
+            } else if (parts.length >= 1) {
+                int major = Integer.parseInt(parts[0]);
+                if (major >= 26) return true;
             }
         } catch (NumberFormatException ignored) {}
         return false;

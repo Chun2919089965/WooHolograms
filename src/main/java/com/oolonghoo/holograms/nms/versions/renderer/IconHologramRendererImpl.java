@@ -93,7 +93,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void render(Player player, Location location, HologramLine line) {
-        if (location == null || line == null) {
+        if (destroyed || location == null || line == null) {
             return;
         }
 

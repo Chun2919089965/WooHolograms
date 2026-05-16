@@ -489,12 +489,17 @@ public class HologramLine {
                 return;
             }
 
+            List<Player> viewerPlayers = new ArrayList<>();
             for (UUID uuid : viewers) {
-                Player player = Bukkit.getPlayer(uuid);
-                if (player != null && player.isOnline()) {
-                    previousRenderer.destroy(player);
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null && p.isOnline()) {
+                    viewerPlayers.add(p);
                 }
             }
+            previousRenderer.destroy(viewerPlayers);
+            WooHolograms plugin = WooHolograms.getInstance();
+            HologramRendererPool pool = plugin.getRendererPool();
+            pool.release(previousRenderer);
             previousRenderer = null;
         }
     }
@@ -948,12 +953,17 @@ public class HologramLine {
                 renderer = null;
             }
             if (previousRenderer != null) {
+                List<Player> viewerPlayers = new ArrayList<>();
                 for (UUID uuid : viewers) {
-                    Player player = Bukkit.getPlayer(uuid);
-                    if (player != null && player.isOnline()) {
-                        previousRenderer.destroy(player);
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p != null && p.isOnline()) {
+                        viewerPlayers.add(p);
                     }
                 }
+                previousRenderer.destroy(viewerPlayers);
+                WooHolograms plugin = WooHolograms.getInstance();
+                HologramRendererPool pool = plugin.getRendererPool();
+                pool.release(previousRenderer);
                 previousRenderer = null;
             }
             viewers.clear();
@@ -1211,7 +1221,7 @@ public class HologramLine {
     }
 
     public void setBillboard(Billboard billboard) {
-        this.billboard = billboard != null ? billboard : Billboard.CENTER;
+        this.billboard = billboard;
     }
 
     public int[] getEntityIds() {

@@ -108,10 +108,10 @@ public class HologramRendererPool {
             return HologramType.TEXT;
         } else if (renderer instanceof NmsIconHologramRenderer) {
             return HologramType.ICON;
-        } else if (renderer instanceof NmsHeadHologramRenderer) {
-            return HologramType.HEAD;
         } else if (renderer instanceof NmsSmallHeadHologramRenderer) {
             return HologramType.SMALLHEAD;
+        } else if (renderer instanceof NmsHeadHologramRenderer) {
+            return HologramType.HEAD;
         } else if (renderer instanceof NmsEntityHologramRenderer) {
             return HologramType.ENTITY;
         }

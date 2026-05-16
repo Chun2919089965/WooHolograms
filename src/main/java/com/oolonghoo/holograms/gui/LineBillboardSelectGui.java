@@ -91,7 +91,7 @@ public class LineBillboardSelectGui extends GuiScreen {
                             ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
                                 try {
                                     float angle = Float.parseFloat(input);
-                                    setLineBillboard(player, Billboard.FIXED_ANGLE);
+                                    setLineBillboard(player, Billboard.FIXED_ANGLE, angle);
                                 } catch (NumberFormatException e) {
                                     player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
                                     guiManager.openGui(player, new LineBillboardSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
@@ -107,7 +107,7 @@ public class LineBillboardSelectGui extends GuiScreen {
                         "",
                         currentBillboard == Billboard.VERTICAL && isOverriding ? "&a当前选择" : "&e点击选择"
                 ))
-                .onClick(context -> setLineBillboard(context.getPlayer(), Billboard.VERTICAL))
+                .onClick(context -> setLineBillboard(context.getPlayer(), Billboard.VERTICAL, 0))
                 .build());
 
         setButton(14, GuiButton.builder(Material.RAIL)
@@ -117,7 +117,7 @@ public class LineBillboardSelectGui extends GuiScreen {
                         "",
                         currentBillboard == Billboard.HORIZONTAL && isOverriding ? "&a当前选择" : "&e点击选择"
                 ))
-                .onClick(context -> setLineBillboard(context.getPlayer(), Billboard.HORIZONTAL))
+                .onClick(context -> setLineBillboard(context.getPlayer(), Billboard.HORIZONTAL, 0))
                 .build());
 
         setButton(16, GuiButton.builder(Material.END_CRYSTAL)
@@ -127,7 +127,7 @@ public class LineBillboardSelectGui extends GuiScreen {
                         "",
                         currentBillboard == Billboard.CENTER && isOverriding ? "&a当前选择" : "&e点击选择"
                 ))
-                .onClick(context -> setLineBillboard(context.getPlayer(), Billboard.CENTER))
+                .onClick(context -> setLineBillboard(context.getPlayer(), Billboard.CENTER, 0))
                 .build());
 
         setButton(22, GuiButton.builder(Material.BARRIER)
@@ -161,7 +161,7 @@ public class LineBillboardSelectGui extends GuiScreen {
         fillBackground();
     }
 
-    private void setLineBillboard(Player player, Billboard billboard) {
+    private void setLineBillboard(Player player, Billboard billboard, float angle) {
         Hologram h = plugin.getHologramManager().getHologram(hologramName);
         if (h != null) {
             HologramPage p = h.getPage(pageIndex);
@@ -169,6 +169,9 @@ public class LineBillboardSelectGui extends GuiScreen {
                 HologramLine l = p.getLine(lineIndex);
                 if (l != null) {
                     l.setBillboard(billboard);
+                    if (billboard == Billboard.FIXED_ANGLE) {
+                        l.setCustomYaw(angle);
+                    }
                     h.save();
                     h.showToNearby();
                     player.sendMessage(ColorUtil.colorize("&a已设置行朝向模式为 " + billboard.getDisplayName() + "！"));

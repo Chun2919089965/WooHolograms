@@ -51,7 +51,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         String text = line.getDisplayText(player);
 
         Hologram hologram = line.getHologram();
-        Billboard billboard = hologram != null ? hologram.getBillboard() : Billboard.CENTER;
+        Billboard billboard = line.getBillboard() != null ? line.getBillboard() : (hologram != null ? hologram.getBillboard() : Billboard.CENTER);
         boolean doubleSided = hologram != null && hologram.isDoubleSided();
         float hologramFacing = hologram != null ? hologram.getFacing() : 0f;
 
@@ -125,7 +125,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         lastTextPerPlayer.put(player.getUniqueId(), text);
 
         Hologram hologram = line.getHologram();
-        Billboard billboard = hologram != null ? hologram.getBillboard() : Billboard.CENTER;
+        Billboard billboard = line.getBillboard() != null ? line.getBillboard() : (hologram != null ? hologram.getBillboard() : Billboard.CENTER);
         boolean doubleSided = hologram != null && hologram.isDoubleSided();
 
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()

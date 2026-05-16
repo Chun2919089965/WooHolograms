@@ -91,7 +91,7 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
     @Override
     public void render(Player player, Location location, HologramLine line) {
-        if (location == null || line == null) {
+        if (destroyed || location == null || line == null) {
             return;
         }
 
@@ -100,7 +100,7 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
         DecentPosition offsetPosition = offsetPosition(position);
         
         Hologram hologram = line.getHologram();
-        Billboard billboard = hologram != null ? hologram.getBillboard() : Billboard.CENTER;
+        Billboard billboard = line.getBillboard() != null ? line.getBillboard() : (hologram != null ? hologram.getBillboard() : Billboard.CENTER);
         float hologramFacing = hologram != null ? hologram.getFacing() : 0f;
         
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()

@@ -234,9 +234,19 @@ public class ChatInputManager implements Listener {
                     return "&c名称只能包含字母、数字、下划线和连字符！";
                 }
             }
-            case DISPLAY_RANGE, UPDATE_INTERVAL, LINE_HEIGHT -> {
+            case DISPLAY_RANGE, UPDATE_INTERVAL -> {
                 try {
                     int value = Integer.parseInt(input);
+                    if (value <= 0) {
+                        return "&c数值必须大于0！";
+                    }
+                } catch (NumberFormatException e) {
+                    return "&c请输入有效的数字！";
+                }
+            }
+            case LINE_HEIGHT -> {
+                try {
+                    double value = Double.parseDouble(input);
                     if (value <= 0) {
                         return "&c数值必须大于0！";
                     }

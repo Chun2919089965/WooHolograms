@@ -678,15 +678,17 @@ public class HologramManager {
         return false;
     }
 
-    public boolean isOnCooldown(Player player) {
-        Long lastClick = clickCooldowns.get(player.getUniqueId());
-        if (lastClick == null) return false;
+    public boolean checkAndSetCooldown(Player player) {
+        long now = System.currentTimeMillis();
         long cooldownMs = plugin.getConfigManager().getClickCooldown();
-        return System.currentTimeMillis() - lastClick < cooldownMs;
-    }
-
-    public void updateClickCooldown(Player player) {
-        clickCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+        if (cooldownMs <= 0) return false;
+        UUID playerId = player.getUniqueId();
+        Long lastClick = clickCooldowns.get(playerId);
+        if (lastClick != null && now - lastClick < cooldownMs) {
+            return true;
+        }
+        clickCooldowns.put(playerId, now);
+        return false;
     }
 
     /*

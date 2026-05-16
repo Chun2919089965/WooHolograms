@@ -68,7 +68,7 @@ public class HologramLine {
     private TextAlignment alignment = TextAlignment.LEFT;
 
     // Billboard 模式
-    private Billboard billboard = Billboard.CENTER;
+    private Billboard billboard;
 
     // 权限
     private String permission;
@@ -808,7 +808,7 @@ public class HologramLine {
             map.put("alignment", alignment.getId());
         }
 
-        if (billboard != Billboard.CENTER) {
+        if (billboard != null) {
             map.put("billboard", billboard.getId());
         }
 
@@ -886,6 +886,8 @@ public class HologramLine {
 
         if (map.containsKey("billboard") && map.get("billboard") instanceof String billboardObj) {
             line.setBillboard(Billboard.fromId(billboardObj));
+        } else {
+            line.setBillboard(null);
         }
 
         return line;
@@ -909,6 +911,8 @@ public class HologramLine {
         line.setBrightness(this.brightness);
         line.setAlignment(this.alignment);
         line.setBillboard(this.billboard);
+        line.setCustomYaw(this.customYaw);
+        line.setCustomPitch(this.customPitch);
         line.addFlags(this.flags.toArray(EnumFlag[]::new));
         return line;
     }

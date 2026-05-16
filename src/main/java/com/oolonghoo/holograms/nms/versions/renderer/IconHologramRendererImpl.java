@@ -128,6 +128,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void updateText(Player player, HologramLine line) {
+        if (destroyed) return;
         String rawContent = line.getContent();
         String resolvedContent = rawContent;
         if (rawContent != null && player != null) {
@@ -169,7 +170,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void teleport(Player player, Location location) {
-        if (location == null) {
+        if (destroyed || location == null) {
             return;
         }
         DecentPosition position = DecentPosition.fromLocation(location);

@@ -675,6 +675,87 @@ public class HologramDetailGui extends GuiScreen {
                 })
                 .build());
         
+        setButton(49, GuiButton.builder(Material.SPYGLASS)
+                .name("&f更新范围")
+                .lore(Arrays.asList(
+                        "&7动画更新可见距离",
+                        "&7当前: &f" + hologram.getUpdateRange() + " 格",
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    player.closeInventory();
+
+                    chatInputManager.requestInput(player, "&a请输入更新范围 (格):",
+                            ChatInputManager.InputType.DISPLAY_RANGE, hologramName, input -> {
+                        try {
+                            int range = Integer.parseInt(input);
+                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                            if (h != null) {
+                                h.setUpdateRange(range);
+                                h.save();
+                                player.sendMessage(ColorUtil.colorize("&a已设置更新范围为 " + range + " 格！"));
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                        }
+                        guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                    });
+                })
+                .build());
+
+        setButton(52, GuiButton.builder(Material.RAIL)
+                .name("&f行间距")
+                .lore(Arrays.asList(
+                        "&7设置行与行之间的间距",
+                        "&7当前: &f" + hologram.getLineHeight(),
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    player.closeInventory();
+
+                    chatInputManager.requestInput(player, "&a请输入行间距:",
+                            ChatInputManager.InputType.LINE_HEIGHT, hologramName, input -> {
+                        try {
+                            double height = Double.parseDouble(input);
+                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                            if (h != null) {
+                                h.setLineHeight(height);
+                                h.save();
+                                h.realignLines();
+                                h.showToNearby();
+                                player.sendMessage(ColorUtil.colorize("&a已设置行间距为 " + height + "！"));
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                        }
+                        guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                    });
+                })
+                .build());
+
+        setButton(53, GuiButton.builder(Material.ARROW)
+                .name("&f下方向原点")
+                .lore(Arrays.asList(
+                        "&7全息图从底部向上生长",
+                        "&7当前: " + (hologram.isDownOrigin() ? "&a启用" : "&c禁用"),
+                        "",
+                        "&e点击切换"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    hologram.setDownOrigin(!hologram.isDownOrigin());
+                    hologram.save();
+                    hologram.realignLines();
+                    hologram.showToNearby();
+                    player.sendMessage(ColorUtil.colorize("&a下方向原点已" + (hologram.isDownOrigin() ? "启用" : "禁用") + "！"));
+                    guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                })
+                .build());
+
         fillLastTwoRows();
     }
     

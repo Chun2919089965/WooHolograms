@@ -398,6 +398,40 @@ public class LineEditGui extends GuiScreen {
         
         // 动作管理按钮
         boolean hasActions = line.hasActions();
+        setButton(22, GuiButton.builder(Material.COMPASS)
+                .name("&f独立朝向模式")
+                .lore(Arrays.asList(
+                        "&7设置此行的独立Billboard模式",
+                        "&7当前: &f" + (line.getBillboard() != null ? line.getBillboard().getDisplayName() : "跟随整体"),
+                        "",
+                        "&e点击设置",
+                        "&7右键: &c重置为跟随整体"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+
+                    if (context.getClickType() == ClickType.RIGHT || context.getClickType() == ClickType.SHIFT_RIGHT) {
+                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                        if (h != null) {
+                            HologramPage p = h.getPage(pageIndex);
+                            if (p != null && lineIndex < p.size()) {
+                                HologramLine l = p.getLine(lineIndex);
+                                if (l != null) {
+                                    l.setBillboard(null);
+                                    h.save();
+                                    h.showToNearby();
+                                    player.sendMessage(ColorUtil.colorize("&a已重置为跟随整体朝向！"));
+                                }
+                            }
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    } else {
+                        guiManager.openGui(player, new LineBillboardSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    }
+                })
+                .build());
+
+        // 动作管理按钮
         setButton(23, GuiButton.builder(Material.COMMAND_BLOCK)
                 .name("&f动作管理")
                 .lore(Arrays.asList(
@@ -504,7 +538,7 @@ public class LineEditGui extends GuiScreen {
                 .name(" ")
                 .build();
         
-        int[] backgroundSlots = {1, 2, 3, 5, 6, 7, 8, 12, 13, 14, 15, 16, 17, 22, 23, 24, 25, 26, 28, 29, 30, 32, 33, 34};
+        int[] backgroundSlots = {1, 2, 3, 5, 6, 7, 8, 12, 13, 14, 15, 16, 17, 24, 25, 26, 28, 29, 30, 32, 33, 34};
         for (int slot : backgroundSlots) {
             if (getButton(slot) == null) {
                 setButton(slot, background);

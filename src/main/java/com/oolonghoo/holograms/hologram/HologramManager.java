@@ -140,6 +140,7 @@ public class HologramManager {
         }
 
         holograms.put(targetName, cloned);
+        addToWorldCache(cloned);
         showToNearby(cloned);
 
         return cloned;

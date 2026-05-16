@@ -15,6 +15,7 @@
 - **亮度控制**：自定义天空光和方块光亮度（0-15）
 - **文本对齐**：支持左对齐、居中、右对齐
 - **Billboard 模式**：固定、垂直、水平、中心四种朝向模式
+- **行独立朝向**：每行可设置独立的 Billboard 模式，覆盖全息图整体设置
 - **渐变动画**：流畅的颜色渐变效果
 - **双面显示**：文本可双面渲染
 
@@ -27,27 +28,31 @@
 - **自定义动画**：通过配置文件创建个性化动画
 
 ### 🖱️ 交互功能
-- **点击动作**：左键、右键、Shift+左键、Shift+右键
+- **点击动作**：左键、右键、Shift+左键、Shift+右键、任意点击
 - **行级别动作**：每行可独立设置点击动作
 - **页面动作**：全息图级别的点击动作
 - **动作类型**：命令、消息、音效、传送、翻页等
+- **点击冷却**：防止快速点击刷动作，可配置冷却时间
 
 ### ⚙️ 行级别自定义
-- **独立朝向**：每行可设置独立的 yaw/pitch，支持不同朝向
+- **独立朝向**：每行可设置独立的 Billboard 模式和 yaw/pitch
 - **独立偏移**：每行可设置独立的 X/Y/Z 轴偏移
 - **独立高度**：每行可设置独立的显示高度
 - **独立亮度**：每行可设置独立的天空光和方块光亮度
 - **独立权限**：每行可设置独立的查看权限
 
 ### 🔧 技术特性
-- **NMS 原生**：1.21+ 原生支持，性能优异
-- **智能更新**：仅更新变更的数据
+- **TextDisplay 实体**：基于 MC 1.21+ TextDisplay 实体，性能优异
+- **增量渲染**：仅更新变更的数据，减少网络包发送
+- **对象池**：渲染器对象复用，减少 GC 压力
+- **细粒度权限**：每个命令独立权限节点
 - **TAB 补全**：完善的命令补全支持
-- **GUI 管理**：可视化编辑界面，使用 lime 玻璃板填充，界面清晰美观
+- **GUI 管理**：可视化编辑界面，所有功能均可通过 GUI 操作
+- **DH 兼容**：自动读取和迁移 DecentHolograms 配置
 
 ## 环境
 
-- Minecraft 1.21+
+- Paper 1.21+（支持 1.21.x 及 26.1+）
 - Java 21+
 - PlaceholderAPI（可选）
 - HeadDatabase（可选，用于头颅材质）
@@ -58,61 +63,61 @@
 
 | 命令 | 描述 | 权限 |
 |------|------|------|
-| `/wh create <名称>` | 创建全息图 | `wooholograms.admin` |
-| `/wh delete <名称>` | 删除全息图 | `wooholograms.admin` |
-| `/wh copy <名称> <新名称>` | 复制全息图 | `wooholograms.admin` |
-| `/wh list [页码]` | 列出所有全息图 | `wooholograms.admin` |
-| `/wh info <名称>` | 查看全息图详情 | `wooholograms.admin` |
-| `/wh gui [名称]` | 打开 GUI 管理界面 | `wooholograms.admin` |
-| `/wh near [范围]` | 显示附近全息图 | `wooholograms.admin` |
-| `/wh reload` | 重载配置 | `wooholograms.admin` |
+| `/wh create <名称>` | 创建全息图 | `wooholograms.command.create` |
+| `/wh delete <名称>` | 删除全息图 | `wooholograms.command.delete` |
+| `/wh copy <名称> <新名称>` | 复制全息图 | `wooholograms.command.copy` |
+| `/wh list [页码]` | 列出所有全息图 | `wooholograms.command.list` |
+| `/wh info <名称>` | 查看全息图详情 | `wooholograms.command.info` |
+| `/wh gui [名称]` | 打开 GUI 管理界面 | `wooholograms.command.gui` |
+| `/wh near [范围]` | 显示附近全息图 | `wooholograms.command.near` |
+| `/wh reload` | 重载配置 | `wooholograms.command.reload` |
 
 ### 位置命令
 
 | 命令 | 描述 | 权限 |
 |------|------|------|
-| `/wh movehere <名称>` | 移动到当前位置 | `wooholograms.admin` |
-| `/wh moveto <名称> <x> <y> <z> [世界]` | 移动到指定坐标 | `wooholograms.admin` |
-| `/wh teleport <名称>` | 传送到全息图位置 | `wooholograms.admin` |
+| `/wh movehere <名称>` | 移动到当前位置 | `wooholograms.command.movehere` |
+| `/wh moveto <名称> <x> <y> <z> [世界]` | 移动到指定坐标 | `wooholograms.command.moveto` |
+| `/wh teleport <名称>` | 传送到全息图位置 | `wooholograms.command.teleport` |
 
 ### 行管理命令
 
 | 命令 | 描述 | 权限 |
 |------|------|------|
-| `/wh addline <名称> <内容>` | 添加行 | `wooholograms.admin` |
-| `/wh setline <名称> <行号> <内容>` | 设置行内容 | `wooholograms.admin` |
-| `/wh deleteline <名称> <行号>` | 删除行 | `wooholograms.admin` |
-| `/wh insertline <名称> <行号> <内容>` | 插入行 | `wooholograms.admin` |
-| `/wh offset <名称> <行号> <偏移>` | 设置行偏移 | `wooholograms.admin` |
-| `/wh height <名称> <行号> <高度>` | 设置行高度 | `wooholograms.admin` |
+| `/wh addline <名称> <内容>` | 添加行 | `wooholograms.command.addline` |
+| `/wh setline <名称> <行号> <内容>` | 设置行内容 | `wooholograms.command.setline` |
+| `/wh deleteline <名称> <行号>` | 删除行 | `wooholograms.command.removeline` |
+| `/wh insertline <名称> <行号> <内容>` | 插入行 | `wooholograms.command.insertline` |
+| `/wh offset <名称> <行号> <偏移>` | 设置行偏移 | `wooholograms.command.offset` |
+| `/wh height <名称> <行号> <高度>` | 设置行高度 | `wooholograms.command.height` |
 
 ### 页面管理命令
 
 | 命令 | 描述 | 权限 |
 |------|------|------|
-| `/wh addpage <名称>` | 添加页面 | `wooholograms.admin` |
-| `/wh deletepage <名称> <页码>` | 删除页面 | `wooholograms.admin` |
-| `/wh swappage <名称> <页码1> <页码2>` | 交换两个页面 | `wooholograms.admin` |
+| `/wh addpage <名称>` | 添加页面 | `wooholograms.command.addpage` |
+| `/wh deletepage <名称> <页码>` | 删除页面 | `wooholograms.command.removepage` |
+| `/wh swappage <名称> <页码1> <页码2>` | 交换两个页面 | `wooholograms.command.swappage` |
 
 ### 属性设置命令
 
 | 命令 | 描述 | 权限 |
 |------|------|------|
-| `/wh setrange <名称> <范围>` | 设置显示范围 | `wooholograms.admin` |
-| `/wh setinterval <名称> <间隔>` | 设置更新间隔 | `wooholograms.admin` |
-| `/wh setpermission <名称> [权限]` | 设置查看权限 | `wooholograms.admin` |
-| `/wh setfacing <名称> <模式> [角度]` | 设置全息图朝向 | `wooholograms.admin` |
-| `/wh setdoublesided <名称> <true|false>` | 设置双面显示 | `wooholograms.admin` |
-| `/wh enable <名称>` | 启用全息图 | `wooholograms.admin` |
-| `/wh disable <名称>` | 禁用全息图 | `wooholograms.admin` |
+| `/wh setrange <名称> <范围>` | 设置显示范围 | `wooholograms.command.setrange` |
+| `/wh setinterval <名称> <间隔>` | 设置更新间隔 | `wooholograms.command.setinterval` |
+| `/wh setpermission <名称> [权限]` | 设置查看权限 | `wooholograms.command.setpermission` |
+| `/wh setfacing <名称> <模式> [角度]` | 设置全息图朝向 | `wooholograms.command.setfacing` |
+| `/wh setdoublesided <名称> <true|false>` | 设置双面显示 | `wooholograms.command.setdoublesided` |
+| `/wh enable <名称>` | 启用全息图 | `wooholograms.command.enable` |
+| `/wh disable <名称>` | 禁用全息图 | `wooholograms.command.disable` |
 
 ### 动作管理命令
 
 | 命令 | 描述 | 权限 |
 |------|------|------|
-| `/wh actions <名称>` | 查看动作列表 | `wooholograms.admin` |
-| `/wh addaction <名称> <行号> <点击类型> <动作>` | 添加点击动作 | `wooholograms.admin` |
-| `/wh deleteaction <名称> <行号> <动作索引>` | 删除动作 | `wooholograms.admin` |
+| `/wh actions <名称>` | 查看动作列表 | `wooholograms.command.actions` |
+| `/wh addaction <名称> <行号> <点击类型> <动作>` | 添加点击动作 | `wooholograms.command.addaction` |
+| `/wh deleteaction <名称> <行号> <动作索引>` | 删除动作 | `wooholograms.command.deleteaction` |
 
 ## 行类型格式
 
@@ -164,8 +169,8 @@
 
 **方法二：使用动画参数（仅部分动画支持）**
 ```
-<#ANIM:wave:&c,&e>波浪文字</#ANIM>     <!-- 波浪动画支持颜色参数 -->
-<#ANIM:gradient:red,blue>渐变</#ANIM>  <!-- 渐变动画支持颜色参数 -->
+<#ANIM:wave:&c,&e>波浪文字</#ANIM>
+<#ANIM:gradient:red,blue>渐变</#ANIM>
 ```
 
 ### 内置动画
@@ -195,10 +200,10 @@
 
 | 模式 | 描述 |
 |------|------|
-| `fixed` | 固定朝向 | 固定朝向指定角度 |
-| `horizontal` | 水平跟随 | 水平方向跟随玩家视角，垂直方向固定 |
-| `vertical` | 垂直跟随 | 垂直方向跟随玩家视角，水平方向固定 |
-| `all` | 完全跟随 | 完全跟随玩家视角（默认） |
+| `fixed` | 固定朝向指定角度 |
+| `horizontal` | 水平方向跟随玩家视角，垂直方向固定 |
+| `vertical` | 垂直方向跟随玩家视角，水平方向固定 |
+| `all` | 完全跟随玩家视角（默认） |
 
 ## 动作类型
 
@@ -262,6 +267,7 @@ holo.getPage(0).addLine("#NEXT 下一页");
 HologramLine line = holo.getPage(0).getLine(0);
 line.setCustomYaw(90);
 line.setCustomPitch(0);
+line.setBillboard(Billboard.FIXED_ANGLE);
 
 // 添加行级别动作
 Action action = new Action(ActionType.COMMAND, "spawn");
@@ -279,20 +285,54 @@ public void onHologramClick(HologramClickEvent event) {
     Player player = event.getPlayer();
     Hologram hologram = event.getHologram();
     ClickType clickType = event.getClickType();
-    // 你的逻辑
 }
 ```
 
 ## 权限
 
+### 管理员权限
+
+| 权限 | 描述 | 默认 |
+|------|------|------|
+| `wooholograms.admin` | 管理员权限（包含所有子权限） | OP |
+| `wooholograms.command.*` | 所有命令权限 | OP |
+
+### 命令权限
+
 | 权限 | 描述 |
 |------|------|
-| `wooholograms.admin` | 管理员权限（所有命令） |
-| `wooholograms.view` | 查看全息图权限 |
-| `wooholograms.create` | 创建全息图权限 |
-| `wooholograms.delete` | 删除全息图权限 |
-| `wooholograms.edit` | 编辑全息图权限 |
-| `wooholograms.reload` | 重载配置权限 |
+| `wooholograms.command.create` | 创建全息图 |
+| `wooholograms.command.delete` | 删除全息图 |
+| `wooholograms.command.copy` | 复制全息图 |
+| `wooholograms.command.near` | 显示附近全息图 |
+| `wooholograms.command.enable` | 启用全息图 |
+| `wooholograms.command.disable` | 禁用全息图 |
+| `wooholograms.command.list` | 列出全息图 |
+| `wooholograms.command.info` | 查看详情 |
+| `wooholograms.command.teleport` | 传送到全息图 |
+| `wooholograms.command.movehere` | 移动到当前位置 |
+| `wooholograms.command.moveto` | 移动到指定坐标 |
+| `wooholograms.command.addline` | 添加行 |
+| `wooholograms.command.removeline` | 删除行 |
+| `wooholograms.command.setline` | 设置行内容 |
+| `wooholograms.command.insertline` | 插入行 |
+| `wooholograms.command.addpage` | 添加页面 |
+| `wooholograms.command.removepage` | 删除页面 |
+| `wooholograms.command.swappage` | 交换页面 |
+| `wooholograms.command.setrange` | 设置显示范围 |
+| `wooholograms.command.setinterval` | 设置更新间隔 |
+| `wooholograms.command.setpermission` | 设置查看权限 |
+| `wooholograms.command.setfacing` | 设置朝向 |
+| `wooholograms.command.setdoublesided` | 设置双面显示 |
+| `wooholograms.command.addaction` | 添加动作 |
+| `wooholograms.command.deleteaction` | 删除动作 |
+| `wooholograms.command.actions` | 查看动作 |
+| `wooholograms.command.offset` | 设置偏移 |
+| `wooholograms.command.height` | 设置高度 |
+| `wooholograms.command.reload` | 重载配置 |
+| `wooholograms.command.setpage` | 设置页面 |
+| `wooholograms.command.gui` | 打开GUI |
+| `wooholograms.command.help` | 查看帮助 |
 
 ## DecentHolograms 配置兼容
 
@@ -317,6 +357,7 @@ facing: 0.0
 down-origin: false
 billboard: CENTER
 double-sided: false
+line-height: 0.3
 permission: null
 pages:
   '1':

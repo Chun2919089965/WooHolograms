@@ -235,8 +235,10 @@ public class HologramLine {
         if (text == null || text.isEmpty()) {
             return false;
         }
-        // 检查 PlaceholderAPI 占位符
-        return text.contains("%");
+        if (text.contains("%")) {
+            return true;
+        }
+        return text.contains("{player}") || text.contains("{page}") || text.contains("{pages}");
     }
     
     /**
@@ -513,7 +515,15 @@ public class HologramLine {
     private void updateTextIfNecessary(Player player, boolean updatePlaceholders) {
         UUID uuid = player.getUniqueId();
         String lastText = lastTextCache.get(uuid);
-        String updatedText = getText(player, updatePlaceholders);
+        String updatedText;
+        if (type == HologramType.TEXT) {
+            updatedText = getText(player, updatePlaceholders);
+        } else {
+            updatedText = content == null ? "" : content;
+            if (updatePlaceholders && !hasFlag(EnumFlag.DISABLE_PLACEHOLDERS)) {
+                updatedText = parsePlaceholders(updatedText, player);
+            }
+        }
 
         if (!updatedText.equals(lastText)) {
             lastTextCache.put(uuid, updatedText);
@@ -792,12 +802,24 @@ public class HologramLine {
             map.put("offsetX", offsetX);
         }
 
+        if (offsetY != 0.0) {
+            map.put("offsetY", offsetY);
+        }
+
         if (offsetZ != 0.0) {
             map.put("offsetZ", offsetZ);
         }
 
         if (parent == null || facing != parent.getParent().getFacing()) {
             map.put("facing", facing);
+        }
+
+        if (customYaw != null) {
+            map.put("custom-yaw", customYaw);
+        }
+
+        if (customPitch != null) {
+            map.put("custom-pitch", customPitch);
         }
 
         if (brightness != null) {
@@ -810,6 +832,17 @@ public class HologramLine {
 
         if (billboard != null) {
             map.put("billboard", billboard.getId());
+        }
+
+        if (hasActions()) {
+            Map<String, List<String>> actionsMap = new LinkedHashMap<>();
+            for (Map.Entry<ClickType, List<Action>> entry : actions.entrySet()) {
+                if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                    actionsMap.put(entry.getKey().name(),
+                            entry.getValue().stream().map(Action::toString).collect(Collectors.toList()));
+                }
+            }
+            map.put("actions", actionsMap);
         }
 
         return map;
@@ -857,6 +890,10 @@ public class HologramLine {
             line.setOffsetX(offsetX.doubleValue());
         }
 
+        if (map.containsKey("offsetY") && map.get("offsetY") instanceof Number offsetY) {
+            line.setOffsetY(offsetY.doubleValue());
+        }
+
         if (map.containsKey("offsetZ") && map.get("offsetZ") instanceof Number offsetZ) {
             line.setOffsetZ(offsetZ.doubleValue());
         }
@@ -890,6 +927,34 @@ public class HologramLine {
             line.setBillboard(null);
         }
 
+        if (map.containsKey("custom-yaw") && map.get("custom-yaw") instanceof Number customYaw) {
+            line.setCustomYaw(customYaw.floatValue());
+        }
+
+        if (map.containsKey("custom-pitch") && map.get("custom-pitch") instanceof Number customPitch) {
+            line.setCustomPitch(customPitch.floatValue());
+        }
+
+        if (map.containsKey("actions") && map.get("actions") instanceof Map<?, ?> actionsMap) {
+            for (Map.Entry<?, ?> entry : actionsMap.entrySet()) {
+                if (entry.getKey() instanceof String clickTypeName && entry.getValue() instanceof List<?> actionList) {
+                    try {
+                        ClickType clickType = ClickType.valueOf(clickTypeName);
+                        for (Object actionObj : actionList) {
+                            if (actionObj instanceof String actionStr) {
+                                Action action = Action.fromString(actionStr);
+                                if (action != null) {
+                                    line.addAction(clickType, action);
+                                }
+                            }
+                        }
+                    } catch (IllegalArgumentException e) {
+                        // ignore unknown click type
+                    }
+                }
+            }
+        }
+
         return line;
     }
 
@@ -914,6 +979,11 @@ public class HologramLine {
         line.setCustomYaw(this.customYaw);
         line.setCustomPitch(this.customPitch);
         line.addFlags(this.flags.toArray(EnumFlag[]::new));
+        for (Map.Entry<ClickType, List<Action>> entry : this.actions.entrySet()) {
+            for (Action action : entry.getValue()) {
+                line.addAction(entry.getKey(), action);
+            }
+        }
         return line;
     }
 

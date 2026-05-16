@@ -777,14 +777,24 @@ public class HologramPage {
         map.put("lines", linesMap);
 
         // 序列化动作
-        Map<String, List<String>> actionsMap = new LinkedHashMap<>();
-        for (Map.Entry<ClickType, List<Action>> entry : actions.entrySet()) {
-            actionsMap.put(entry.getKey().name(), 
-                    entry.getValue().stream()
-                            .map(Action::toString)
-                            .collect(Collectors.toList()));
+        if (hasActions()) {
+            Map<String, List<String>> actionsMap = new LinkedHashMap<>();
+            for (Map.Entry<ClickType, List<Action>> entry : actions.entrySet()) {
+                if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                    actionsMap.put(entry.getKey().name(),
+                            entry.getValue().stream()
+                                    .map(Action::toString)
+                                    .collect(Collectors.toList()));
+                }
+            }
+            if (!actionsMap.isEmpty()) {
+                map.put("actions", actionsMap);
+            }
         }
-        map.put("actions", actionsMap);
+
+        if (!flags.isEmpty()) {
+            map.put("flags", flags.stream().map(EnumFlag::name).collect(Collectors.toList()));
+        }
 
         return map;
     }

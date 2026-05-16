@@ -50,9 +50,7 @@ public class HologramRendererPool {
         if (!enabled || renderer == null) {
             return;
         }
-        if (renderer.isDestroyed()) {
-            renderer.reset();
-        }
+        renderer.reset();
         HologramType type = getRendererType(renderer);
         if (type == null) {
             return;

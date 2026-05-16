@@ -1969,6 +1969,9 @@ public class Hologram {
         hologram.setDisplayRange(this.displayRange);
         hologram.setUpdateRange(this.updateRange);
         hologram.setUpdateInterval(this.updateInterval);
+        hologram.setBillboard(this.billboard);
+        hologram.setDoubleSided(this.doubleSided);
+        hologram.setLineHeight(this.lineHeight);
         hologram.addFlags(this.flags.toArray(new EnumFlag[this.flags.size()]));
         hologram.setDefaultVisibleState(this.defaultVisibleState);
         hologram.showPlayers.addAll(this.showPlayers);
@@ -2051,7 +2054,7 @@ public class Hologram {
 
         double range = getDisplayRange();
         for (Player player : loc.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(loc) <= range * range) {
+            if (!isVisible(player) && player.getLocation().distanceSquared(loc) <= range * range) {
                 show(player, 0);
             }
         }

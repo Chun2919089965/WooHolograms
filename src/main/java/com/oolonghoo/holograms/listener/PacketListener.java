@@ -260,47 +260,17 @@ public class PacketListener {
      */
     private boolean handleUseEntity(Player player, Object packet) {
         try {
-            // 获取实体 ID
             int entityId = getEntityIdFromPacket(packet);
             
             if (entityId < 0) {
                 return false;
             }
             
-            // 获取点击类型
             ClickType clickType = getClickType(packet);
             
-            // 查找对应的全息图
-            Hologram hologram = findHologramByEntityId(player, entityId);
-            if (hologram == null) {
-                return false;
-            }
-            
-            if (plugin.getHologramManager().checkAndSetCooldown(player)) {
-                return true;
-            }
-            
-            // 触发事件
-            HologramPage page = hologram.getPageByEntityId(entityId);
-            HologramClickEvent event = new HologramClickEvent(hologram, page, player, clickType, entityId);
-            Bukkit.getPluginManager().callEvent(event);
-            
-            if (event.isCancelled()) {
-                return true;
-            }
-            
-            // 查找被点击的行
-            if (page != null) {
-                HologramLine line = page.getLineByEntityId(entityId);
-                if (line != null && line.hasActions()) {
-                    // 执行行级别动作
-                    line.executeActions(player, clickType);
-                    return false;
-                }
-            }
-            
-            // 执行页面级别动作
-            hologram.executeActions(player, clickType);
+            final int eid = entityId;
+            final ClickType ct = clickType;
+            Bukkit.getScheduler().runTask(plugin, () -> handleClick(player, eid, ct));
             
             return false;
         } catch (Exception e) {
@@ -310,6 +280,39 @@ public class PacketListener {
             }
             return false;
         }
+    }
+
+    private void handleClick(Player player, int entityId, ClickType clickType) {
+        if (!player.isOnline()) {
+            return;
+        }
+
+        Hologram hologram = findHologramByEntityId(player, entityId);
+        if (hologram == null) {
+            return;
+        }
+
+        if (plugin.getHologramManager().checkAndSetCooldown(player)) {
+            return;
+        }
+
+        HologramPage page = hologram.getPageByEntityId(entityId);
+        HologramClickEvent event = new HologramClickEvent(hologram, page, player, clickType, entityId);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return;
+        }
+
+        if (page != null) {
+            HologramLine line = page.getLineByEntityId(entityId);
+            if (line != null && line.hasActions()) {
+                line.executeActions(player, clickType);
+                return;
+            }
+        }
+
+        hologram.executeActions(player, clickType);
     }
 
     /**

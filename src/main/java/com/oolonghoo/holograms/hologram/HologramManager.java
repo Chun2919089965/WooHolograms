@@ -342,12 +342,10 @@ public class HologramManager {
      * 重载所有全息图
      */
     public void reload() {
-        // 停止更新任务
         stopUpdateTask();
 
-        // 隐藏并清除所有全息图
         for (Hologram hologram : holograms.values()) {
-            hologram.hideAll();
+            hologram.destroy();
         }
         holograms.clear();
         hologramsByWorld.clear();
@@ -390,7 +388,7 @@ public class HologramManager {
 
         double displayRange = hologram.getDisplayRange();
         for (Player player : location.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(location) <= displayRange * displayRange) {
+            if (!hologram.isVisible(player) && player.getLocation().distanceSquared(location) <= displayRange * displayRange) {
                 hologram.show(player, 0);
             }
         }
@@ -436,38 +434,6 @@ public class HologramManager {
     }
 
     /**
-     * 玩家移动时更新可见性
-     * 
-     * @param player 玩家
-     */
-    public void onPlayerMove(Player player) {
-        List<Hologram> worldHolograms = hologramsByWorld.get(player.getWorld().getName());
-        if (worldHolograms == null) {
-            return;
-        }
-        for (Hologram hologram : worldHolograms) {
-            if (!hologram.isEnabled()) {
-                continue;
-            }
-
-            Location loc = hologram.getLocation();
-            if (loc == null) {
-                continue;
-            }
-
-            double displayRange = hologram.getDisplayRange();
-            double distanceSquared = player.getLocation().distanceSquared(loc);
-            boolean isViewer = hologram.isVisible(player);
-
-            if (distanceSquared <= displayRange * displayRange && !isViewer) {
-                hologram.show(player, hologram.getPlayerPage(player));
-            } else if (distanceSquared > displayRange * displayRange && isViewer) {
-                hologram.hide(player);
-            }
-        }
-    }
-
-    /**
      * 玩家传送时更新可见性
      * 
      * @param player 玩家
@@ -480,6 +446,9 @@ public class HologramManager {
         }
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) {
+                return;
+            }
             List<Hologram> worldHolograms = hologramsByWorld.get(player.getWorld().getName());
             if (worldHolograms != null) {
                 for (Hologram hologram : worldHolograms) {

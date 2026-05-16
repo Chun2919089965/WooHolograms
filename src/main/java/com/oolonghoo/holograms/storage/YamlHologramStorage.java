@@ -447,7 +447,8 @@ public class YamlHologramStorage implements HologramStorage {
         }
 
         if (section.contains("billboard")) {
-            line.setBillboard(Billboard.fromId(section.getString("billboard")));
+            String billboardId = section.getString("billboard");
+            line.setBillboard(billboardId != null && !billboardId.isEmpty() ? Billboard.fromId(billboardId) : null);
         }
 
         String linePermission = section.getString("permission");

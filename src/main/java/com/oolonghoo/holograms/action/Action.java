@@ -104,7 +104,10 @@ public class Action {
         if (type == null || player == null) {
             return false;
         }
-        return type.execute(player, data);
+        if (data != null) {
+            return type.execute(player, data);
+        }
+        return type.execute(player);
     }
 
     /**

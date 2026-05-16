@@ -276,6 +276,11 @@ public class PacketListener {
                 return false;
             }
             
+            if (plugin.getHologramManager().isOnCooldown(player)) {
+                return true;
+            }
+            plugin.getHologramManager().updateClickCooldown(player);
+            
             // 触发事件
             HologramPage page = hologram.getPageByEntityId(entityId);
             HologramClickEvent event = new HologramClickEvent(hologram, page, player, clickType, entityId);

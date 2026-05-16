@@ -934,12 +934,14 @@ public class HologramLine {
     public void destroy() {
         synchronized (renderMutex) {
             if (renderer != null) {
+                List<Player> viewerPlayers = new ArrayList<>();
                 for (UUID uuid : viewers) {
                     Player player = Bukkit.getPlayer(uuid);
                     if (player != null && player.isOnline()) {
-                        renderer.destroy(player);
+                        viewerPlayers.add(player);
                     }
                 }
+                renderer.destroy(viewerPlayers);
                 WooHolograms plugin = WooHolograms.getInstance();
                 HologramRendererPool pool = plugin.getRendererPool();
                 pool.release(renderer);

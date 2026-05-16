@@ -21,13 +21,17 @@ import org.bukkit.inventory.meta.SkullMeta;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
     protected final int entityId;
     protected final boolean small;
     protected boolean destroyed = false;
+    protected final Map<UUID, String> lastContentPerPlayer = new HashMap<>();
 
     public HeadHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this(entityIdGenerator, false);
@@ -137,6 +141,10 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
                 .withEntityMetadata(entityId, metadataBuilder.toWatchableObjects())
                 .withHelmet(entityId, headItem)
                 .sendTo(player);
+        String rawContent = line.getContent();
+        if (rawContent != null && player != null) {
+            lastContentPerPlayer.put(player.getUniqueId(), com.oolonghoo.holograms.util.PlaceholderUtil.replace(rawContent, player));
+        }
     }
 
     @Override
@@ -148,6 +156,15 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
     @Override
     public void updateText(Player player, HologramLine line) {
+        String rawContent = line.getContent();
+        String resolvedContent = rawContent;
+        if (rawContent != null && player != null) {
+            resolvedContent = com.oolonghoo.holograms.util.PlaceholderUtil.replace(rawContent, player);
+        }
+        String lastContent = lastContentPerPlayer.get(player.getUniqueId());
+        if (resolvedContent != null && resolvedContent.equals(lastContent)) return;
+        lastContentPerPlayer.put(player.getUniqueId(), resolvedContent);
+
         ItemStack headItem = createHeadItem(line, player);
         EntityPacketsBuilder.create()
                 .withHelmet(entityId, headItem)
@@ -164,13 +181,16 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
     @Override
     public void destroy(Player player) {
         hide(player);
+        lastContentPerPlayer.remove(player.getUniqueId());
     }
 
     @Override
     public void destroy(Collection<Player> players) {
+        destroyed = true;
         for (Player player : players) {
-            destroy(player);
+            hide(player);
         }
+        lastContentPerPlayer.clear();
     }
 
     @Override
@@ -194,6 +214,12 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
     @Override
     public NmsAdapter getAdapter() {
         return null;
+    }
+
+    @Override
+    public void reset() {
+        destroyed = false;
+        lastContentPerPlayer.clear();
     }
 
     protected DecentPosition offsetPosition(DecentPosition position) {

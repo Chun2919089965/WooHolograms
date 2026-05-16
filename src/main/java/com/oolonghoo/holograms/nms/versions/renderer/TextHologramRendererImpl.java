@@ -30,6 +30,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
     private float currentYaw = 0.0f;
     private float currentPitch = 0.0f;
     private boolean currentDoubleSided = false;
+    private final Map<UUID, String> lastTextPerPlayer = new HashMap<>();
 
     public TextHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.frontEntityId = entityIdGenerator.getFreeEntityId();
@@ -102,8 +103,9 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         }
  
         packetsBuilder.sendTo(player);
+        lastTextPerPlayer.put(player.getUniqueId(), text);
     }
- 
+
     @Override
     public void render(Collection<Player> players, Location location, HologramLine line) {
         for (Player player : players) {
@@ -118,6 +120,9 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         }
 
         String text = line.getDisplayText(player);
+        String lastText = lastTextPerPlayer.get(player.getUniqueId());
+        if (text != null && text.equals(lastText)) return;
+        lastTextPerPlayer.put(player.getUniqueId(), text);
 
         Hologram hologram = line.getHologram();
         Billboard billboard = hologram != null ? hologram.getBillboard() : Billboard.CENTER;
@@ -157,13 +162,19 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withRemoveEntity(frontEntityId)
                 .withRemoveEntity(backEntityId)
                 .sendTo(player);
+        lastTextPerPlayer.remove(player.getUniqueId());
     }
  
     @Override
     public void destroy(Collection<Player> players) {
+        destroyed = true;
         for (Player player : players) {
-            destroy(player);
+            EntityPacketsBuilder.create()
+                    .withRemoveEntity(frontEntityId)
+                    .withRemoveEntity(backEntityId)
+                    .sendTo(player);
         }
+        lastTextPerPlayer.clear();
     }
  
     @Override
@@ -201,5 +212,14 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
     @Override
     public boolean isDestroyed() {
         return destroyed;
+    }
+
+    @Override
+    public void reset() {
+        destroyed = false;
+        currentYaw = 0.0f;
+        currentPitch = 0.0f;
+        currentDoubleSided = false;
+        lastTextPerPlayer.clear();
     }
 }

@@ -18,14 +18,18 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     private final int itemEntityId;
     private final int armorStandEntityId;
     private boolean destroyed = false;
+    private final Map<UUID, String> lastContentPerPlayer = new HashMap<>();
 
     public IconHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.itemEntityId = entityIdGenerator.getFreeEntityId();
@@ -94,6 +98,10 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
         }
 
         ItemStack item = parseItem(line.getContent(), player);
+        String rawContent = line.getContent();
+        if (rawContent != null && player != null) {
+            lastContentPerPlayer.put(player.getUniqueId(), PlaceholderUtil.replace(rawContent, player));
+        }
         DecentPosition position = DecentPosition.fromLocation(location);
 
         EntityPacketsBuilder.create()
@@ -120,6 +128,15 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void updateText(Player player, HologramLine line) {
+        String rawContent = line.getContent();
+        String resolvedContent = rawContent;
+        if (rawContent != null && player != null) {
+            resolvedContent = PlaceholderUtil.replace(rawContent, player);
+        }
+        String lastContent = lastContentPerPlayer.get(player.getUniqueId());
+        if (resolvedContent != null && resolvedContent.equals(lastContent)) return;
+        lastContentPerPlayer.put(player.getUniqueId(), resolvedContent);
+
         ItemStack item = parseItem(line.getContent(), player);
         EntityPacketsBuilder.create()
                 .withEntityMetadata(itemEntityId, EntityMetadataBuilder.create()
@@ -137,15 +154,17 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void destroy(Player player) {
-        this.destroyed = true;
         hide(player);
+        lastContentPerPlayer.remove(player.getUniqueId());
     }
 
     @Override
     public void destroy(Collection<Player> players) {
+        destroyed = true;
         for (Player player : players) {
-            destroy(player);
+            hide(player);
         }
+        lastContentPerPlayer.clear();
     }
 
     @Override
@@ -169,6 +188,12 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
     @Override
     public NmsAdapter getAdapter() {
         return null;
+    }
+
+    @Override
+    public void reset() {
+        destroyed = false;
+        lastContentPerPlayer.clear();
     }
 
     private DecentPosition offsetPosition(DecentPosition position) {

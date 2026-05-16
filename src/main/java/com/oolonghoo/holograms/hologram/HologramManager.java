@@ -31,6 +31,8 @@ public class HologramManager {
 
     private final Map<String, List<Hologram>> hologramsByWorld;
 
+    private final ConcurrentHashMap<UUID, Long> clickCooldowns = new ConcurrentHashMap<>();
+
     // 更新任务
     private UpdateTask updateTask;
 
@@ -364,6 +366,7 @@ public class HologramManager {
 
         holograms.clear();
         hologramsByWorld.clear();
+        clickCooldowns.clear();
     }
 
     /*
@@ -429,6 +432,7 @@ public class HologramManager {
         for (Hologram hologram : holograms.values()) {
             hologram.onQuit(player);
         }
+        clickCooldowns.remove(player.getUniqueId());
     }
 
     /**
@@ -672,6 +676,17 @@ public class HologramManager {
             }
         }
         return false;
+    }
+
+    public boolean isOnCooldown(Player player) {
+        Long lastClick = clickCooldowns.get(player.getUniqueId());
+        if (lastClick == null) return false;
+        long cooldownMs = plugin.getConfigManager().getClickCooldown();
+        return System.currentTimeMillis() - lastClick < cooldownMs;
+    }
+
+    public void updateClickCooldown(Player player) {
+        clickCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
     }
 
     /*

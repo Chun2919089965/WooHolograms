@@ -47,15 +47,16 @@ public class HologramRendererPool {
     }
 
     public void release(NmsHologramRenderer renderer) {
-        if (!enabled || renderer == null || renderer.isDestroyed()) {
+        if (!enabled || renderer == null) {
             return;
         }
-        
+        if (renderer.isDestroyed()) {
+            renderer.reset();
+        }
         HologramType type = getRendererType(renderer);
         if (type == null) {
             return;
         }
-        
         Queue<NmsHologramRenderer> queue = pool.get(type);
         if (queue != null && queue.size() < maxSize) {
             queue.offer(renderer);

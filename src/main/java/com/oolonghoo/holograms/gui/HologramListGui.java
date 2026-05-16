@@ -57,6 +57,10 @@ public class HologramListGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
+                    if (!player.hasPermission("wooholograms.command.reload")) {
+                        player.sendMessage(ColorUtil.colorize("&c你没有权限执行此操作！"));
+                        return;
+                    }
                     plugin.getConfigManager().reload();
                     plugin.getMessages().reload();
                     plugin.getStorage().reload();
@@ -76,6 +80,10 @@ public class HologramListGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
+                    if (!player.hasPermission("wooholograms.command.create")) {
+                        player.sendMessage(ColorUtil.colorize("&c你没有权限执行此操作！"));
+                        return;
+                    }
                     player.closeInventory();
                     
                     chatInputManager.requestInput(player, "&a请输入全息图名称:", ChatInputManager.InputType.HOLOGRAM_NAME, input -> {

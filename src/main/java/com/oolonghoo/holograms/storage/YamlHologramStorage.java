@@ -271,7 +271,7 @@ public class YamlHologramStorage implements HologramStorage {
         if (section.contains("location")) {
             String locStr = section.getString("location");
             if (locStr != null && !locStr.isEmpty()) {
-                Location loc = LocationUtil.fromString(locStr);
+                Location loc = LocationUtil.asLocation(locStr);
                 if (loc != null) {
                     return loc;
                 }
@@ -358,29 +358,21 @@ public class YamlHologramStorage implements HologramStorage {
                 if (pageSection != null) {
                     loadPageActions(pageSection.getConfigurationSection("actions"), page);
 
-                    if (pageSection.isList("lines")) {
-                        List<String> lineContents = pageSection.getStringList("lines");
-                        for (String content : lineContents) {
-                            page.addLine(content);
-                        }
-                        page.realignLines();
-                    } else {
-                        ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
-                        if (linesSection != null) {
-                            Set<String> lineKeys = linesSection.getKeys(false);
-                            for (String lineIndex : lineKeys) {
-                                ConfigurationSection lineSection = linesSection.getConfigurationSection(lineIndex);
-                                if (lineSection != null) {
-                                    loadHologramLine(lineSection, page);
-                                } else {
-                                    String content = linesSection.getString(lineIndex);
-                                    if (content != null) {
-                                        page.addLine(content);
-                                    }
+                    ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
+                    if (linesSection != null) {
+                        Set<String> lineKeys = linesSection.getKeys(false);
+                        for (String lineIndex : lineKeys) {
+                            ConfigurationSection lineSection = linesSection.getConfigurationSection(lineIndex);
+                            if (lineSection != null) {
+                                loadHologramLine(lineSection, page);
+                            } else {
+                                String content = linesSection.getString(lineIndex);
+                                if (content != null) {
+                                    page.addLine(content);
                                 }
                             }
-                            page.realignLines();
                         }
+                        page.realignLines();
                     }
                 }
             }

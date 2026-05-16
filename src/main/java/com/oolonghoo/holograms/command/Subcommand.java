@@ -16,6 +16,7 @@ public abstract class Subcommand {
     private final String description;
     private final String usage;
     private final String permission;
+    private final String commandPermission;
     private final List<String> aliases;
     private boolean playerOnly = false;
 
@@ -24,6 +25,7 @@ public abstract class Subcommand {
         this.description = description;
         this.usage = "/" + name;
         this.permission = permission;
+        this.commandPermission = "wooholograms.command." + name;
         this.aliases = aliases != null ? aliases : new ArrayList<>();
     }
 
@@ -32,6 +34,7 @@ public abstract class Subcommand {
         this.description = description;
         this.usage = usage;
         this.permission = permission;
+        this.commandPermission = "wooholograms.command." + name;
         this.aliases = aliases != null ? aliases : new ArrayList<>();
     }
 
@@ -51,6 +54,10 @@ public abstract class Subcommand {
         return permission;
     }
 
+    public String getCommandPermission() {
+        return commandPermission;
+    }
+
     public List<String> getAliases() {
         return aliases;
     }
@@ -64,7 +71,7 @@ public abstract class Subcommand {
     }
 
     public boolean hasPermission(CommandSender sender) {
-        return permission == null || permission.isEmpty() || sender.hasPermission(permission);
+        return sender.hasPermission(commandPermission) || sender.hasPermission(permission) || sender.hasPermission("wooholograms.admin");
     }
 
     public abstract boolean execute(CommandSender sender, String[] args);

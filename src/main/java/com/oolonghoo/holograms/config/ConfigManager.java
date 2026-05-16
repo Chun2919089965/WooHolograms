@@ -105,7 +105,7 @@ public class ConfigManager {
 
         // 交互设置
         interactionEnabled = config.getBoolean("interaction.enabled", true);
-        clickCooldown = config.getInt("interaction.click-cooldown", 10);
+        clickCooldown = config.getInt("interaction.click-cooldown", 500);
 
         // 限制设置
         maxHologramsPerWorld = config.getInt("limits.max-holograms-per-world", 100);

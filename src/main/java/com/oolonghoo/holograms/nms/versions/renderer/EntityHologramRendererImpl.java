@@ -86,7 +86,6 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
 
     @Override
     public void destroy(Player player) {
-        this.destroyed = true;
         EntityPacketsBuilder.create()
                 .withRemoveEntity(entityId)
                 .sendTo(player);
@@ -94,8 +93,11 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
 
     @Override
     public void destroy(Collection<Player> players) {
+        destroyed = true;
         for (Player player : players) {
-            destroy(player);
+            EntityPacketsBuilder.create()
+                    .withRemoveEntity(entityId)
+                    .sendTo(player);
         }
     }
 
@@ -126,5 +128,11 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
     @Override
     public boolean isDestroyed() {
         return destroyed;
+    }
+
+    @Override
+    public void reset() {
+        destroyed = false;
+        entityType = EntityType.ZOMBIE;
     }
 }

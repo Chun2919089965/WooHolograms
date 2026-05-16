@@ -58,9 +58,13 @@ public class Action {
     private static String normalizeActionString(String s) {
         if (s.startsWith("[") && s.contains("]")) {
             int end = s.indexOf(']');
+            if (end <= 1) return s;
             String typeName = s.substring(1, end);
             String rest = s.substring(end + 1).trim();
-            return rest.isEmpty() ? typeName : typeName + ":" + rest;
+            s = rest.isEmpty() ? typeName : typeName + ":" + rest;
+        }
+        if (s.toUpperCase().startsWith("CONNECT:") || s.equalsIgnoreCase("CONNECT")) {
+            s = s.toUpperCase().replaceFirst("CONNECT", "SERVER");
         }
         return s;
     }

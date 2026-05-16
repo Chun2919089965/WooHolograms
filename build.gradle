@@ -55,7 +55,7 @@ tasks.register('buildInfo') {
         println "=========================================="
         println "Version: ${version}"
         println "Java: ${java.sourceCompatibility}"
-        println "Paper: 1.21+"
+        println "Paper: 1.21+ (1.21.x / 26.1+)"
         println "=========================================="
     }
 }

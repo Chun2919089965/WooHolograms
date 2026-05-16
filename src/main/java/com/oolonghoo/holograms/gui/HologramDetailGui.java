@@ -357,6 +357,10 @@ public class HologramDetailGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
+                    if (!player.hasPermission("wooholograms.command.teleport")) {
+                        player.sendMessage(ColorUtil.colorize("&c你没有权限执行此操作！"));
+                        return;
+                    }
                     Location loc = hologram.getLocation();
                     if (loc != null && loc.getWorld() != null) {
                         player.teleport(loc);
@@ -376,6 +380,10 @@ public class HologramDetailGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
+                    if (!player.hasPermission("wooholograms.command.movehere")) {
+                        player.sendMessage(ColorUtil.colorize("&c你没有权限执行此操作！"));
+                        return;
+                    }
                     hologram.setLocation(player.getLocation());
                     hologram.save();
                     hologram.showToNearby();
@@ -564,6 +572,10 @@ public class HologramDetailGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
+                    if (!player.hasPermission("wooholograms.command.delete")) {
+                        player.sendMessage(ColorUtil.colorize("&c你没有权限执行此操作！"));
+                        return;
+                    }
                     guiManager.openGui(player, ConfirmGui.createDeleteConfirm(hologramName, confirmed -> {
                         if (confirmed) {
                             plugin.getHologramManager().deleteHologram(hologramName);

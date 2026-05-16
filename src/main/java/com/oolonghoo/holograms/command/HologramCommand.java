@@ -73,7 +73,7 @@ public class HologramCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
-                if (player.hasPermission("wooholograms.admin")) {
+                if (player.hasPermission("wooholograms.command.gui")) {
                     plugin.getGuiManager().openGui(player, new HologramListGui(plugin, plugin.getGuiManager(), plugin.getChatInputManager(), 0, SortType.NAME, player));
                 } else {
                     sender.sendMessage(ColorUtil.colorize("&c你没有权限执行此命令！"));

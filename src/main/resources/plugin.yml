@@ -3,7 +3,7 @@ version: ${project.version}
 main: com.oolonghoo.holograms.WooHolograms
 api-version: '1.21'
 author: oolongho
-description: A simple hologram plugin
+description: A hologram plugin for Paper 1.21+
 
 softdepend:
   - PlaceholderAPI
@@ -18,26 +18,46 @@ commands:
 
 permissions:
   wooholograms.admin:
-    description: 管理员权限
+    description: 管理员权限（包含所有子权限）
     default: op
+    children:
+      wooholograms.command.*: true
   wooholograms.use:
     description: 基本使用权限
     default: true
-  wooholograms.create:
-    description: 创建全息图
+  wooholograms.command.*:
+    description: 所有命令权限
     default: op
-  wooholograms.delete:
-    description: 删除全息图
-    default: op
-  wooholograms.edit:
-    description: 编辑全息图
-    default: op
-  wooholograms.move:
-    description: 移动全息图
-    default: op
-  wooholograms.list:
-    description: 列出全息图
-    default: op
-  wooholograms.reload:
-    description: 重载配置
-    default: op
+    children:
+      wooholograms.command.create: true
+      wooholograms.command.delete: true
+      wooholograms.command.copy: true
+      wooholograms.command.near: true
+      wooholograms.command.enable: true
+      wooholograms.command.disable: true
+      wooholograms.command.list: true
+      wooholograms.command.info: true
+      wooholograms.command.teleport: true
+      wooholograms.command.movehere: true
+      wooholograms.command.moveto: true
+      wooholograms.command.addline: true
+      wooholograms.command.removeline: true
+      wooholograms.command.setline: true
+      wooholograms.command.insertline: true
+      wooholograms.command.addpage: true
+      wooholograms.command.removepage: true
+      wooholograms.command.swappage: true
+      wooholograms.command.setrange: true
+      wooholograms.command.setinterval: true
+      wooholograms.command.setpermission: true
+      wooholograms.command.setfacing: true
+      wooholograms.command.setdoublesided: true
+      wooholograms.command.addaction: true
+      wooholograms.command.deleteaction: true
+      wooholograms.command.actions: true
+      wooholograms.command.offset: true
+      wooholograms.command.height: true
+      wooholograms.command.reload: true
+      wooholograms.command.setpage: true
+      wooholograms.command.gui: true
+      wooholograms.command.help: true

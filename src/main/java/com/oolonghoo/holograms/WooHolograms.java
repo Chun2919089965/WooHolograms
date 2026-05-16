@@ -16,6 +16,7 @@ import com.oolonghoo.holograms.nms.NmsHologramRendererFactory;
 import com.oolonghoo.holograms.nms.HologramRendererPool;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
 import com.oolonghoo.holograms.nms.versions.HologramRendererFactoryImpl;
+import com.oolonghoo.holograms.nms.versions.NmsVersionDetector;
 import com.oolonghoo.holograms.storage.HologramStorage;
 import com.oolonghoo.holograms.storage.YamlHologramStorage;
 import org.bukkit.Bukkit;
@@ -57,14 +58,14 @@ public class WooHolograms extends JavaPlugin {
     @Override
     public void onEnable() {
         // 检查版本
-        if (!checkVersion()) {
-            getLogger().severe("========================================");
-            getLogger().severe("此插件仅支持 Minecraft 1.21+");
-            getLogger().severe("========================================");
+        if (!NmsVersionDetector.isSupported()) {
+            getLogger().severe(NmsVersionDetector.getUnsupportedMessage());
+            getLogger().severe("Plugin will be disabled.");
             this.pluginEnabled = false;
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+        getLogger().info("Server version: " + NmsVersionDetector.getMinecraftVersion() + " (NMS: " + NmsVersionDetector.getServerVersion() + ")");
         
         // 初始化配置
         configManager = new ConfigManager(this);
@@ -313,18 +314,4 @@ public class WooHolograms extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new WorldListener(this), this);
     }
     
-    private boolean checkVersion() {
-        String bukkitVersion = getServer().getBukkitVersion();
-        String mcVersion = bukkitVersion.split("-", 2)[0];
-        String[] parts = mcVersion.split("\\.");
-        if (parts.length < 2) {
-            return false;
-        }
-        try {
-            int minor = Integer.parseInt(parts[1]);
-            return minor >= 21;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
 }

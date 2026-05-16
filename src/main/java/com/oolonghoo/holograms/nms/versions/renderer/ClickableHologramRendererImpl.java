@@ -7,6 +7,8 @@ import com.oolonghoo.holograms.nms.versions.EntityPacketsBuilder;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
+import java.util.Collection;
+
 /**
  * 可点击全息图渲染器实现
  *
@@ -16,6 +18,7 @@ import org.bukkit.entity.Player;
 public class ClickableHologramRendererImpl implements NmsClickableHologramRenderer {
 
     private final int entityId;
+    private boolean destroyed = false;
 
     public ClickableHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.entityId = entityIdGenerator.getFreeEntityId();
@@ -50,5 +53,28 @@ public class ClickableHologramRendererImpl implements NmsClickableHologramRender
     @Override
     public int getEntityId() {
         return entityId;
+    }
+
+    @Override
+    public void destroy(Player player) {
+        hide(player);
+    }
+
+    @Override
+    public void destroy(Collection<Player> players) {
+        destroyed = true;
+        for (Player player : players) {
+            hide(player);
+        }
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
+    @Override
+    public void reset() {
+        destroyed = false;
     }
 }

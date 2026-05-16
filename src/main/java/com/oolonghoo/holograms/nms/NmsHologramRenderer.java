@@ -87,4 +87,6 @@ public interface NmsHologramRenderer {
      * @return 是否已销毁
      */
     boolean isDestroyed();
+
+    void reset();
 }

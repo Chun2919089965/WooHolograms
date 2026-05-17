@@ -8,9 +8,9 @@ import com.oolonghoo.holograms.nms.renderer.NmsSmallHeadHologramRenderer;
 import com.oolonghoo.holograms.nms.renderer.NmsEntityHologramRenderer;
 
 import java.util.EnumMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class HologramRendererPool {
 
@@ -26,7 +26,7 @@ public class HologramRendererPool {
         this.pool = new EnumMap<>(HologramType.class);
         
         for (HologramType type : HologramType.values()) {
-            pool.put(type, new LinkedList<>());
+            pool.put(type, new ConcurrentLinkedQueue<>());
         }
     }
 

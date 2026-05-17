@@ -512,7 +512,7 @@ public class HologramManager {
         }
 
         updateTask = new UpdateTask();
-        updateTask.runTaskTimerAsynchronously(plugin, interval, interval);
+        updateTask.runTaskTimer(plugin, interval, interval);
     }
 
     /**
@@ -549,13 +549,11 @@ public class HologramManager {
                 if (!hologram.isEnabled()) {
                     continue;
                 }
-                
+
                 hologram.updateAnimationsAll();
             }
-            
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                updateVisibilityForAllPlayers();
-            });
+
+            updateVisibilityForAllPlayers();
         }
     }
     
@@ -622,6 +620,19 @@ public class HologramManager {
                 hologramsByWorld.remove(loc.getWorld().getName());
             }
         }
+    }
+
+    public void updateWorldCache(Hologram hologram, String oldWorldName) {
+        if (oldWorldName != null) {
+            List<Hologram> list = hologramsByWorld.get(oldWorldName);
+            if (list != null) {
+                list.remove(hologram);
+                if (list.isEmpty()) {
+                    hologramsByWorld.remove(oldWorldName);
+                }
+            }
+        }
+        addToWorldCache(hologram);
     }
 
     /*

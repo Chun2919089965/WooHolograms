@@ -323,19 +323,17 @@ public class PacketListener {
      */
     private int getEntityIdFromPacket(Object packet) {
         try {
-            // 尝试不同的字段名
             String[] fieldNames = {"a", "entityId", "b", "id"};
-            
+
             for (String fieldName : fieldNames) {
                 try {
                     Field field = packet.getClass().getDeclaredField(fieldName);
                     field.setAccessible(true);
                     Object value = field.get(packet);
-                    
+
                     if (value instanceof Integer intValue) {
                         return intValue;
                     } else if (value != null) {
-                        // 可能是一个包含 entityId 的对象
                         try {
                             Method getEntityId = value.getClass().getMethod("getEntityId");
                             return (Integer) getEntityId.invoke(value);
@@ -343,20 +341,7 @@ public class PacketListener {
                     }
                 } catch (NoSuchFieldException ignored) {}
             }
-            
-            // 尝试通过方法获取
-            for (Method m : packet.getClass().getDeclaredMethods()) {
-                if (m.getReturnType() == int.class || m.getReturnType() == Integer.class) {
-                    m.setAccessible(true);
-                    try {
-                        Object result = m.invoke(packet);
-                        if (result instanceof Integer intValue) {
-                            return intValue;
-                        }
-                    } catch (ReflectiveOperationException ignored) {}
-                }
-            }
-            
+
         } catch (ReflectiveOperationException e) {
             if (plugin.getConfigManager().isDebug()) {
                 plugin.getLogger().warning(() -> "Failed to get entity ID from packet: " + e.getMessage());

@@ -4,6 +4,8 @@ import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.action.ClickType;
 import com.oolonghoo.holograms.api.event.HologramClickEvent;
 import com.oolonghoo.holograms.nms.NmsHologramRenderer;
+import com.oolonghoo.holograms.nms.renderer.NmsClickableHologramRenderer;
+import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.storage.HologramStorage;
 import com.oolonghoo.holograms.util.LocationUtil;
 import org.bukkit.Bukkit;
@@ -164,7 +166,17 @@ public class Hologram {
      * @param location 新位置
      */
     public void setLocation(Location location) {
+        String oldWorldName = this.location != null && this.location.getWorld() != null
+                ? this.location.getWorld().getName() : null;
+        String newWorldName = location != null && location.getWorld() != null
+                ? location.getWorld().getName() : null;
+
         this.location = location != null ? location.clone() : null;
+
+        if (oldWorldName != null && !oldWorldName.equals(newWorldName)) {
+            WooHolograms.getInstance().getHologramManager().updateWorldCache(this, oldWorldName);
+        }
+
         realignLines();
         teleportClickableEntitiesAll();
     }
@@ -1351,18 +1363,22 @@ public class Hologram {
      */
     public void teleport(Location location, boolean updateViewers) {
         synchronized (visibilityMutex) {
-            // 1. 更新位置
+            String oldWorldName = this.location != null && this.location.getWorld() != null
+                    ? this.location.getWorld().getName() : null;
+            String newWorldName = location != null && location.getWorld() != null
+                    ? location.getWorld().getName() : null;
+
             this.location = location != null ? location.clone() : null;
 
-            // 2. 重新对齐所有行
+            if (oldWorldName != null && !oldWorldName.equals(newWorldName)) {
+                WooHolograms.getInstance().getHologramManager().updateWorldCache(this, oldWorldName);
+            }
+
             realignLines();
 
-            // 3. 更新观看者
             if (updateViewers && enabled) {
-                // 传送可点击实体
                 teleportClickableEntitiesAll();
 
-                // 更新所有行的位置
                 for (HologramPage page : pages) {
                     for (HologramLine line : page.getLines()) {
                         line.updateLocation(true);
@@ -1680,12 +1696,12 @@ public class Hologram {
         }
 
         int amount = (int) (page.getHeight() / 2) + 1;
-        Location loc = location.clone();
-        loc.setY((int) (loc.getY() - (downOrigin ? 0 : page.getHeight())) + 0.5);
+        DecentPosition pos = getClickableBasePosition(page);
 
         for (int i = 0; i < amount; i++) {
-            getClickableRenderer(i);
-            loc.add(0, 1.8, 0);
+            NmsClickableHologramRenderer renderer = (NmsClickableHologramRenderer) getClickableRenderer(i);
+            renderer.display(player, pos);
+            pos = pos.addY(1.8);
         }
     }
 
@@ -1735,12 +1751,12 @@ public class Hologram {
         }
 
         int amount = (int) (page.getHeight() / 2) + 1;
-        Location loc = location.clone();
-        loc.setY((int) (loc.getY() - (downOrigin ? 0 : page.getHeight())) + 0.5);
+        DecentPosition pos = getClickableBasePosition(page);
 
         for (int i = 0; i < amount; i++) {
-            getClickableRenderer(i);
-            loc.add(0, 1.8, 0);
+            NmsClickableHologramRenderer renderer = (NmsClickableHologramRenderer) getClickableRenderer(i);
+            renderer.move(player, pos);
+            pos = pos.addY(1.8);
         }
     }
 
@@ -1767,6 +1783,21 @@ public class Hologram {
             clickableRenderers.add(renderer);
         }
         return clickableRenderers.get(index);
+    }
+
+    private DecentPosition getClickableBasePosition(HologramPage page) {
+        double baseY = location.getY() - (downOrigin ? 0 : page.getHeight());
+        baseY = Math.floor(baseY) + 0.5;
+        return new DecentPosition(location.getX(), baseY, location.getZ());
+    }
+
+    public void destroyClickableRenderers() {
+        for (NmsHologramRenderer renderer : clickableRenderers) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                renderer.destroy(player);
+            }
+        }
+        clickableRenderers.clear();
     }
 
     /*
@@ -1941,12 +1972,7 @@ public class Hologram {
         }
         pages.clear();
 
-        for (NmsHologramRenderer renderer : clickableRenderers) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                renderer.destroy(player);
-            }
-        }
-        clickableRenderers.clear();
+        destroyClickableRenderers();
     }
 
     /*

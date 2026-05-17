@@ -54,7 +54,6 @@ public class AnimationManager {
         this.plugin = plugin;
         this.animationMap = new ConcurrentHashMap<>();
         this.step = new AtomicLong(0);
-        this.reload();
     }
 
     /**

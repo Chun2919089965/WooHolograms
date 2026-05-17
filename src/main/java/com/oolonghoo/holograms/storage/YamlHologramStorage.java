@@ -20,6 +20,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -351,7 +352,9 @@ public class YamlHologramStorage implements HologramStorage {
             hologram.removePage(0);
 
             Set<String> pageKeys = pagesSection.getKeys(false);
-            for (String pageIndex : pageKeys) {
+            List<String> sortedPageKeys = new ArrayList<>(pageKeys);
+            sortedPageKeys.sort(Comparator.comparingInt(Integer::parseInt));
+            for (String pageIndex : sortedPageKeys) {
                 HologramPage page = hologram.addPage();
                 ConfigurationSection pageSection = pagesSection.getConfigurationSection(pageIndex);
 
@@ -361,7 +364,9 @@ public class YamlHologramStorage implements HologramStorage {
                     ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
                     if (linesSection != null) {
                         Set<String> lineKeys = linesSection.getKeys(false);
-                        for (String lineIndex : lineKeys) {
+                        List<String> sortedLineKeys = new ArrayList<>(lineKeys);
+                        sortedLineKeys.sort(Comparator.comparingInt(Integer::parseInt));
+                        for (String lineIndex : sortedLineKeys) {
                             ConfigurationSection lineSection = linesSection.getConfigurationSection(lineIndex);
                             if (lineSection != null) {
                                 loadHologramLine(lineSection, page);

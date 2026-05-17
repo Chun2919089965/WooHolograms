@@ -34,9 +34,6 @@ public class HologramPage {
     // 点击动作
     private final Map<ClickType, List<Action>> actions;
 
-    // 可点击实体渲染器
-    private final List<NmsHologramRenderer> clickableRenderers;
-
     // 标志
     private final Set<EnumFlag> flags;
 
@@ -55,7 +52,6 @@ public class HologramPage {
         this.index = index;
         this.lines = new ArrayList<>();
         this.actions = new EnumMap<>(ClickType.class);
-        this.clickableRenderers = new ArrayList<>();
         this.flags = ConcurrentHashMap.newKeySet();
     }
 
@@ -433,10 +429,8 @@ public class HologramPage {
             line.hide();
         }
 
-        for (NmsHologramRenderer renderer : clickableRenderers) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                renderer.destroy(player);
-            }
+        if (parent != null) {
+            parent.hideClickableEntitiesAll();
         }
     }
 
@@ -609,14 +603,6 @@ public class HologramPage {
      * @return 是否包含
      */
     public boolean hasEntity(int entityId) {
-        // 检查可点击实体
-        for (NmsHologramRenderer renderer : clickableRenderers) {
-            if (renderer.getEntityIds().contains(entityId)) {
-                return true;
-            }
-        }
-
-        // 检查行实体
         for (HologramLine line : lines) {
             for (int id : line.getEntityIds()) {
                 if (id == entityId) {
@@ -646,50 +632,15 @@ public class HologramPage {
     }
 
     /**
-     * 获取可点击渲染器
-     * 
-     * @param index 索引
-     * @return 渲染器
-     */
-    public NmsHologramRenderer getClickableRenderer(int index) {
-        if (index >= clickableRenderers.size()) {
-            NmsHologramRenderer renderer = WooHolograms.getInstance()
-                    .getRendererFactory()
-                    .createClickableRenderer();
-            clickableRenderers.add(renderer);
-        }
-        return clickableRenderers.get(index);
-    }
-
-    /**
-     * 获取所有可点击渲染器
-     * 
-     * @return 渲染器列表
-     */
-    public List<NmsHologramRenderer> getClickableEntityRenderers() {
-        return Collections.unmodifiableList(clickableRenderers);
-    }
-
-    /**
      * 显示可点击实体
      * 
      * @param player 玩家
      */
     public void showClickableEntities(Player player) {
-        if (!isClickable()) {
+        if (parent == null || !isClickable()) {
             return;
         }
-
-        int amount = (int) (getHeight() / 2) + 1;
-        Location location = parent.getLocation().clone();
-        location.setY((int) (location.getY() - (parent.isDownOrigin() ? 0 : getHeight())) + 0.5);
-
-        for (int i = 0; i < amount; i++) {
-            getClickableRenderer(i);
-            // 渲染可点击实体
-            // renderer.display(player, location);
-            location.add(0, 1.8, 0);
-        }
+        parent.showClickableEntities(player);
     }
 
     /**
@@ -698,9 +649,17 @@ public class HologramPage {
      * @param player 玩家
      */
     public void hideClickableEntities(Player player) {
-        for (NmsHologramRenderer renderer : clickableRenderers) {
-            renderer.destroy(player);
+        if (parent == null) {
+            return;
         }
+        parent.hideClickableEntities(player);
+    }
+
+    public void teleportClickableEntities(Player player) {
+        if (parent == null || !isClickable()) {
+            return;
+        }
+        parent.teleportClickableEntities(player);
     }
 
     /*
@@ -836,12 +795,9 @@ public class HologramPage {
         }
         lines.clear();
 
-        for (NmsHologramRenderer renderer : clickableRenderers) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                renderer.destroy(player);
-            }
+        if (parent != null) {
+            parent.destroyClickableRenderers();
         }
-        clickableRenderers.clear();
 
         actions.clear();
 

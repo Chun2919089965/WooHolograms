@@ -180,7 +180,7 @@ public class HologramLine {
                     this.previousRenderer = this.renderer;
                     this.renderer = null;
                 }
-                this.actions.remove(ClickType.ANY);
+                removeAutoPageActions(ClickType.ANY, ActionType.NEXT_PAGE);
                 Hologram hologram = getHologram();
                 if (hologram != null) {
                     this.actions.computeIfAbsent(ClickType.ANY, k -> new ArrayList<>())
@@ -193,7 +193,7 @@ public class HologramLine {
                     this.previousRenderer = this.renderer;
                     this.renderer = null;
                 }
-                this.actions.remove(ClickType.ANY);
+                removeAutoPageActions(ClickType.ANY, ActionType.PREV_PAGE);
                 Hologram hologram = getHologram();
                 if (hologram != null) {
                     this.actions.computeIfAbsent(ClickType.ANY, k -> new ArrayList<>())
@@ -224,6 +224,16 @@ public class HologramLine {
             return false;
         }
         return ANIMATION_PATTERN.matcher(text).find();
+    }
+
+    private void removeAutoPageActions(ClickType clickType, ActionType pageActionType) {
+        List<Action> actionList = actions.get(clickType);
+        if (actionList != null) {
+            actionList.removeIf(a -> a.getType() == pageActionType);
+            if (actionList.isEmpty()) {
+                actions.remove(clickType);
+            }
+        }
     }
 
     /**

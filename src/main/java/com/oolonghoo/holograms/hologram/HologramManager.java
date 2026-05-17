@@ -267,7 +267,6 @@ public class HologramManager {
         }
 
         removeFromWorldCache(hologram);
-        unregisterHologramEntityIds(hologram);
 
         HologramDeleteEvent event = new HologramDeleteEvent(hologram);
         Bukkit.getPluginManager().callEvent(event);

@@ -28,6 +28,8 @@ defaults:
   item-height: 0.6
   # 默认头颅行高
   head-height: 0.6
+  # 默认背景透明度 (0=完全透明, 255=完全不透明)
+  default-background-alpha: 64
 
 # 性能设置
 performance:

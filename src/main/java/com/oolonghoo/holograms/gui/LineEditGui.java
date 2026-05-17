@@ -225,6 +225,47 @@ public class LineEditGui extends GuiScreen {
                 .build());
         
         // 第二行按钮
+        setButton(12, GuiButton.builder(Material.BLACK_STAINED_GLASS_PANE)
+                .name("&f背景透明度")
+                .lore(Arrays.asList(
+                        "&7设置文本背景的透明度",
+                        "&7当前: &f" + line.getBackgroundAlpha() + " (0=透明, 255=不透明)",
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    player.closeInventory();
+                    
+                    chatInputManager.requestInput(player, "&a请输入背景透明度 (0-255, 0=完全透明, 255=完全不透明):", 
+                            ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
+                        try {
+                            int alpha = Integer.parseInt(input.trim());
+                            if (alpha < 0 || alpha > 255) {
+                                player.sendMessage(ColorUtil.colorize("&c透明度必须在 0-255 之间！"));
+                            } else {
+                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                if (h != null) {
+                                    HologramPage p = h.getPage(pageIndex);
+                                    if (p != null && lineIndex < p.size()) {
+                                        HologramLine l = p.getLine(lineIndex);
+                                        if (l != null) {
+                                            l.setBackgroundAlpha(alpha);
+                                            h.save();
+                                            h.showToNearby();
+                                            player.sendMessage(ColorUtil.colorize("&a已设置背景透明度为 " + alpha + "！"));
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    });
+                })
+                .build());
+        
         // 亮度设置
         Brightness brightness = line.getBrightness();
         String brightnessDisplay = brightness != null && !brightness.isDefault() 
@@ -538,7 +579,7 @@ public class LineEditGui extends GuiScreen {
                 .name(" ")
                 .build();
         
-        int[] backgroundSlots = {1, 2, 3, 5, 6, 7, 8, 12, 13, 14, 15, 16, 17, 24, 25, 26, 28, 29, 30, 32, 33, 34};
+        int[] backgroundSlots = {1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 24, 25, 26, 28, 29, 30, 32, 33, 34};
         for (int slot : backgroundSlots) {
             if (getButton(slot) == null) {
                 setButton(slot, background);

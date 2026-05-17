@@ -34,6 +34,7 @@ public class ConfigManager {
     private double defaultTextHeight;
     private double defaultItemHeight;
     private double defaultHeadHeight;
+    private int defaultBackgroundAlpha;
 
     // 性能设置
     private long renderInterval;
@@ -92,6 +93,7 @@ public class ConfigManager {
         defaultTextHeight = config.getDouble("defaults.text-height", 0.3);
         defaultItemHeight = config.getDouble("defaults.item-height", 0.6);
         defaultHeadHeight = config.getDouble("defaults.head-height", 0.6);
+        defaultBackgroundAlpha = config.getInt("defaults.default-background-alpha", 64);
 
         // 性能设置
         renderInterval = config.getLong("performance.render-interval", 2L);
@@ -193,6 +195,10 @@ public class ConfigManager {
 
     public double getDefaultHeadHeight() {
         return defaultHeadHeight;
+    }
+
+    public int getDefaultBackgroundAlpha() {
+        return defaultBackgroundAlpha;
     }
 
     public long getRenderInterval() {

@@ -60,7 +60,8 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withNoGravity()
                 .withTextDisplayText(text)
                 .withBillboard(billboard)
-                .withTextAlignment(line.getAlignment());
+                .withTextAlignment(line.getAlignment())
+                .withTextBackgroundColor(line.getBackgroundAlpha() << 24);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
             metadataBuilder.withDisplayBrightness(line.getBrightness());
@@ -131,7 +132,8 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()
                 .withTextDisplayText(text)
                 .withTextAlignment(line.getAlignment())
-                .withBillboard(billboard);
+                .withBillboard(billboard)
+                .withTextBackgroundColor(line.getBackgroundAlpha() << 24);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
             metadataBuilder.withDisplayBrightness(line.getBrightness());

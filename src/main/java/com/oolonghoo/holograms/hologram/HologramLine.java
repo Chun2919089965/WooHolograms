@@ -71,6 +71,7 @@ public class HologramLine {
 
     // Billboard 模式
     private Billboard billboard;
+    private int backgroundAlpha;
 
     // 权限
     private String permission;
@@ -127,6 +128,7 @@ public class HologramLine {
         this.playerTextCache = new ConcurrentHashMap<>();
         this.lastTextCache = new ConcurrentHashMap<>();
         this.enabled = true;
+        this.backgroundAlpha = WooHolograms.getInstance().getConfigManager().getDefaultBackgroundAlpha();
 
         // 解析内容
         parseContent();
@@ -862,6 +864,11 @@ public class HologramLine {
             map.put("billboard", billboard.getId());
         }
 
+        int defaultBgAlpha = WooHolograms.getInstance().getConfigManager().getDefaultBackgroundAlpha();
+        if (backgroundAlpha != defaultBgAlpha) {
+            map.put("background-alpha", backgroundAlpha);
+        }
+
         if (hasActions()) {
             Map<String, List<String>> actionsMap = new LinkedHashMap<>();
             for (Map.Entry<ClickType, List<Action>> entry : actions.entrySet()) {
@@ -955,6 +962,12 @@ public class HologramLine {
             line.setBillboard(null);
         }
 
+        if (map.containsKey("background-alpha") && map.get("background-alpha") instanceof Number bgAlpha) {
+            line.setBackgroundAlpha(bgAlpha.intValue());
+        } else {
+            line.setBackgroundAlpha(WooHolograms.getInstance().getConfigManager().getDefaultBackgroundAlpha());
+        }
+
         if (map.containsKey("custom-yaw") && map.get("custom-yaw") instanceof Number customYaw) {
             line.setCustomYaw(customYaw.floatValue());
         }
@@ -1004,6 +1017,7 @@ public class HologramLine {
         line.setBrightness(this.brightness);
         line.setAlignment(this.alignment);
         line.setBillboard(this.billboard);
+        line.setBackgroundAlpha(this.backgroundAlpha);
         line.setCustomYaw(this.customYaw);
         line.setCustomPitch(this.customPitch);
         line.addFlags(this.flags.toArray(EnumFlag[]::new));
@@ -1326,6 +1340,14 @@ public class HologramLine {
 
     public void setBillboard(Billboard billboard) {
         this.billboard = billboard;
+    }
+
+    public int getBackgroundAlpha() {
+        return backgroundAlpha;
+    }
+
+    public void setBackgroundAlpha(int backgroundAlpha) {
+        this.backgroundAlpha = Math.max(0, Math.min(255, backgroundAlpha));
     }
 
     public int[] getEntityIds() {

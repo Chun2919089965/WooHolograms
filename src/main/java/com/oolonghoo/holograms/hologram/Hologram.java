@@ -70,8 +70,6 @@ public class Hologram {
     // 可点击实体渲染器
     private final List<NmsHologramRenderer> clickableRenderers;
 
-    // 可点击实体渲染器
-
     protected final Object visibilityMutex = new Object();
 
     // 存储器
@@ -166,19 +164,26 @@ public class Hologram {
      * @param location 新位置
      */
     public void setLocation(Location location) {
-        String oldWorldName = this.location != null && this.location.getWorld() != null
-                ? this.location.getWorld().getName() : null;
-        String newWorldName = location != null && location.getWorld() != null
-                ? location.getWorld().getName() : null;
+        synchronized (visibilityMutex) {
+            String oldWorldName = this.location != null && this.location.getWorld() != null
+                    ? this.location.getWorld().getName() : null;
+            String newWorldName = location != null && location.getWorld() != null
+                    ? location.getWorld().getName() : null;
 
-        this.location = location != null ? location.clone() : null;
+            this.location = location != null ? location.clone() : null;
 
-        if (oldWorldName != null && !oldWorldName.equals(newWorldName)) {
-            WooHolograms.getInstance().getHologramManager().updateWorldCache(this, oldWorldName);
+            if (oldWorldName != null && !oldWorldName.equals(newWorldName)) {
+                hideAll();
+                WooHolograms.getInstance().getHologramManager().updateWorldCache(this, oldWorldName);
+            }
+
+            realignLines();
+            teleportClickableEntitiesAll();
+
+            if (oldWorldName != null && !oldWorldName.equals(newWorldName) && newWorldName != null) {
+                showToNearby();
+            }
         }
-
-        realignLines();
-        teleportClickableEntitiesAll();
     }
 
     /**
@@ -786,7 +791,7 @@ public class Hologram {
                     }
                 }
             } else {
-                // 没有页面了，清空观看者
+                destroyClickableRenderers();
                 viewerPages.clear();
                 viewers.clear();
             }
@@ -809,7 +814,8 @@ public class Hologram {
             }
             pages.clear();
 
-            // 3. 清空观看者状态
+            destroyClickableRenderers();
+
             viewerPages.clear();
             viewers.clear();
         }
@@ -1371,17 +1377,22 @@ public class Hologram {
             this.location = location != null ? location.clone() : null;
 
             if (oldWorldName != null && !oldWorldName.equals(newWorldName)) {
+                hideAll();
                 WooHolograms.getInstance().getHologramManager().updateWorldCache(this, oldWorldName);
             }
 
             realignLines();
 
             if (updateViewers && enabled) {
-                teleportClickableEntitiesAll();
+                if (oldWorldName != null && !oldWorldName.equals(newWorldName)) {
+                    showToNearby();
+                } else {
+                    teleportClickableEntitiesAll();
 
-                for (HologramPage page : pages) {
-                    for (HologramLine line : page.getLines()) {
-                        line.updateLocation(true);
+                    for (HologramPage page : pages) {
+                        for (HologramLine line : page.getLines()) {
+                            line.updateLocation(true);
+                        }
                     }
                 }
             }
@@ -1703,6 +1714,8 @@ public class Hologram {
             renderer.display(player, pos);
             pos = pos.addY(1.8);
         }
+
+        trimExcessClickableRenderers(amount);
     }
 
     /**
@@ -1781,6 +1794,9 @@ public class Hologram {
                     .getRendererFactory()
                     .createClickableRenderer();
             clickableRenderers.add(renderer);
+            for (int id : renderer.getEntityIds()) {
+                WooHolograms.getInstance().getHologramManager().registerEntityId(id, this);
+            }
         }
         return clickableRenderers.get(index);
     }
@@ -1792,12 +1808,28 @@ public class Hologram {
     }
 
     public void destroyClickableRenderers() {
+        List<Player> viewerList = getViewerPlayers();
         for (NmsHologramRenderer renderer : clickableRenderers) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            for (int id : renderer.getEntityIds()) {
+                WooHolograms.getInstance().getHologramManager().unregisterEntityId(id);
+            }
+            for (Player player : viewerList) {
                 renderer.destroy(player);
             }
         }
         clickableRenderers.clear();
+    }
+
+    private void trimExcessClickableRenderers(int activeCount) {
+        while (clickableRenderers.size() > activeCount) {
+            NmsHologramRenderer extra = clickableRenderers.remove(clickableRenderers.size() - 1);
+            for (int id : extra.getEntityIds()) {
+                WooHolograms.getInstance().getHologramManager().unregisterEntityId(id);
+            }
+            for (Player player : getViewerPlayers()) {
+                extra.destroy(player);
+            }
+        }
     }
 
     /*
@@ -1964,15 +1996,18 @@ public class Hologram {
      * 销毁
      */
     public void destroy() {
-        disable();
-        viewerPages.clear();
+        synchronized (visibilityMutex) {
+            hideAll();
+            enabled = false;
+            viewerPages.clear();
 
-        for (HologramPage page : pages) {
-            page.destroy();
+            for (HologramPage page : pages) {
+                page.destroy();
+            }
+            pages.clear();
+
+            destroyClickableRenderers();
         }
-        pages.clear();
-
-        destroyClickableRenderers();
     }
 
     /*

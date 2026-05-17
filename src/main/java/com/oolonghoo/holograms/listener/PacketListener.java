@@ -398,15 +398,9 @@ public class PacketListener {
      * @return 全息图
      */
     private Hologram findHologramByEntityId(Player player, int entityId) {
-        for (Hologram hologram : plugin.getHologramManager().getHolograms()) {
-            if (!hologram.isEnabled() || !hologram.isVisible(player)) {
-                continue;
-            }
-            
-            // 检查实体 ID 是否属于此全息图
-            if (hologram.hasEntity(entityId)) {
-                return hologram;
-            }
+        Hologram hologram = plugin.getHologramManager().getHologramByEntityId(entityId);
+        if (hologram != null && hologram.isEnabled() && hologram.isVisible(player)) {
+            return hologram;
         }
         return null;
     }

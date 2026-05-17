@@ -4,10 +4,12 @@ import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.action.Action;
 import com.oolonghoo.holograms.action.ActionType;
 import com.oolonghoo.holograms.action.ClickType;
+import com.oolonghoo.holograms.hologram.HologramManager;
 import com.oolonghoo.holograms.nms.NmsHologramRenderer;
 import com.oolonghoo.holograms.nms.NmsHologramRendererFactory;
 import com.oolonghoo.holograms.nms.HologramRendererPool;
 import com.oolonghoo.holograms.util.ColorUtil;
+import com.oolonghoo.holograms.util.PlaceholderUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -214,6 +216,24 @@ public class HologramLine {
         }
     }
 
+    private void registerEntityIds() {
+        if (renderer == null) return;
+        Hologram hologram = getHologram();
+        if (hologram == null) return;
+        HologramManager manager = WooHolograms.getInstance().getHologramManager();
+        for (int id : renderer.getEntityIds()) {
+            manager.registerEntityId(id, hologram);
+        }
+    }
+
+    private void unregisterEntityIds(NmsHologramRenderer r) {
+        if (r == null) return;
+        HologramManager manager = WooHolograms.getInstance().getHologramManager();
+        for (int id : r.getEntityIds()) {
+            manager.unregisterEntityId(id);
+        }
+    }
+
     /**
      * 检查内容是否包含动画
      * @param text 文本
@@ -340,17 +360,18 @@ public class HologramLine {
         if (parent == null || parent.getParent() == null) {
             return;
         }
-        
+
         WooHolograms plugin = WooHolograms.getInstance();
-        
+
         HologramRendererPool pool = plugin.getRendererPool();
         renderer = pool.obtain(type);
         if (renderer != null) {
+            registerEntityIds();
             return;
         }
-        
+
         NmsHologramRendererFactory factory = plugin.getRendererFactory();
-        
+
         renderer = switch (type) {
             case TEXT -> factory.createTextRenderer();
             case ICON -> factory.createIconRenderer();
@@ -359,6 +380,7 @@ public class HologramLine {
             case ENTITY -> factory.createEntityRenderer();
             default -> factory.createTextRenderer();
         };
+        registerEntityIds();
     }
 
     /**
@@ -509,6 +531,7 @@ public class HologramLine {
                 }
             }
             previousRenderer.destroy(viewerPlayers);
+            unregisterEntityIds(previousRenderer);
             WooHolograms plugin = WooHolograms.getInstance();
             HologramRendererPool pool = plugin.getRendererPool();
             pool.release(previousRenderer);
@@ -591,15 +614,10 @@ public class HologramLine {
             return "";
         }
 
-        // 替换内部占位符
-        text = text.replace("{player}", player.getName());
         text = text.replace("{page}", String.valueOf(parent != null ? parent.getIndex() + 1 : 1));
-        text = text.replace("{pages}", String.valueOf(parent != null ? parent.getParent().size() : 1));
+        text = text.replace("{pages}", String.valueOf(parent != null && parent.getParent() != null ? parent.getParent().size() : 1));
 
-        // PlaceholderAPI 占位符由 hook 处理
-        if (WooHolograms.getInstance().getPlaceholderHook() != null) {
-            text = WooHolograms.getInstance().getPlaceholderHook().setPlaceholders(player, text);
-        }
+        text = PlaceholderUtil.replace(text, player);
 
         return text;
     }
@@ -1023,6 +1041,7 @@ public class HologramLine {
     public void destroy() {
         synchronized (renderMutex) {
             if (renderer != null) {
+                unregisterEntityIds(renderer);
                 List<Player> viewerPlayers = new ArrayList<>();
                 for (UUID uuid : viewers) {
                     Player player = Bukkit.getPlayer(uuid);
@@ -1037,6 +1056,7 @@ public class HologramLine {
                 renderer = null;
             }
             if (previousRenderer != null) {
+                unregisterEntityIds(previousRenderer);
                 List<Player> viewerPlayers = new ArrayList<>();
                 for (UUID uuid : viewers) {
                     Player p = Bukkit.getPlayer(uuid);

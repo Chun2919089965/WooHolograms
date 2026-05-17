@@ -162,16 +162,10 @@ public class ColorUtil {
             return "";
         }
 
-        // 移除 & 颜色代码
-        text = text.replaceAll("&[0-9a-fA-Fk-oK-OrR]", "");
+        text = LEGACY_COLOR_PATTERN.matcher(text).replaceAll("");
 
-        // 移除 § 颜色代码
-        text = text.replaceAll("§[0-9a-fA-Fk-oK-OrR]", "");
-
-        // 移除十六进制颜色
         text = HEX_COLOR_PATTERN.matcher(text).replaceAll("");
 
-        // 移除 MiniMessage 标签
         text = stripMiniMessageTags(text);
 
         return text;
@@ -387,61 +381,45 @@ public class ColorUtil {
      * @param text 传统格式文本
      * @return MiniMessage 格式文本
      */
+    private static final String[] LEGACY_TO_MINI = {
+            "<black>", "<dark_blue>", "<dark_green>", "<dark_aqua>",
+            "<dark_red>", "<dark_purple>", "<gold>", "<gray>",
+            "<dark_gray>", "<blue>", "<green>", "<aqua>",
+            "<red>", "<light_purple>", "<yellow>", "<white>",
+            "<obfuscated>", "<bold>", "<strikethrough>", "<underlined>",
+            "<italic>", "<reset>"
+    };
+
     public static String legacyToMiniMessage(String text) {
         if (text == null || text.isEmpty()) {
             return "";
         }
 
-        // 颜色映射
-        text = text.replace("&0", "<black>");
-        text = text.replace("&1", "<dark_blue>");
-        text = text.replace("&2", "<dark_green>");
-        text = text.replace("&3", "<dark_aqua>");
-        text = text.replace("&4", "<dark_red>");
-        text = text.replace("&5", "<dark_purple>");
-        text = text.replace("&6", "<gold>");
-        text = text.replace("&7", "<gray>");
-        text = text.replace("&8", "<dark_gray>");
-        text = text.replace("&9", "<blue>");
-        text = text.replace("&a", "<green>");
-        text = text.replace("&b", "<aqua>");
-        text = text.replace("&c", "<red>");
-        text = text.replace("&d", "<light_purple>");
-        text = text.replace("&e", "<yellow>");
-        text = text.replace("&f", "<white>");
-
-        // 格式映射
-        text = text.replace("&k", "<obfuscated>");
-        text = text.replace("&l", "<bold>");
-        text = text.replace("&m", "<strikethrough>");
-        text = text.replace("&n", "<underlined>");
-        text = text.replace("&o", "<italic>");
-        text = text.replace("&r", "<reset>");
-
-        // 处理 § 符号
-        text = text.replace("§0", "<black>");
-        text = text.replace("§1", "<dark_blue>");
-        text = text.replace("§2", "<dark_green>");
-        text = text.replace("§3", "<dark_aqua>");
-        text = text.replace("§4", "<dark_red>");
-        text = text.replace("§5", "<dark_purple>");
-        text = text.replace("§6", "<gold>");
-        text = text.replace("§7", "<gray>");
-        text = text.replace("§8", "<dark_gray>");
-        text = text.replace("§9", "<blue>");
-        text = text.replace("§a", "<green>");
-        text = text.replace("§b", "<aqua>");
-        text = text.replace("§c", "<red>");
-        text = text.replace("§d", "<light_purple>");
-        text = text.replace("§e", "<yellow>");
-        text = text.replace("§f", "<white>");
-        text = text.replace("§k", "<obfuscated>");
-        text = text.replace("§l", "<bold>");
-        text = text.replace("§m", "<strikethrough>");
-        text = text.replace("§n", "<underlined>");
-        text = text.replace("§o", "<italic>");
-        text = text.replace("§r", "<reset>");
-
-        return text;
+        Matcher matcher = LEGACY_COLOR_PATTERN.matcher(text);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            char code = Character.toLowerCase(matcher.group(1).charAt(0));
+            int index;
+            if (code >= '0' && code <= '9') {
+                index = code - '0';
+            } else if (code >= 'a' && code <= 'f') {
+                index = code - 'a' + 10;
+            } else if (code == 'k') {
+                index = 16;
+            } else if (code == 'l') {
+                index = 17;
+            } else if (code == 'm') {
+                index = 18;
+            } else if (code == 'n') {
+                index = 19;
+            } else if (code == 'o') {
+                index = 20;
+            } else {
+                index = 21;
+            }
+            matcher.appendReplacement(result, LEGACY_TO_MINI[index]);
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 }

@@ -31,6 +31,8 @@ public class HologramManager {
 
     private final Map<String, List<Hologram>> hologramsByWorld;
 
+    private final Map<Integer, Hologram> entityIdIndex;
+
     private final ConcurrentHashMap<UUID, Long> clickCooldowns = new ConcurrentHashMap<>();
 
     // 更新任务
@@ -51,6 +53,7 @@ public class HologramManager {
         this.storage = storage;
         this.holograms = new ConcurrentHashMap<>();
         this.hologramsByWorld = new ConcurrentHashMap<>();
+        this.entityIdIndex = new ConcurrentHashMap<>();
     }
 
     /*
@@ -264,14 +267,13 @@ public class HologramManager {
         }
 
         removeFromWorldCache(hologram);
+        unregisterHologramEntityIds(hologram);
 
         HologramDeleteEvent event = new HologramDeleteEvent(hologram);
         Bukkit.getPluginManager().callEvent(event);
 
-        // 销毁全息图
         hologram.destroy();
 
-        // 删除对应的存储文件
         storage.delete(name);
 
         return true;
@@ -287,7 +289,7 @@ public class HologramManager {
         Hologram hologram = holograms.remove(name);
         if (hologram != null) {
             removeFromWorldCache(hologram);
-            hologram.hideAll();
+            hologram.destroy();
         }
         return hologram;
     }
@@ -349,6 +351,7 @@ public class HologramManager {
         }
         holograms.clear();
         hologramsByWorld.clear();
+        entityIdIndex.clear();
         loadAll();
     }
 
@@ -364,6 +367,7 @@ public class HologramManager {
 
         holograms.clear();
         hologramsByWorld.clear();
+        entityIdIndex.clear();
         clickCooldowns.clear();
     }
 
@@ -564,9 +568,19 @@ public class HologramManager {
                 continue;
             }
 
-            List<Player> players = world.getPlayers();
+            List<Player> players = new ArrayList<>(world.getPlayers());
             if (players.isEmpty()) {
                 continue;
+            }
+
+            double[] playerX = new double[players.size()];
+            double[] playerY = new double[players.size()];
+            double[] playerZ = new double[players.size()];
+            for (int i = 0; i < players.size(); i++) {
+                Location pLoc = players.get(i).getLocation();
+                playerX[i] = pLoc.getX();
+                playerY[i] = pLoc.getY();
+                playerZ[i] = pLoc.getZ();
             }
 
             for (Hologram hologram : entry.getValue()) {
@@ -579,15 +593,20 @@ public class HologramManager {
                     continue;
                 }
 
-                double displayRange = hologram.getDisplayRange();
-                double displayRangeSq = displayRange * displayRange;
+                double hx = holoLoc.getX(), hy = holoLoc.getY(), hz = holoLoc.getZ();
+                double displayRangeSq = hologram.getDisplayRange();
+                displayRangeSq *= displayRangeSq;
 
-                for (Player player : players) {
+                for (int i = 0; i < players.size(); i++) {
+                    Player player = players.get(i);
                     if (!player.isOnline()) {
                         continue;
                     }
 
-                    boolean inRange = player.getLocation().distanceSquared(holoLoc) <= displayRangeSq;
+                    double dx = playerX[i] - hx;
+                    double dy = playerY[i] - hy;
+                    double dz = playerZ[i] - hz;
+                    boolean inRange = dx * dx + dy * dy + dz * dz <= displayRangeSq;
                     boolean isVisible = hologram.isVisible(player);
 
                     if (inRange && !isVisible) {
@@ -648,14 +667,27 @@ public class HologramManager {
      * @return 是否处理成功
      */
     public boolean handleClick(Player player, int entityId, com.oolonghoo.holograms.action.ClickType clickType) {
-        for (Hologram hologram : holograms.values()) {
-            if (hologram.isVisible(player)) {
-                if (hologram.onClick(player, entityId, clickType)) {
-                    return true;
-                }
-            }
+        Hologram hologram = entityIdIndex.get(entityId);
+        if (hologram != null && hologram.isVisible(player)) {
+            return hologram.onClick(player, entityId, clickType);
         }
         return false;
+    }
+
+    public void registerEntityId(int entityId, Hologram hologram) {
+        entityIdIndex.put(entityId, hologram);
+    }
+
+    public void unregisterEntityId(int entityId) {
+        entityIdIndex.remove(entityId);
+    }
+
+    public void unregisterHologramEntityIds(Hologram hologram) {
+        entityIdIndex.values().removeIf(h -> h == hologram);
+    }
+
+    public Hologram getHologramByEntityId(int entityId) {
+        return entityIdIndex.get(entityId);
     }
 
     public boolean checkAndSetCooldown(Player player) {

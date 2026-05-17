@@ -794,13 +794,7 @@ public class HologramPage {
             line.destroy();
         }
         lines.clear();
-
-        if (parent != null) {
-            parent.destroyClickableRenderers();
-        }
-
         actions.clear();
-
         flags.clear();
     }
 

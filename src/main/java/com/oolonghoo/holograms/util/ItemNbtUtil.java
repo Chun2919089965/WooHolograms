@@ -96,21 +96,21 @@ public class ItemNbtUtil {
                         result.putInt("CustomModelData", parseInt(value));
                         break;
                     case "color":
-                        CompoundTag display = result.getCompound("display");
+                        CompoundTag display = result.getCompoundOrEmpty("display");
                         if (display.isEmpty()) {
                             result.put("display", display);
                         }
                         display.putInt("color", parseColor(value));
                         break;
                     case "name":
-                        CompoundTag displayTag = result.getCompound("display");
+                        CompoundTag displayTag = result.getCompoundOrEmpty("display");
                         if (displayTag.isEmpty()) {
                             result.put("display", displayTag);
                         }
                         displayTag.putString("Name", "{\"text\":\"" + ColorUtil.colorize(value) + "\"}");
                         break;
                     case "lore":
-                        CompoundTag displayTag2 = result.getCompound("display");
+                        CompoundTag displayTag2 = result.getCompoundOrEmpty("display");
                         if (displayTag2.isEmpty()) {
                             result.put("display", displayTag2);
                         }

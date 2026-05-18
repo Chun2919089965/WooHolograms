@@ -37,7 +37,7 @@ public class ActionTypeSelectGui extends GuiScreen {
     private void render() {
         fillBackground();
         
-        setButton(0, GuiButton.builder(Material.SPECTRAL_ARROW)
+        setButton(0, GuiButton.builder(Material.BOOK)
                 .name("&f返回")
                 .lore(Arrays.asList(
                         "&7返回动作管理",

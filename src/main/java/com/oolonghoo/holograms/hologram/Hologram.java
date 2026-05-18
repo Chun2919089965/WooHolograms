@@ -40,8 +40,8 @@ public class Hologram {
     private int updateInterval;
     private Billboard billboard = Billboard.CENTER;
     private float facing;
-    private boolean downOrigin;
     private boolean doubleSided = false;
+    private TextAlignment alignment = TextAlignment.LEFT;
     
     // 全息图类型和显示属性
     private HologramType type;
@@ -106,7 +106,6 @@ public class Hologram {
         this.displayRange = plugin.getConfigManager().getDefaultDisplayRange();
         this.updateRange = plugin.getConfigManager().getDefaultUpdateRange();
         this.updateInterval = plugin.getConfigManager().getDefaultUpdateInterval();
-        this.downOrigin = plugin.getConfigManager().isDefaultDownOrigin();
         this.lineHeight = plugin.getConfigManager().getDefaultLineHeight();
         
         this.facing = 0.0f;
@@ -337,25 +336,15 @@ public class Hologram {
         refreshAllViewers();
     }
 
-    /**
-     * 是否从下往上
-     * 
-     * @return 是否从下往上
-     */
-    public boolean isDownOrigin() {
-        return downOrigin;
+    public TextAlignment getAlignment() {
+        return alignment;
     }
 
-    /**
-     * 设置是否从下往上
-     * 
-     * @param downOrigin 是否从下往上
-     */
-    public void setDownOrigin(boolean downOrigin) {
-        this.downOrigin = downOrigin;
+    public void setAlignment(TextAlignment alignment) {
+        this.alignment = alignment != null ? alignment : TextAlignment.LEFT;
         refreshAllViewers();
     }
-    
+
     /**
      * 刷新所有观看者的全息图显示
      * 重新渲染所有行和可点击实体
@@ -1802,8 +1791,7 @@ public class Hologram {
     }
 
     private DecentPosition getClickableBasePosition(HologramPage page) {
-        double baseY = location.getY() - (downOrigin ? 0 : page.getHeight());
-        baseY = Math.floor(baseY) + 0.5;
+        double baseY = Math.floor(location.getY()) + 0.5;
         return new DecentPosition(location.getX(), baseY, location.getZ());
     }
 
@@ -2024,7 +2012,7 @@ public class Hologram {
      */
     public Hologram clone(String name, Location location, boolean temp) {
         Hologram hologram = new Hologram(name, location, !temp);
-        hologram.setDownOrigin(this.downOrigin);
+        hologram.setAlignment(this.alignment);
         hologram.setPermission(this.permission);
         hologram.setFacing(this.facing);
         hologram.setDisplayRange(this.displayRange);
@@ -2071,7 +2059,7 @@ public class Hologram {
         map.put("update-interval", updateInterval);
         map.put("billboard", billboard != Billboard.CENTER ? billboard.getId() : null);
         map.put("facing", facing);
-        map.put("down-origin", downOrigin);
+        map.put("alignment", alignment.getId());
         map.put("double-sided", doubleSided);
         map.put("pages", pages.stream().map(HologramPage::serializeToMap).collect(Collectors.toList()));
         return map;

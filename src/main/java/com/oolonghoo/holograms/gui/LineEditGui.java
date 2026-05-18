@@ -7,7 +7,6 @@ import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramLine;
 import com.oolonghoo.holograms.hologram.HologramPage;
 import com.oolonghoo.holograms.hologram.HologramType;
-import com.oolonghoo.holograms.hologram.TextAlignment;
 import com.oolonghoo.holograms.util.ColorUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -281,21 +280,6 @@ public class LineEditGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     guiManager.openGui(context.getPlayer(), new BrightnessSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex, true));
-                })
-                .build());
-        
-        // 对齐设置
-        TextAlignment alignment = line.getAlignment();
-        setButton(19, GuiButton.builder(Material.REPEATER)
-                .name("&f对齐设置")
-                .lore(Arrays.asList(
-                        "&7设置文本的对齐方式",
-                        "&7当前: &f" + alignment.getDisplayName(),
-                        "",
-                        "&e点击设置"
-                ))
-                .onClick(context -> {
-                    guiManager.openGui(context.getPlayer(), new AlignmentSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
                 })
                 .build());
         

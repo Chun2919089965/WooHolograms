@@ -11,10 +11,8 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.ItemStack;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 实体元数据构建器
@@ -106,8 +104,7 @@ public class EntityMetadataBuilder {
      */
     EntityMetadataBuilder withCustomName(String customName) {
         Component component = CraftChatMessage.fromStringOrNull(customName);
-        Optional<Component> optionalComponent = Optional.ofNullable(component);
-        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME.construct(optionalComponent));
+        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME.construct(component != null ? component : Component.empty()));
         boolean visible = !Strings.isNullOrEmpty(customName);
         watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME_VISIBLE.construct(visible));
         return this;
@@ -122,8 +119,7 @@ public class EntityMetadataBuilder {
      */
     public EntityMetadataBuilder withCustomName(String customName, boolean visible) {
         Component component = CraftChatMessage.fromStringOrNull(customName);
-        Optional<Component> optionalComponent = Optional.ofNullable(component);
-        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME.construct(optionalComponent));
+        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME.construct(component != null ? component : Component.empty()));
         watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME_VISIBLE.construct(visible));
         return this;
     }
@@ -231,19 +227,10 @@ public class EntityMetadataBuilder {
      */
     public EntityMetadataBuilder withDisplayBrightness(Brightness brightness) {
         if (brightness == null || brightness.isDefault()) {
-            watchableObjects.add(EntityMetadataType.DISPLAY_BRIGHTNESS.construct(Optional.empty()));
-        } else {
-            try {
-                Class<?> brightnessClass = Class.forName("net.minecraft.world.entity.Display$Brightness");
-                Constructor<?> constructor = brightnessClass.getConstructor(int.class, int.class);
-                Object nmsBrightness = constructor.newInstance(brightness.getBlockLight(), brightness.getSkyLight());
-                @SuppressWarnings("unchecked")
-                Optional<Object> optional = Optional.of(nmsBrightness);
-                watchableObjects.add(EntityMetadataType.DISPLAY_BRIGHTNESS.construct((Optional) optional));
-            } catch (Exception e) {
-                watchableObjects.add(EntityMetadataType.DISPLAY_BRIGHTNESS.construct(Optional.empty()));
-            }
+            return this;
         }
+        int brightnessInt = brightness.getBlockLight() << 4 | brightness.getSkyLight() << 20;
+        watchableObjects.add(EntityMetadataType.DISPLAY_BRIGHTNESS.construct(brightnessInt));
         return this;
     }
 
@@ -303,15 +290,15 @@ public class EntityMetadataBuilder {
         }
         byte styleFlags;
         switch (alignment) {
-            case CENTER:
-                styleFlags = 1;
+            case LEFT:
+                styleFlags = 0x08;
                 break;
             case RIGHT:
-                styleFlags = 2;
+                styleFlags = 0x10;
                 break;
-            case LEFT:
+            case CENTER:
             default:
-                styleFlags = 0;
+                styleFlags = 0x00;
                 break;
         }
         watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_STYLE_FLAGS.construct(styleFlags));

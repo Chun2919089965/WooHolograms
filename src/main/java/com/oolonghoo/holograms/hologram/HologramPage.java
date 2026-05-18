@@ -110,11 +110,7 @@ public class HologramPage {
         }
 
         Location center = parent.getLocation().clone();
-        if (parent.isDownOrigin()) {
-            center.add(0, getHeight() / 2, 0);
-        } else {
-            center.subtract(0, getHeight() / 2, 0);
-        }
+        center.subtract(0, getHeight() / 2, 0);
         return center;
     }
 
@@ -334,11 +330,6 @@ public class HologramPage {
         }
 
         Location currentLocation = parent.getLocation().clone();
-
-        // 如果从下往上，先移动到顶部
-        if (parent.isDownOrigin()) {
-            currentLocation.add(0, getHeight(), 0);
-        }
 
         for (HologramLine line : lines) {
             Location lineLocation = line.getLocation();

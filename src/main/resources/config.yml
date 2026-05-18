@@ -18,8 +18,6 @@ defaults:
   update-range: 48
   # 默认更新间隔（tick），0 表示禁用自动更新
   update-interval: 0
-  # 是否从下往上构建
-  down-origin: true
   # 默认行高
   line-height: 0.3
   # 默认文本行高

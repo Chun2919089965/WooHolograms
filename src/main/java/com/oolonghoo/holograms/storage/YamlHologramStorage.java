@@ -78,7 +78,7 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("display-range", hologram.getDisplayRange());
             yaml.set("update-range", hologram.getUpdateRange());
             yaml.set("update-interval", hologram.getUpdateInterval());
-            yaml.set("down-origin", hologram.isDownOrigin());
+            yaml.set("alignment", hologram.getAlignment().getId());
 
             if (hologram.getPermission() != null && !hologram.getPermission().isEmpty()) {
                 yaml.set("permission", hologram.getPermission());
@@ -122,8 +122,8 @@ public class YamlHologramStorage implements HologramStorage {
                                 line.getBrightness().getSkyLight() + "," + line.getBrightness().getBlockLight());
                     }
 
-                    if (line.getAlignment() != null) {
-                        yaml.set(linePath + ".alignment", line.getAlignment().getId());
+                    if (line.getBackgroundAlpha() != plugin.getConfigManager().getDefaultBackgroundAlpha()) {
+                        yaml.set(linePath + ".background-alpha", line.getBackgroundAlpha());
                     }
 
                     if (line.getBillboard() != null) {
@@ -326,7 +326,7 @@ public class YamlHologramStorage implements HologramStorage {
         hologram.setDisplayRange(getCompatDouble(section, "display-range", "displayRange", 48.0));
         hologram.setUpdateRange(getCompatDouble(section, "update-range", "updateRange", 48.0));
         hologram.setUpdateInterval(getCompatInt(section, "update-interval", "updateInterval", 40));
-        hologram.setDownOrigin(getCompatBoolean(section, "down-origin", "downOrigin", true));
+        hologram.setAlignment(TextAlignment.fromId(section.getString("alignment", "LEFT")));
 
         String permission = section.getString("permission");
         if (permission != null && !permission.isEmpty()) {
@@ -381,6 +381,40 @@ public class YamlHologramStorage implements HologramStorage {
                     }
                 }
             }
+        } else if (section.contains("pages")) {
+            List<?> pagesList = section.getList("pages");
+            if (pagesList != null) {
+                hologram.removePage(0);
+                for (Object pageObj : pagesList) {
+                    if (!(pageObj instanceof Map)) continue;
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> pageMap = (Map<String, Object>) pageObj;
+                    HologramPage page = hologram.addPage();
+
+                    Object actionsObj = pageMap.get("actions");
+                    if (actionsObj instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> actionsMap = (Map<String, Object>) actionsObj;
+                        loadPageActionsFromMap(actionsMap, page);
+                    }
+
+                    Object linesObj = pageMap.get("lines");
+                    if (linesObj instanceof List) {
+                        @SuppressWarnings("unchecked")
+                        List<Object> linesList = (List<Object>) linesObj;
+                        for (Object lineObj : linesList) {
+                            if (lineObj instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> lineMap = (Map<String, Object>) lineObj;
+                                loadHologramLineFromMap(lineMap, page);
+                            } else if (lineObj instanceof String) {
+                                page.addLine((String) lineObj);
+                            }
+                        }
+                        page.realignLines();
+                    }
+                }
+            }
         }
 
         return hologram;
@@ -401,6 +435,111 @@ public class YamlHologramStorage implements HologramStorage {
                 Action action = Action.fromString(actionStr);
                 if (action != null) {
                     page.addAction(clickType, action);
+                }
+            }
+        }
+    }
+
+    private void loadPageActionsFromMap(Map<String, Object> actionsMap, HologramPage page) {
+        for (ClickType clickType : ClickType.values()) {
+            Object actionListObj = actionsMap.get(clickType.name());
+            if (!(actionListObj instanceof List)) continue;
+            @SuppressWarnings("unchecked")
+            List<Object> actionList = (List<Object>) actionListObj;
+            for (Object actionObj : actionList) {
+                if (actionObj instanceof String actionStr) {
+                    Action action = Action.fromString(actionStr);
+                    if (action != null) {
+                        page.addAction(clickType, action);
+                    }
+                }
+            }
+        }
+    }
+
+    private void loadHologramLineFromMap(Map<String, Object> map, HologramPage page) {
+        String content = map.getOrDefault("content", "") instanceof String s ? s : "";
+        HologramLine line = page.addLine(content);
+
+        Object heightObj = map.get("height");
+        if (heightObj instanceof Number n) {
+            line.setHeight(n.doubleValue());
+        }
+
+        Object offsetXObj = map.get("offsetX");
+        if (offsetXObj instanceof Number n) line.setOffsetX(n.doubleValue());
+
+        Object offsetYObj = map.get("offsetY");
+        if (offsetYObj instanceof Number n) line.setOffsetY(n.doubleValue());
+
+        Object offsetZObj = map.get("offsetZ");
+        if (offsetZObj instanceof Number n) line.setOffsetZ(n.doubleValue());
+
+        Object facingObj = map.get("facing");
+        if (facingObj instanceof Number n) line.setFacing(n.floatValue());
+
+        Object customYawObj = map.get("custom-yaw");
+        if (customYawObj == null) customYawObj = map.get("customYaw");
+        if (customYawObj instanceof Number n) line.setCustomYaw(n.floatValue());
+
+        Object customPitchObj = map.get("custom-pitch");
+        if (customPitchObj == null) customPitchObj = map.get("customPitch");
+        if (customPitchObj instanceof Number n) line.setCustomPitch(n.floatValue());
+
+        Object brightnessObj = map.get("brightness");
+        if (brightnessObj instanceof String brightnessStr) {
+            String[] parts = brightnessStr.split(",");
+            if (parts.length == 2) {
+                try {
+                    line.setBrightness(Brightness.of(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        Object bgAlphaObj = map.get("background-alpha");
+        if (bgAlphaObj instanceof Number n) {
+            line.setBackgroundAlpha(n.intValue());
+        }
+
+        Object billboardObj = map.get("billboard");
+        if (billboardObj instanceof String billboardStr) {
+            line.setBillboard(Billboard.fromId(billboardStr));
+        }
+
+        Object permissionObj = map.get("permission");
+        if (permissionObj instanceof String permStr && !permStr.isEmpty()) {
+            line.setPermission(permStr);
+        }
+
+        Object flagsObj = map.get("flags");
+        if (flagsObj instanceof List<?> flagList) {
+            for (Object flagObj : flagList) {
+                if (flagObj instanceof String flagStr) {
+                    try {
+                        line.addFlags(EnumFlag.valueOf(flagStr.toUpperCase()));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+        }
+
+        Object actionsObj = map.get("actions");
+        if (actionsObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> actionsMap = (Map<String, Object>) actionsObj;
+            for (ClickType clickType : ClickType.values()) {
+                Object actionListObj = actionsMap.get(clickType.name());
+                if (!(actionListObj instanceof List)) continue;
+                @SuppressWarnings("unchecked")
+                List<Object> actionList = (List<Object>) actionListObj;
+                for (Object actionObj : actionList) {
+                    if (actionObj instanceof String actionStr) {
+                        Action action = Action.fromString(actionStr);
+                        if (action != null) {
+                            line.addAction(clickType, action);
+                        }
+                    }
                 }
             }
         }
@@ -447,8 +586,8 @@ public class YamlHologramStorage implements HologramStorage {
             }
         }
 
-        if (section.contains("alignment")) {
-            line.setAlignment(TextAlignment.fromId(section.getString("alignment")));
+        if (section.contains("background-alpha")) {
+            line.setBackgroundAlpha(section.getInt("background-alpha"));
         }
 
         if (section.contains("billboard")) {

@@ -130,7 +130,7 @@ public class HeadTexture {
 
         if (meta != null && base64 != null && !base64.isEmpty()) {
             GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-            profile.getProperties().put("textures", new Property("textures", base64));
+            profile.properties().put("textures", new Property("textures", base64));
 
             try {
                 Field profileField = meta.getClass().getDeclaredField("profile");

@@ -69,7 +69,7 @@ public class HologramDetailGui extends GuiScreen {
             currentPageIndex = Math.max(0, hologram.getPageCount() - 1);
         }
         
-        setButton(0, GuiButton.builder(Material.SPECTRAL_ARROW)
+        setButton(0, GuiButton.builder(Material.BOOK)
                 .name("&f返回列表")
                 .lore(Arrays.asList(
                         "&7返回全息图列表",
@@ -749,22 +749,16 @@ public class HologramDetailGui extends GuiScreen {
                 })
                 .build());
 
-        setButton(53, GuiButton.builder(Material.ARROW)
-                .name("&f下方向原点")
+        setButton(53, GuiButton.builder(Material.REPEATER)
+                .name("&f对齐设置")
                 .lore(Arrays.asList(
-                        "&7全息图从底部向上生长",
-                        "&7当前: " + (hologram.isDownOrigin() ? "&a启用" : "&c禁用"),
+                        "&7设置文本的对齐方式",
+                        "&7当前: &f" + hologram.getAlignment().getDisplayName(),
                         "",
-                        "&e点击切换"
+                        "&e点击设置"
                 ))
                 .onClick(context -> {
-                    Player player = context.getPlayer();
-                    hologram.setDownOrigin(!hologram.isDownOrigin());
-                    hologram.save();
-                    hologram.realignLines();
-                    hologram.showToNearby();
-                    player.sendMessage(ColorUtil.colorize("&a下方向原点已" + (hologram.isDownOrigin() ? "启用" : "禁用") + "！"));
-                    guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                    guiManager.openGui(context.getPlayer(), new AlignmentSelectGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
                 })
                 .build());
 

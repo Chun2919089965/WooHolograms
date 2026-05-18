@@ -60,7 +60,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withNoGravity()
                 .withTextDisplayText(text)
                 .withBillboard(billboard)
-                .withTextAlignment(line.getAlignment())
+                .withTextAlignment(hologram.getAlignment())
                 .withTextBackgroundColor(line.getBackgroundAlpha() << 24);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
@@ -121,8 +121,6 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         }
 
         String text = line.getDisplayText(player);
-        String lastText = lastTextPerPlayer.get(player.getUniqueId());
-        if (text != null && text.equals(lastText)) return;
         lastTextPerPlayer.put(player.getUniqueId(), text);
 
         Hologram hologram = line.getHologram();
@@ -131,7 +129,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
 
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()
                 .withTextDisplayText(text)
-                .withTextAlignment(line.getAlignment())
+                .withTextAlignment(hologram.getAlignment())
                 .withBillboard(billboard)
                 .withTextBackgroundColor(line.getBackgroundAlpha() << 24);
 

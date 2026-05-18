@@ -2,8 +2,6 @@ package com.oolonghoo.holograms.gui;
 
 import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.hologram.Hologram;
-import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.hologram.HologramPage;
 import com.oolonghoo.holograms.hologram.TextAlignment;
 import com.oolonghoo.holograms.util.ColorUtil;
 import org.bukkit.Material;
@@ -11,30 +9,22 @@ import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 
-/**
- * 对齐设置 GUI
- * 用于设置全息图行的文本对齐方式
- *
- * 
- */
 public class AlignmentSelectGui extends GuiScreen {
 
     private final WooHolograms plugin;
     private final GuiManager guiManager;
     private final ChatInputManager chatInputManager;
     private final String hologramName;
-    private final int pageIndex;
-    private final int lineIndex;
+    private final int currentPageIndex;
 
     public AlignmentSelectGui(WooHolograms plugin, GuiManager guiManager, ChatInputManager chatInputManager,
-                              String hologramName, int pageIndex, int lineIndex) {
+                              String hologramName, int currentPageIndex) {
         super("alignment_select", ColorUtil.colorize("&8对齐设置"), 27);
         this.plugin = plugin;
         this.guiManager = guiManager;
         this.chatInputManager = chatInputManager;
         this.hologramName = hologramName;
-        this.pageIndex = pageIndex;
-        this.lineIndex = lineIndex;
+        this.currentPageIndex = currentPageIndex;
 
         render();
     }
@@ -59,40 +49,20 @@ public class AlignmentSelectGui extends GuiScreen {
             return;
         }
 
-        HologramPage page = hologram.getPage(pageIndex);
-        if (page == null || lineIndex < 0 || lineIndex >= page.size()) {
-            setButton(13, GuiButton.builder(Material.BARRIER)
-                    .name("&f行不存在")
-                    .lore(Arrays.asList(
-                            "",
-                            "&7该行已被删除",
-                            "",
-                            "&e点击返回详情"
-                    ))
-                    .onClick(context -> {
-                        guiManager.openGui(context.getPlayer(), new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, pageIndex));
-                    })
-                    .build());
-            return;
-        }
+        TextAlignment currentAlignment = hologram.getAlignment();
 
-        HologramLine line = page.getLine(lineIndex);
-        TextAlignment currentAlignment = line.getAlignment();
-
-        // 返回按钮
         setButton(0, GuiButton.builder(Material.BOOK)
                 .name("&f返回")
                 .lore(Arrays.asList(
-                        "&7返回行编辑",
+                        "&7返回全息图详情",
                         "",
                         "&e点击返回"
                 ))
                 .onClick(context -> {
-                    guiManager.openGui(context.getPlayer(), new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    guiManager.openGui(context.getPlayer(), new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
                 })
                 .build());
 
-        // 当前设置显示
         setButton(4, GuiButton.builder(Material.REPEATER)
                 .name("&f当前对齐方式")
                 .lore(Arrays.asList(
@@ -102,7 +72,6 @@ public class AlignmentSelectGui extends GuiScreen {
                 ))
                 .build());
 
-        // 左对齐选项
         setButton(11, GuiButton.builder(Material.ARROW)
                 .name("&f左对齐")
                 .lore(Arrays.asList(
@@ -116,7 +85,6 @@ public class AlignmentSelectGui extends GuiScreen {
                 })
                 .build());
 
-        // 居中对齐选项
         setButton(13, GuiButton.builder(Material.END_CRYSTAL)
                 .name("&f居中")
                 .lore(Arrays.asList(
@@ -130,7 +98,6 @@ public class AlignmentSelectGui extends GuiScreen {
                 })
                 .build());
 
-        // 右对齐选项
         setButton(15, GuiButton.builder(Material.ARROW)
                 .name("&f右对齐")
                 .lore(Arrays.asList(
@@ -150,18 +117,12 @@ public class AlignmentSelectGui extends GuiScreen {
     private void setAlignment(Player player, TextAlignment alignment) {
         Hologram h = plugin.getHologramManager().getHologram(hologramName);
         if (h != null) {
-            HologramPage p = h.getPage(pageIndex);
-            if (p != null && lineIndex < p.size()) {
-                HologramLine l = p.getLine(lineIndex);
-                if (l != null) {
-                    l.setAlignment(alignment);
-                    h.save();
-                    h.showToNearby();
-                    player.sendMessage(ColorUtil.colorize("&a已设置对齐方式为 " + alignment.getDisplayName() + "！"));
-                }
-            }
+            h.setAlignment(alignment);
+            h.save();
+            h.refreshAllViewers();
+            player.sendMessage(ColorUtil.colorize("&a已设置对齐方式为 " + alignment.getDisplayName() + "！"));
         }
-        guiManager.openGui(player, new AlignmentSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+        guiManager.openGui(player, new AlignmentSelectGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
     }
 
     private void fillBackground() {

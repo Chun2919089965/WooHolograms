@@ -29,7 +29,6 @@ public class ConfigManager {
     private double defaultDisplayRange;
     private double defaultUpdateRange;
     private int defaultUpdateInterval;
-    private boolean defaultDownOrigin;
     private double defaultLineHeight;
     private double defaultTextHeight;
     private double defaultItemHeight;
@@ -88,7 +87,6 @@ public class ConfigManager {
         defaultDisplayRange = config.getDouble("defaults.display-range", 48.0);
         defaultUpdateRange = config.getDouble("defaults.update-range", 48.0);
         defaultUpdateInterval = config.getInt("defaults.update-interval", 3);
-        defaultDownOrigin = config.getBoolean("defaults.down-origin", true);
         defaultLineHeight = config.getDouble("defaults.line-height", 0.3);
         defaultTextHeight = config.getDouble("defaults.text-height", 0.3);
         defaultItemHeight = config.getDouble("defaults.item-height", 0.6);
@@ -175,10 +173,6 @@ public class ConfigManager {
 
     public int getDefaultUpdateInterval() {
         return defaultUpdateInterval;
-    }
-
-    public boolean isDefaultDownOrigin() {
-        return defaultDownOrigin;
     }
 
     public double getDefaultLineHeight() {

@@ -10,8 +10,6 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Optional;
-
 /**
  * 实体元数据类型
  * 用于构建实体的元数据项
@@ -27,7 +25,7 @@ class EntityMetadataType<T> {
             = ReflectUtil.getFieldValue(Entity.class, "DATA_SHARED_FLAGS_ID");
 
     // 实体自定义名称
-    private static final EntityDataAccessor<Optional<Component>> ENTITY_CUSTOM_NAME_OBJECT
+    private static final EntityDataAccessor<Component> ENTITY_CUSTOM_NAME_OBJECT
             = ReflectUtil.getFieldValue(Entity.class, "DATA_CUSTOM_NAME");
 
     // 实体自定义名称是否可见
@@ -64,8 +62,7 @@ class EntityMetadataType<T> {
             = ReflectUtil.getFieldValue(Display.class, "DATA_BILLBOARD_RENDER_CONSTRAINTS_ID");
 
     // Display Entity - 亮度覆盖
-    @SuppressWarnings("unchecked")
-    private static final EntityDataAccessor<Optional<?>> DISPLAY_BRIGHTNESS_OBJECT
+    private static final EntityDataAccessor<Integer> DISPLAY_BRIGHTNESS_OBJECT
             = ReflectUtil.getFieldValue(Display.class, "DATA_BRIGHTNESS_OVERRIDE_ID");
 
 
@@ -92,7 +89,7 @@ class EntityMetadataType<T> {
 
     // 静态实例
     static final EntityMetadataType<Byte> ENTITY_PROPERTIES = new EntityMetadataType<>(ENTITY_PROPERTIES_OBJECT);
-    static final EntityMetadataType<Optional<Component>> ENTITY_CUSTOM_NAME = new EntityMetadataType<>(ENTITY_CUSTOM_NAME_OBJECT);
+    static final EntityMetadataType<Component> ENTITY_CUSTOM_NAME = new EntityMetadataType<>(ENTITY_CUSTOM_NAME_OBJECT);
     static final EntityMetadataType<Boolean> ENTITY_CUSTOM_NAME_VISIBLE = new EntityMetadataType<>(ENTITY_CUSTOM_NAME_VISIBLE_OBJECT);
     static final EntityMetadataType<Boolean> ENTITY_SILENT = new EntityMetadataType<>(ENTITY_SILENT_OBJECT);
     static final EntityMetadataType<Boolean> ENTITY_HAS_NO_GRAVITY = new EntityMetadataType<>(ENTITY_HAS_NO_GRAVITY_OBJECT);
@@ -103,8 +100,7 @@ class EntityMetadataType<T> {
 
     // Display Entity 静态实例
     static final EntityMetadataType<Byte> DISPLAY_BILLBOARD = new EntityMetadataType<>(DISPLAY_BILLBOARD_OBJECT);
-    @SuppressWarnings("unchecked")
-    static final EntityMetadataType<Optional<?>> DISPLAY_BRIGHTNESS = new EntityMetadataType<>(DISPLAY_BRIGHTNESS_OBJECT);
+    static final EntityMetadataType<Integer> DISPLAY_BRIGHTNESS = new EntityMetadataType<>(DISPLAY_BRIGHTNESS_OBJECT);
 
     // TextDisplay Entity 静态实例
     static final EntityMetadataType<Component> TEXT_DISPLAY_TEXT = new EntityMetadataType<>(TEXT_DISPLAY_TEXT_OBJECT);

@@ -66,9 +66,6 @@ public class HologramLine {
     // 亮度
     private Brightness brightness;
 
-    // 文本对齐
-    private TextAlignment alignment = TextAlignment.LEFT;
-
     // Billboard 模式
     private Billboard billboard;
     private int backgroundAlpha;
@@ -856,10 +853,6 @@ public class HologramLine {
             map.put("brightness", brightness.getSkyLight() + "," + brightness.getBlockLight());
         }
 
-        if (alignment != TextAlignment.LEFT) {
-            map.put("alignment", alignment.getId());
-        }
-
         if (billboard != null) {
             map.put("billboard", billboard.getId());
         }
@@ -952,10 +945,6 @@ public class HologramLine {
             }
         }
 
-        if (map.containsKey("alignment") && map.get("alignment") instanceof String alignmentObj) {
-            line.setAlignment(TextAlignment.fromId(alignmentObj));
-        }
-
         if (map.containsKey("billboard") && map.get("billboard") instanceof String billboardObj) {
             line.setBillboard(Billboard.fromId(billboardObj));
         } else {
@@ -1015,7 +1004,6 @@ public class HologramLine {
         line.setFacing(this.facing);
         line.setPermission(this.permission);
         line.setBrightness(this.brightness);
-        line.setAlignment(this.alignment);
         line.setBillboard(this.billboard);
         line.setBackgroundAlpha(this.backgroundAlpha);
         line.setCustomYaw(this.customYaw);
@@ -1324,14 +1312,6 @@ public class HologramLine {
 
     public void setBrightness(Brightness brightness) {
         this.brightness = brightness;
-    }
-
-    public TextAlignment getAlignment() {
-        return alignment;
-    }
-
-    public void setAlignment(TextAlignment alignment) {
-        this.alignment = alignment != null ? alignment : TextAlignment.LEFT;
     }
 
     public Billboard getBillboard() {

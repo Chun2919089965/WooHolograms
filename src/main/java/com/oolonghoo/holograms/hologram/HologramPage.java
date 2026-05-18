@@ -110,7 +110,7 @@ public class HologramPage {
         }
 
         Location center = parent.getLocation().clone();
-        center.subtract(0, getHeight() / 2, 0);
+        center.add(0, getHeight() / 2, 0);
         return center;
     }
 
@@ -330,6 +330,7 @@ public class HologramPage {
         }
 
         Location currentLocation = parent.getLocation().clone();
+        currentLocation.add(0, getHeight(), 0);
 
         for (HologramLine line : lines) {
             Location lineLocation = line.getLocation();

@@ -1,9 +1,10 @@
 name: WooHolograms
 version: ${project.version}
 main: com.oolonghoo.holograms.WooHolograms
-api-version: '1.21'
+api-version: '26.1'
+folia-supported: true
 author: oolongho
-description: A hologram plugin for Paper 1.21+
+description: A hologram plugin for Paper/Folia 26.1+
 
 softdepend:
   - PlaceholderAPI

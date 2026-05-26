@@ -8,6 +8,7 @@ import com.oolonghoo.holograms.hologram.HologramLine;
 import com.oolonghoo.holograms.hologram.HologramPage;
 import com.oolonghoo.holograms.hologram.HologramType;
 import com.oolonghoo.holograms.util.ColorUtil;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -363,7 +364,7 @@ public class HologramDetailGui extends GuiScreen {
                     }
                     Location loc = hologram.getLocation();
                     if (loc != null && loc.getWorld() != null) {
-                        player.teleport(loc);
+                        SchedulerUtil.teleportAsync(player, loc);
                         player.sendMessage(ColorUtil.colorize("&a已传送到全息图位置！"));
                     } else {
                         player.sendMessage(ColorUtil.colorize("&c全息图位置无效！"));

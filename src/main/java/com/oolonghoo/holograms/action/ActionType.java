@@ -4,6 +4,7 @@ import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.util.ColorUtil;
 import com.oolonghoo.holograms.util.LocationUtil;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -112,7 +113,7 @@ public abstract class ActionType {
 
             // 在主线程执行命令
             final String finalCommand = command;
-            Bukkit.getScheduler().runTask(WooHolograms.getInstance(), () -> {
+            SchedulerUtil.runTask(player, () -> {
                 player.chat("/" + finalCommand);
             });
             return true;
@@ -148,7 +149,7 @@ public abstract class ActionType {
 
             // 在主线程执行命令
             final String finalCommand = command;
-            Bukkit.getScheduler().runTask(WooHolograms.getInstance(), () -> {
+            SchedulerUtil.runTask(() -> {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand);
             });
             return true;
@@ -172,11 +173,15 @@ public abstract class ActionType {
             String[] spl = args[0].split(":", 3);
             Sound sound;
             try {
-                sound = Sound.valueOf(spl[0].toUpperCase());
+                @SuppressWarnings("removal")
+                Sound s = Sound.valueOf(spl[0].toUpperCase());
+                sound = s;
             } catch (IllegalArgumentException e) {
                 // 尝试使用自定义音效名称
                 try {
-                    sound = Sound.valueOf("ENTITY_EXPERIENCE_ORB_PICKUP");
+                    @SuppressWarnings("removal")
+                    Sound s = Sound.valueOf("ENTITY_EXPERIENCE_ORB_PICKUP");
+                    sound = s;
                 } catch (IllegalArgumentException ex) {
                     return true;
                 }
@@ -226,9 +231,7 @@ public abstract class ActionType {
 
             // 在主线程传送
             final Location finalLocation = location;
-            Bukkit.getScheduler().runTask(WooHolograms.getInstance(), () -> {
-                player.teleport(finalLocation);
-            });
+            SchedulerUtil.runTask(player, () -> SchedulerUtil.teleportAsync(player, finalLocation));
             return true;
         }
         

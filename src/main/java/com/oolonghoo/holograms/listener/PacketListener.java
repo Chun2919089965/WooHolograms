@@ -6,137 +6,50 @@ import com.oolonghoo.holograms.api.event.HologramClickEvent;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramLine;
 import com.oolonghoo.holograms.hologram.HologramPage;
+import com.oolonghoo.holograms.nms.versions.FriendlyByteBufWrapper;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 数据包监听器
  * 监听玩家交互数据包以检测全息图点击
- * 使用反射实现版本兼容
- * 
+ * 使用直接 NMS 引用实现
  */
 public class PacketListener {
 
+    private static final String HANDLER_NAME = "wooholograms_packet";
+
     private final WooHolograms plugin;
     private final Map<Player, Channel> playerChannels;
-    
-    // 反射缓存
-    private Class<?> craftPlayerClass;
-    private Class<?> serverPlayerClass;
-    private Class<?> connectionClass;
-    private Class<?> packetClass;
-    private Method getHandleMethod;
-    private Method getConnectionMethod;
 
     public PacketListener(WooHolograms plugin) {
         this.plugin = plugin;
         this.playerChannels = new ConcurrentHashMap<>();
-        initReflection();
-    }
-    
-    /**
-     * 初始化反射
-     */
-    private void initReflection() {
-        try {
-            String version;
-            String packageName = Bukkit.getServer().getClass().getPackage().getName();
-            
-            if (packageName.contains(".v")) {
-                String[] parts = packageName.split("\\.");
-                version = parts.length > 3 ? parts[3] : "";
-            } else {
-                version = "";
-            }
-            
-            if (!version.isEmpty()) {
-                craftPlayerClass = Class.forName("org.bukkit.craftbukkit." + version + ".entity.CraftPlayer");
-            } else {
-                craftPlayerClass = Class.forName("org.bukkit.craftbukkit.entity.CraftPlayer");
-            }
-            
-            getHandleMethod = craftPlayerClass.getMethod("getHandle");
-            
-            serverPlayerClass = getHandleMethod.getReturnType();
-            
-            try {
-                connectionClass = serverPlayerClass.getField("connection").getType();
-                getConnectionMethod = null;
-            } catch (NoSuchFieldException e) {
-                try {
-                    connectionClass = serverPlayerClass.getField("b").getType();
-                } catch (NoSuchFieldException e2) {
-                    for (Method m : serverPlayerClass.getMethods()) {
-                        if (m.getReturnType().getSimpleName().contains("Connection") || 
-                            m.getReturnType().getSimpleName().contains("PlayerConnection")) {
-                            getConnectionMethod = m;
-                            connectionClass = m.getReturnType();
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            if (connectionClass != null) {
-                for (Field f : connectionClass.getDeclaredFields()) {
-                    if (f.getType() == Channel.class) {
-                        f.setAccessible(true);
-                        break;
-                    }
-                }
-            }
-            
-            try {
-                packetClass = Class.forName("net.minecraft.network.protocol.game.ServerboundInteractPacket");
-            } catch (ClassNotFoundException e) {
-                try {
-                    packetClass = Class.forName("net.minecraft.server.network.PacketListenerInUseEntity");
-                } catch (ClassNotFoundException e2) {
-                    try {
-                        packetClass = Class.forName("net.minecraft.network.protocol.game.PacketPlayInUseEntity");
-                    } catch (ClassNotFoundException e3) {
-                        plugin.getLogger().warning("无法找到交互数据包类，点击功能可能无法正常工作");
-                        if (plugin.getConfigManager().isDebug()) {
-                            String errorMsg = e3.getMessage();
-                            plugin.getLogger().warning(() -> "详细错误: " + errorMsg);
-                        }
-                    }
-                }
-            }
-            
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            String errorMsg = e.getMessage();
-            plugin.getLogger().warning(() -> "初始化反射失败: " + errorMsg);
-            if (plugin.getConfigManager().isDebug()) {
-                plugin.getLogger().warning("初始化反射详细错误信息:");
-                for (StackTraceElement ste : e.getStackTrace()) {
-                    String steStr = ste.toString();
-                    plugin.getLogger().warning(() -> "  at " + steStr);
-                }
-            }
-        }
     }
 
     /**
-     * 注册监听器
+     * 注册监听器，为所有在线玩家注入数据包处理器
      */
     public void register() {
-        // 为所有在线玩家注册
         for (Player player : Bukkit.getOnlinePlayers()) {
             inject(player);
         }
     }
 
     /**
-     * 注销监听器
+     * 注销监听器，移除所有玩家的数据包处理器
      */
     public void unregister() {
         for (Player player : playerChannels.keySet()) {
@@ -147,141 +60,159 @@ public class PacketListener {
 
     /**
      * 为玩家注入数据包处理器
-     * 
+     *
      * @param player 玩家
      */
     public void inject(Player player) {
-        try {
-            Channel channel = getChannel(player);
-            
-            if (channel != null && !playerChannels.containsKey(player)) {
-                ChannelDuplexHandler handler = new ChannelDuplexHandler() {
-                    @Override
-                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                        if (packetClass != null && packetClass.isInstance(msg)) {
-                            if (handleUseEntity(player, msg)) {
-                                return; // 取消数据包
-                            }
-                        }
-                        super.channelRead(ctx, msg);
+        Channel channel = getChannel(player);
+        if (channel == null || playerChannels.containsKey(player)) {
+            return;
+        }
+
+        ChannelDuplexHandler handler = new ChannelDuplexHandler() {
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                if (msg instanceof ServerboundInteractPacket packet) {
+                    if (handleInteractPacket(player, packet)) {
+                        return; // 取消数据包
                     }
-                };
-                
-                channel.pipeline().addBefore("packet_handler", "wooholograms_packet", handler);
-                playerChannels.put(player, channel);
+                }
+                super.channelRead(ctx, msg);
             }
+        };
+
+        // 在 Netty EventLoop 中执行管道操作，确保线程安全
+        if (channel.eventLoop().inEventLoop()) {
+            injectHandler(channel, handler);
+        } else {
+            channel.eventLoop().execute(() -> injectHandler(channel, handler));
+        }
+
+        playerChannels.put(player, channel);
+    }
+
+    /**
+     * 在管道中注入处理器
+     */
+    private void injectHandler(Channel channel, ChannelDuplexHandler handler) {
+        try {
+            channel.pipeline().addBefore("packet_handler", HANDLER_NAME, handler);
         } catch (Exception e) {
             if (plugin.getConfigManager().isDebug()) {
-                String playerName = player.getName();
-                String errorMsg = e.getMessage();
-                plugin.getLogger().warning(() -> "无法为玩家 " + playerName + " 注入数据包监听器: " + errorMsg);
+                plugin.getLogger().warning(() -> "注入数据包处理器失败: " + e.getMessage());
             }
         }
-    }
-    
-    /**
-     * 获取玩家的 Channel
-     */
-    private Channel getChannel(Player player) {
-        try {
-            if (craftPlayerClass == null || getHandleMethod == null) {
-                return null;
-            }
-            
-            Object craftPlayer = craftPlayerClass.cast(player);
-            Object entityPlayer = getHandleMethod.invoke(craftPlayer);
-            
-            if (entityPlayer == null) {
-                return null;
-            }
-            
-            Object connection = null;
-            
-            // 尝试获取连接
-            if (getConnectionMethod != null) {
-                connection = getConnectionMethod.invoke(entityPlayer);
-            } else {
-                // 尝试直接访问字段
-                for (Field f : entityPlayer.getClass().getDeclaredFields()) {
-                    if (f.getType().getSimpleName().contains("Connection") || 
-                        f.getType().getSimpleName().contains("PlayerConnection")) {
-                        f.setAccessible(true);
-                        connection = f.get(entityPlayer);
-                        break;
-                    }
-                }
-            }
-            
-            if (connection == null) {
-                return null;
-            }
-            
-            // 获取 Channel
-            for (Field f : connection.getClass().getDeclaredFields()) {
-                if (f.getType() == Channel.class) {
-                    f.setAccessible(true);
-                    return (Channel) f.get(connection);
-                }
-            }
-            
-        } catch (ReflectiveOperationException e) {
-            if (plugin.getConfigManager().isDebug()) {
-                plugin.getLogger().warning(() -> "获取 Channel 失败: " + e.getMessage());
-            }
-        }
-        return null;
     }
 
     /**
      * 为玩家移除数据包处理器
-     * 
+     *
      * @param player 玩家
      */
     public void uninject(Player player) {
         Channel channel = playerChannels.remove(player);
-        if (channel != null && channel.pipeline().get("wooholograms_packet") != null) {
-            try {
-                channel.pipeline().remove("wooholograms_packet");
-            } catch (RuntimeException e) {
-                if (plugin.getConfigManager().isDebug()) {
-                    String playerName = player.getName();
-                    plugin.getLogger().warning(() -> "Failed to remove packet handler for player " + playerName + ": " + e.getMessage());
-                }
+        if (channel == null) {
+            return;
+        }
+
+        if (channel.eventLoop().inEventLoop()) {
+            removeHandler(channel);
+        } else {
+            channel.eventLoop().execute(() -> removeHandler(channel));
+        }
+    }
+
+    /**
+     * 从管道中移除处理器
+     */
+    private void removeHandler(Channel channel) {
+        try {
+            if (channel.pipeline().get(HANDLER_NAME) != null) {
+                channel.pipeline().remove(HANDLER_NAME);
             }
+        } catch (RuntimeException e) {
+            if (plugin.getConfigManager().isDebug()) {
+                plugin.getLogger().warning(() -> "移除数据包处理器失败: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 获取玩家的 Netty Channel
+     * 通过 CraftPlayer -> ServerPlayer -> ServerGamePacketListenerImpl -> Connection -> Channel 链路获取
+     */
+    private Channel getChannel(Player player) {
+        try {
+            CraftPlayer craftPlayer = (CraftPlayer) player;
+            ServerGamePacketListenerImpl connection = craftPlayer.getHandle().connection;
+            if (connection == null) {
+                return null;
+            }
+            // ServerCommonPacketListenerImpl 持有 Connection 字段
+            Connection nmConnection = ((ServerCommonPacketListenerImpl) connection).connection;
+            return nmConnection.channel;
+        } catch (Exception e) {
+            if (plugin.getConfigManager().isDebug()) {
+                plugin.getLogger().warning(() -> "获取 Channel 失败: " + e.getMessage());
+            }
+            return null;
         }
     }
 
     /**
      * 处理实体交互数据包
-     * 
+     * 使用 STREAM_CODEC 解码数据包获取实体 ID 和动作类型
+     *
      * @param player 玩家
-     * @param packet 数据包
+     * @param packet 交互数据包
      * @return 是否取消数据包
      */
-    private boolean handleUseEntity(Player player, Object packet) {
+    private boolean handleInteractPacket(Player player, ServerboundInteractPacket packet) {
         try {
-            int entityId = getEntityIdFromPacket(packet);
-            
+            FriendlyByteBufWrapper buf = FriendlyByteBufWrapper.getInstance();
+            ServerboundInteractPacket.STREAM_CODEC.encode(buf.getSerializer(), packet);
+
+            int entityId = buf.readVarInt();
+            int actionOrdinal = buf.readVarInt();
+
             if (entityId < 0) {
                 return false;
             }
-            
-            ClickType clickType = getClickType(packet);
-            
-            final int eid = entityId;
-            final ClickType ct = clickType;
-            Bukkit.getScheduler().runTask(plugin, () -> handleClick(player, eid, ct));
-            
+
+            ClickType clickType = mapActionToClickType(player, actionOrdinal);
+
+            // 切换到主线程处理点击逻辑
+            SchedulerUtil.runTask(player, () -> handleClick(player, entityId, clickType));
+
             return false;
         } catch (Exception e) {
             if (plugin.getConfigManager().isDebug()) {
-                String errorMsg = e.getMessage();
-                plugin.getLogger().warning(() -> "处理实体交互数据包时出错: " + errorMsg);
+                plugin.getLogger().warning(() -> "处理交互数据包时出错: " + e.getMessage());
             }
             return false;
         }
     }
 
+    /**
+     * 将 NMS 动作序号映射为 ClickType
+     * 参考: https://minecraft.wiki/w/Java_Edition_protocol#Interact
+     *
+     * @param player        玩家（用于判断是否潜行）
+     * @param actionOrdinal 动作序号 (0=INTERACT, 1=ATTACK, 2=INTERACT_AT)
+     * @return 点击类型
+     */
+    private ClickType mapActionToClickType(Player player, int actionOrdinal) {
+        return switch (actionOrdinal) {
+            case 1 -> player.isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
+            case 0, 2 -> player.isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
+            default -> ClickType.RIGHT;
+        };
+    }
+
+    /**
+     * 处理全息图点击
+     * 在主线程执行
+     */
     private void handleClick(Player player, int entityId, ClickType clickType) {
         if (!player.isOnline()) {
             return;
@@ -316,86 +247,7 @@ public class PacketListener {
     }
 
     /**
-     * 从数据包获取实体 ID
-     * 
-     * @param packet 数据包
-     * @return 实体 ID
-     */
-    private int getEntityIdFromPacket(Object packet) {
-        try {
-            String[] fieldNames = {"a", "entityId", "b", "id"};
-
-            for (String fieldName : fieldNames) {
-                try {
-                    Field field = packet.getClass().getDeclaredField(fieldName);
-                    field.setAccessible(true);
-                    Object value = field.get(packet);
-
-                    if (value instanceof Integer intValue) {
-                        return intValue;
-                    } else if (value != null) {
-                        try {
-                            Method getEntityId = value.getClass().getMethod("getEntityId");
-                            return (Integer) getEntityId.invoke(value);
-                        } catch (NoSuchMethodException ignored) {}
-                    }
-                } catch (NoSuchFieldException ignored) {}
-            }
-
-        } catch (ReflectiveOperationException e) {
-            if (plugin.getConfigManager().isDebug()) {
-                plugin.getLogger().warning(() -> "Failed to get entity ID from packet: " + e.getMessage());
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * 获取点击类型
-     * 
-     * @param packet 数据包
-     * @return 点击类型
-     */
-    private ClickType getClickType(Object packet) {
-        try {
-            // 尝试获取 action 字段
-            String[] fieldNames = {"b", "action", "c"};
-            
-            for (String fieldName : fieldNames) {
-                try {
-                    Field field = packet.getClass().getDeclaredField(fieldName);
-                    field.setAccessible(true);
-                    Object action = field.get(packet);
-                    
-                    if (action != null) {
-                        String actionName = action.toString();
-                        
-                        if (actionName.contains("ATTACK") || actionName.contains("attack")) {
-                            return ClickType.LEFT;
-                        } else if (actionName.contains("INTERACT") || actionName.contains("interact")) {
-                            return ClickType.RIGHT;
-                        }
-                    }
-                } catch (NoSuchFieldException e) {
-                    // 继续尝试下一个字段名
-                }
-            }
-            
-        } catch (ReflectiveOperationException e) {
-            if (plugin.getConfigManager().isDebug()) {
-                plugin.getLogger().warning(() -> "Failed to get click type from packet: " + e.getMessage());
-            }
-        }
-        
-        return ClickType.RIGHT;
-    }
-
-    /**
      * 根据实体 ID 查找全息图
-     * 
-     * @param player 玩家
-     * @param entityId 实体 ID
-     * @return 全息图
      */
     private Hologram findHologramByEntityId(Player player, int entityId) {
         Hologram hologram = plugin.getHologramManager().getHologramByEntityId(entityId);

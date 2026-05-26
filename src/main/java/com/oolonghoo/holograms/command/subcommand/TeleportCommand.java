@@ -4,6 +4,7 @@ import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.command.Subcommand;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.util.ColorUtil;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -39,7 +40,7 @@ public class TeleportCommand extends Subcommand {
             return true;
         }
 
-        player.teleport(hologram.getLocation());
+        SchedulerUtil.teleportAsync(player, hologram.getLocation());
         player.sendMessage(ColorUtil.colorize("&a已传送到全息图 " + name + "！"));
         return true;
     }

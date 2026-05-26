@@ -3,7 +3,6 @@ import com.oolonghoo.holograms.hologram.Billboard;
 import com.oolonghoo.holograms.hologram.HeadTexture;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.nms.NmsAdapter;
 import com.oolonghoo.holograms.nms.NmsHologramPartData;
 import com.oolonghoo.holograms.nms.renderer.NmsHeadHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
@@ -21,17 +20,17 @@ import org.bukkit.inventory.meta.SkullMeta;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
     protected final int entityId;
     protected final boolean small;
     protected boolean destroyed = false;
-    protected final Map<UUID, String> lastContentPerPlayer = new HashMap<>();
+    protected final Map<UUID, String> lastContentPerPlayer = new ConcurrentHashMap<>();
 
     public HeadHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this(entityIdGenerator, false);
@@ -210,11 +209,6 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
         for (Player player : players) {
             teleport(player, location);
         }
-    }
-
-    @Override
-    public NmsAdapter getAdapter() {
-        return null;
     }
 
     @Override

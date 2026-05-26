@@ -2,7 +2,6 @@ package com.oolonghoo.holograms.nms.versions.renderer;
 import com.oolonghoo.holograms.hologram.Billboard;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.nms.NmsAdapter;
 import com.oolonghoo.holograms.nms.renderer.NmsTextHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
@@ -13,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
  
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
  
 /**
  * 文本全息图渲染器实现
@@ -30,7 +30,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
     private float currentYaw = 0.0f;
     private float currentPitch = 0.0f;
     private boolean currentDoubleSided = false;
-    private final Map<UUID, String> lastTextPerPlayer = new HashMap<>();
+    private final Map<UUID, String> lastTextPerPlayer = new ConcurrentHashMap<>();
 
     public TextHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.frontEntityId = entityIdGenerator.getFreeEntityId();
@@ -202,11 +202,6 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         for (Player player : players) {
             teleport(player, location);
         }
-    }
- 
-    @Override
-    public NmsAdapter getAdapter() {
-        return null;
     }
  
     @Override

@@ -7,10 +7,10 @@ import net.minecraft.network.FriendlyByteBuf;
  * 字节缓冲区包装类
  * 用于数据包序列化
  *
- * 
- * 
+ *
+ *
  */
-class FriendlyByteBufWrapper {
+public class FriendlyByteBufWrapper {
 
     private static final ThreadLocal<FriendlyByteBufWrapper> LOCAL_INSTANCE = ThreadLocal.withInitial(
             FriendlyByteBufWrapper::new);
@@ -26,14 +26,14 @@ class FriendlyByteBufWrapper {
      *
      * @return FriendlyByteBuf
      */
-    FriendlyByteBuf getSerializer() {
+    public FriendlyByteBuf getSerializer() {
         return serializer;
     }
 
     /**
      * 清空缓冲区
      */
-    void clear() {
+    public void clear() {
         serializer.clear();
     }
 
@@ -42,7 +42,7 @@ class FriendlyByteBufWrapper {
      *
      * @param array 整数数组
      */
-    void writeIntArray(int[] array) {
+    public void writeIntArray(int[] array) {
         serializer.writeVarIntArray(array);
     }
 
@@ -51,7 +51,7 @@ class FriendlyByteBufWrapper {
      *
      * @param value 值
      */
-    void writeVarInt(int value) {
+    public void writeVarInt(int value) {
         serializer.writeVarInt(value);
     }
 
@@ -60,7 +60,7 @@ class FriendlyByteBufWrapper {
      *
      * @return 值
      */
-    int readVarInt() {
+    public int readVarInt() {
         return serializer.readVarInt();
     }
 
@@ -69,7 +69,7 @@ class FriendlyByteBufWrapper {
      *
      * @return FriendlyByteBufWrapper 实例
      */
-    static FriendlyByteBufWrapper getInstance() {
+    public static FriendlyByteBufWrapper getInstance() {
         FriendlyByteBufWrapper instance = LOCAL_INSTANCE.get();
         instance.clear();
         return instance;

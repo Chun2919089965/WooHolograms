@@ -8,7 +8,8 @@ import com.oolonghoo.holograms.storage.HologramStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
+import com.oolonghoo.holograms.util.SchedulerUtil;
+import com.oolonghoo.holograms.util.SchedulerUtil.TaskHandle;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +37,7 @@ public class HologramManager {
     private final ConcurrentHashMap<UUID, Long> clickCooldowns = new ConcurrentHashMap<>();
 
     // 更新任务
-    private UpdateTask updateTask;
+    private TaskHandle updateTaskHandle;
 
     /*
      * 构造函数
@@ -448,7 +449,7 @@ public class HologramManager {
             }
         }
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        SchedulerUtil.runTaskLater(player, () -> {
             if (!player.isOnline()) {
                 return;
             }
@@ -503,9 +504,9 @@ public class HologramManager {
      * 启动更新任务
      */
     private void startUpdateTask() {
-        if (updateTask != null) {
-            updateTask.cancel();
-            updateTask = null;
+        if (updateTaskHandle != null) {
+            updateTaskHandle.cancel();
+            updateTaskHandle = null;
         }
 
         long interval = plugin.getConfigManager().getUpdateInterval();
@@ -514,50 +515,35 @@ public class HologramManager {
             return;
         }
 
-        updateTask = new UpdateTask();
-        updateTask.runTaskTimer(plugin, interval, interval);
+        updateTaskHandle = SchedulerUtil.runAtFixedRate(this::updateTick, interval, interval);
     }
 
     /**
      * 停止更新任务
      */
     private void stopUpdateTask() {
-        if (updateTask != null) {
-            updateTask.cancel();
-            updateTask = null;
+        if (updateTaskHandle != null) {
+            updateTaskHandle.cancel();
+            updateTaskHandle = null;
         }
     }
 
     /**
-     * 更新任务
+     * 更新 tick 逻辑
      * 负责更新动画和占位符，以及视距检测
      */
-    private class UpdateTask extends BukkitRunnable {
-        private Hologram[] cachedHolograms = new Hologram[0];
-        private long lastCacheUpdate = 0;
-        private static final long CACHE_UPDATE_INTERVAL = 100; // 每100tick更新一次缓存
-        
-        @Override
-        public void run() {
-            plugin.getAnimationManager().tick();
-            
-            // 使用缓存的全息图数组，避免每次创建新列表
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastCacheUpdate > CACHE_UPDATE_INTERVAL * 50) {
-                cachedHolograms = holograms.values().toArray(new Hologram[holograms.size()]);
-                lastCacheUpdate = currentTime;
-            }
-            
-            for (Hologram hologram : cachedHolograms) {
-                if (!hologram.isEnabled()) {
-                    continue;
-                }
+    private void updateTick() {
+        plugin.getAnimationManager().tick();
 
-                hologram.updateAnimationsAll();
+        for (Hologram hologram : holograms.values()) {
+            if (!hologram.isEnabled()) {
+                continue;
             }
 
-            updateVisibilityForAllPlayers();
+            hologram.updateAnimationsAll();
         }
+
+        updateVisibilityForAllPlayers();
     }
     
     private void updateVisibilityForAllPlayers() {

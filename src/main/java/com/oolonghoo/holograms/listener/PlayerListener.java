@@ -1,6 +1,7 @@
 package com.oolonghoo.holograms.listener;
 
 import com.oolonghoo.holograms.WooHolograms;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -23,7 +24,7 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event) {
         // 延迟一 tick 确保玩家完全加载
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        SchedulerUtil.runTaskLater(event.getPlayer(), () -> {
             plugin.getHologramManager().onPlayerJoin(event.getPlayer());
         }, 1L);
     }

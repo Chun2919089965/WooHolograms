@@ -7,6 +7,7 @@ import com.oolonghoo.holograms.animation.text.GradientAnimation;
 import com.oolonghoo.holograms.animation.text.ScrollAnimation;
 import com.oolonghoo.holograms.animation.text.TypewriterAnimation;
 import com.oolonghoo.holograms.animation.text.WaveAnimation;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 
 import java.io.File;
 import java.util.Collection;
@@ -72,7 +73,7 @@ public class AnimationManager {
         this.step.set(0);
 
         // 异步加载自定义动画
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::loadCustomAnimations);
+        SchedulerUtil.runTaskAsynchronously(this::loadCustomAnimations);
     }
     
     /**

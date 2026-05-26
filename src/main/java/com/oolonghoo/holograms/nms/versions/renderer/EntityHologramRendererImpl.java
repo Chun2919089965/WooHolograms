@@ -1,7 +1,6 @@
 package com.oolonghoo.holograms.nms.versions.renderer;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.nms.NmsAdapter;
 import com.oolonghoo.holograms.nms.renderer.NmsEntityHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
@@ -118,11 +117,6 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
         for (Player player : players) {
             teleport(player, location);
         }
-    }
-
-    @Override
-    public NmsAdapter getAdapter() {
-        return null;
     }
 
     @Override

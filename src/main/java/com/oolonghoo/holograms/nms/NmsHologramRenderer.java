@@ -77,12 +77,6 @@ public interface NmsHologramRenderer {
     void teleport(Collection<Player> players, Location location);
 
     /**
-     * 获取 NMS 适配器
-     * @return NMS 适配器
-     */
-    NmsAdapter getAdapter();
-
-    /**
      * 检查渲染器是否已销毁
      * @return 是否已销毁
      */

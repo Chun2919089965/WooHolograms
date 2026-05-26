@@ -12,6 +12,7 @@ import com.oolonghoo.holograms.hologram.HologramPage;
 import com.oolonghoo.holograms.hologram.HologramType;
 import com.oolonghoo.holograms.hologram.TextAlignment;
 import com.oolonghoo.holograms.util.LocationUtil;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
@@ -219,7 +220,7 @@ public class YamlHologramStorage implements HologramStorage {
 
     @Override
     public void saveAsync(Hologram hologram) {
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> save(hologram));
+        SchedulerUtil.runTaskAsynchronously(() -> save(hologram));
     }
 
     @Override

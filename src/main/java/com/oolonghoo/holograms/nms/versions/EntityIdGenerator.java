@@ -1,9 +1,9 @@
 package com.oolonghoo.holograms.nms.versions;
 
-import com.oolonghoo.holograms.nms.util.ReflectField;
 import com.oolonghoo.holograms.nms.util.WooHologramsException;
 import net.minecraft.world.entity.Entity;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -15,7 +15,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class EntityIdGenerator {
 
-    private static final ReflectField<AtomicInteger> ENTITY_COUNT_FIELD = new ReflectField<>(Entity.class, "ENTITY_COUNTER");
+    private static final AtomicInteger ENTITY_COUNTER;
+
+    static {
+        try {
+            Field field = Entity.class.getDeclaredField("ENTITY_COUNTER");
+            field.setAccessible(true);
+            ENTITY_COUNTER = (AtomicInteger) field.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new WooHologramsException("Failed to access Entity.ENTITY_COUNTER", e);
+        }
+    }
 
     /**
      * 获取一个空闲的实体 ID
@@ -24,12 +34,7 @@ public class EntityIdGenerator {
      */
     public int getFreeEntityId() {
         try {
-            /*
-             * 我们以与服务器相同的方式获取新的实体 ID。这是为了确保
-             * ID 是唯一的，不会与任何其他实体冲突。
-             */
-            AtomicInteger entityCount = ENTITY_COUNT_FIELD.get(null);
-            return entityCount.incrementAndGet();
+            return ENTITY_COUNTER.incrementAndGet();
         } catch (Exception e) {
             throw new WooHologramsException("Failed to get new entity ID", e);
         }

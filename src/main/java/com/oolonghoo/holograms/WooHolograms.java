@@ -16,7 +16,7 @@ import com.oolonghoo.holograms.nms.NmsHologramRendererFactory;
 import com.oolonghoo.holograms.nms.HologramRendererPool;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
 import com.oolonghoo.holograms.nms.versions.HologramRendererFactoryImpl;
-import com.oolonghoo.holograms.nms.versions.NmsVersionDetector;
+import com.oolonghoo.holograms.util.SchedulerUtil;
 import com.oolonghoo.holograms.storage.HologramStorage;
 import com.oolonghoo.holograms.storage.YamlHologramStorage;
 import org.bukkit.Bukkit;
@@ -58,14 +58,28 @@ public class WooHolograms extends JavaPlugin {
     @Override
     public void onEnable() {
         // 检查版本
-        if (!NmsVersionDetector.isSupported()) {
-            getLogger().severe(NmsVersionDetector.getUnsupportedMessage());
+        String mcVersion = getServer().getBukkitVersion();
+        int dashIdx = mcVersion.indexOf('-');
+        if (dashIdx > 0) mcVersion = mcVersion.substring(0, dashIdx);
+        String[] parts = mcVersion.split("\\.");
+        boolean supported = false;
+        if (parts.length >= 1) {
+            try {
+                int major = Integer.parseInt(parts[0]);
+                if (major >= 26) supported = true;
+            } catch (NumberFormatException ignored) {}
+        }
+        if (!supported) {
+            getLogger().severe("WooHolograms requires Paper/Folia 26.1+. Current server: " + mcVersion);
             getLogger().severe("Plugin will be disabled.");
             this.pluginEnabled = false;
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        getLogger().info("Server version: " + NmsVersionDetector.getMinecraftVersion() + " (NMS: " + NmsVersionDetector.getServerVersion() + ")");
+        getLogger().info("Server version: " + mcVersion);
+
+        // 初始化调度器工具
+        SchedulerUtil.initialize(this);
         
         // 初始化配置
         configManager = new ConfigManager(this);

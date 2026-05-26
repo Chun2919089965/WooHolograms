@@ -1,7 +1,6 @@
 package com.oolonghoo.holograms.nms.versions.renderer;
 import com.oolonghoo.holograms.hologram.HeadTexture;
 import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.nms.NmsAdapter;
 import com.oolonghoo.holograms.nms.NmsHologramPartData;
 import com.oolonghoo.holograms.nms.renderer.NmsIconHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
@@ -18,7 +17,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -29,7 +28,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
     private final int itemEntityId;
     private final int armorStandEntityId;
     private boolean destroyed = false;
-    private final Map<UUID, String> lastContentPerPlayer = new HashMap<>();
+    private final Map<UUID, String> lastContentPerPlayer = new ConcurrentHashMap<>();
 
     public IconHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.itemEntityId = entityIdGenerator.getFreeEntityId();
@@ -184,11 +183,6 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
         for (Player player : players) {
             teleport(player, location);
         }
-    }
-
-    @Override
-    public NmsAdapter getAdapter() {
-        return null;
     }
 
     @Override

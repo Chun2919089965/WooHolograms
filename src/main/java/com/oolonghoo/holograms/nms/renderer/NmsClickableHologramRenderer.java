@@ -127,14 +127,6 @@ public interface NmsClickableHologramRenderer extends NmsHologramRenderer {
     }
     
     /**
-     * 获取 NMS 适配器（默认实现）
-     */
-    @Override
-    default com.oolonghoo.holograms.nms.NmsAdapter getAdapter() {
-        return null;
-    }
-    
-    /**
      * 检查渲染器是否已销毁（默认实现）
      */
     @Override

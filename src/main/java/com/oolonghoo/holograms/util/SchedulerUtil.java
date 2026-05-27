@@ -96,11 +96,14 @@ public final class SchedulerUtil {
      * @param task       要执行的任务
      * @param delayTicks 延迟 tick 数
      */
-    public static void runTaskLater(Runnable task, long delayTicks) {
+    public static TaskHandle runTaskLater(Runnable task, long delayTicks) {
         if (isFolia()) {
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, t -> task.run(), delayTicks);
+            io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduledTask =
+                    Bukkit.getGlobalRegionScheduler().runDelayed(plugin, t -> task.run(), delayTicks);
+            return new TaskHandle(scheduledTask, true);
         } else {
-            Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks);
+            BukkitTask bukkitTask = Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks);
+            return new TaskHandle(bukkitTask, false);
         }
     }
 

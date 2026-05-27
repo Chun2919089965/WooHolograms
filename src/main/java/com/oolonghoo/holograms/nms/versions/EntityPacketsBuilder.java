@@ -30,7 +30,7 @@ import java.util.UUID;
  */
 public class EntityPacketsBuilder {
 
-    private static final Set<net.minecraft.world.entity.RelativeMovement> EMPTY_RELATIVES = Set.of();
+    private static final Set<net.minecraft.world.entity.Relative> EMPTY_RELATIVES = Set.of();
 
     private final List<Packet<?>> packets;
 
@@ -184,7 +184,10 @@ public class EntityPacketsBuilder {
     }
 
     private EntityPacketsBuilder updatePassenger(int entityId, int... passengers) {
-        ClientboundSetPassengersPacket packet = new ClientboundSetPassengersPacket(entityId, passengers);
+        FriendlyByteBufWrapper buf = FriendlyByteBufWrapper.getInstance();
+        buf.writeVarInt(entityId);
+        buf.writeIntArray(passengers);
+        ClientboundSetPassengersPacket packet = ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf.getSerializer());
         packets.add(packet);
         return this;
     }

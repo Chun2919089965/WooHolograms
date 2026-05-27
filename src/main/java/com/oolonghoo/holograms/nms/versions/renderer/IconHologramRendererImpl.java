@@ -108,7 +108,11 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     @Override
     public void destroy(Player player) {
-        hide(player);
+        EntityPacketsBuilder.create()
+                .withRemovePassenger(armorStandEntityId)
+                .withRemoveEntity(itemEntityId)
+                .withRemoveEntity(armorStandEntityId)
+                .sendTo(player);
         lastContentPerPlayer.remove(player.getUniqueId());
     }
 
@@ -116,7 +120,11 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
     public void destroy(Collection<Player> players) {
         destroyed = true;
         for (Player player : players) {
-            hide(player);
+            EntityPacketsBuilder.create()
+                    .withRemovePassenger(armorStandEntityId)
+                    .withRemoveEntity(itemEntityId)
+                    .withRemoveEntity(armorStandEntityId)
+                    .sendTo(player);
         }
         lastContentPerPlayer.clear();
     }

@@ -142,7 +142,9 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
     @Override
     public void destroy(Player player) {
-        hide(player);
+        EntityPacketsBuilder.create()
+                .withRemoveEntity(entityId)
+                .sendTo(player);
         lastContentPerPlayer.remove(player.getUniqueId());
     }
 
@@ -150,7 +152,9 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
     public void destroy(Collection<Player> players) {
         destroyed = true;
         for (Player player : players) {
-            hide(player);
+            EntityPacketsBuilder.create()
+                    .withRemoveEntity(entityId)
+                    .sendTo(player);
         }
         lastContentPerPlayer.clear();
     }

@@ -13,6 +13,7 @@ import com.oolonghoo.holograms.util.SchedulerUtil.TaskHandle;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 全息图管理器
@@ -203,15 +204,6 @@ public class HologramManager {
         return Collections.unmodifiableCollection(holograms.values());
     }
     
-    /**
-     * 获取所有全息图（别名方法）
-     * 
-     * @return 全息图集合
-     */
-    public Collection<Hologram> getAllHolograms() {
-        return getHolograms();
-    }
-
     /**
      * 获取全息图数量
      * 
@@ -595,9 +587,9 @@ public class HologramManager {
                     boolean isVisible = hologram.isVisible(player);
 
                     if (inRange && !isVisible) {
-                        hologram.show(player, 0);
+                        SchedulerUtil.runTask(player, () -> hologram.show(player, 0));
                     } else if (!inRange && isVisible) {
-                        hologram.hide(player);
+                        SchedulerUtil.runTask(player, () -> hologram.hide(player));
                     }
                 }
             }
@@ -609,7 +601,7 @@ public class HologramManager {
         if (loc == null || loc.getWorld() == null) {
             return;
         }
-        hologramsByWorld.computeIfAbsent(loc.getWorld().getName(), k -> new ArrayList<>()).add(hologram);
+        hologramsByWorld.computeIfAbsent(loc.getWorld().getName(), k -> new CopyOnWriteArrayList<>()).add(hologram);
     }
 
     private void removeFromWorldCache(Hologram hologram) {
@@ -676,16 +668,19 @@ public class HologramManager {
     }
 
     public boolean checkAndSetCooldown(Player player) {
-        long now = System.currentTimeMillis();
         long cooldownMs = plugin.getConfigManager().getClickCooldown();
         if (cooldownMs <= 0) return false;
         UUID playerId = player.getUniqueId();
-        Long lastClick = clickCooldowns.get(playerId);
-        if (lastClick != null && now - lastClick < cooldownMs) {
-            return true;
-        }
-        clickCooldowns.put(playerId, now);
-        return false;
+        long now = System.currentTimeMillis();
+        Boolean[] onCooldown = {false};
+        clickCooldowns.compute(playerId, (id, lastClick) -> {
+            if (lastClick != null && now - lastClick < cooldownMs) {
+                onCooldown[0] = true;
+                return lastClick;
+            }
+            return now;
+        });
+        return onCooldown[0];
     }
 
     /*

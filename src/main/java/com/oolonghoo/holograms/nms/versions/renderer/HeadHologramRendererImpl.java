@@ -3,7 +3,6 @@ import com.oolonghoo.holograms.hologram.Billboard;
 import com.oolonghoo.holograms.hologram.HeadTexture;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.nms.NmsHologramPartData;
 import com.oolonghoo.holograms.nms.renderer.NmsHeadHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
@@ -39,43 +38,6 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
     protected HeadHologramRendererImpl(EntityIdGenerator entityIdGenerator, boolean small) {
         this.entityId = entityIdGenerator.getFreeEntityId();
         this.small = small;
-    }
-
-    public void display(Player player, NmsHologramPartData<ItemStack> data) {
-        DecentPosition position = data.getPosition();
-        ItemStack content = data.getContent();
-        DecentPosition offsetPosition = offsetPosition(position);
-        EntityPacketsBuilder.create()
-                .withSpawnEntity(entityId, EntityType.ARMOR_STAND, offsetPosition)
-                .withEntityMetadata(entityId, EntityMetadataBuilder.create()
-                        .withInvisible()
-                        .withNoGravity()
-                        .withArmorStandProperties(small, true)
-                        .toWatchableObjects())
-                .withHelmet(entityId, content)
-                .sendTo(player);
-    }
-
-    public void updateContent(Player player, NmsHologramPartData<ItemStack> data) {
-        EntityPacketsBuilder.create()
-                .withHelmet(entityId, data.getContent())
-                .sendTo(player);
-    }
-
-    public void move(Player player, NmsHologramPartData<ItemStack> data) {
-        EntityPacketsBuilder.create()
-                .withTeleportEntity(entityId, offsetPosition(data.getPosition()))
-                .sendTo(player);
-    }
-
-    public void hide(Player player) {
-        EntityPacketsBuilder.create()
-                .withRemoveEntity(entityId)
-                .sendTo(player);
-    }
-
-    public double getHeight(NmsHologramPartData<ItemStack> data) {
-        return small ? 0.5d : 0.7d;
     }
 
     @Override
@@ -222,26 +184,6 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
         return position.subtractY(offsetY);
     }
 
-    protected ItemStack createHeadItem(HologramLine line) {
-        HeadTexture headTexture = line.getHeadTexture();
-        
-        if (headTexture == null) {
-            String content = line.getContent();
-            headTexture = HeadTexture.parse(content);
-        }
-
-        if (headTexture == null) {
-            return new ItemStack(Material.PLAYER_HEAD);
-        }
-
-        return switch (headTexture.getType()) {
-            case BASE64 -> HeadTexture.createHeadFromBase64(headTexture.getValue());
-            case PLAYER -> createHeadFromPlayerName(headTexture.getValue());
-            case HDB -> createHeadFromHDB(headTexture.getValue());
-            default -> new ItemStack(Material.PLAYER_HEAD);
-        };
-    }
-    
     protected ItemStack createHeadItem(HologramLine line, Player player) {
         HeadTexture headTexture = line.getHeadTexture();
         String content = line.getContent();

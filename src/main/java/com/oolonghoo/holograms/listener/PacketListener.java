@@ -19,6 +19,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,7 +53,7 @@ public class PacketListener {
      * 注销监听器，移除所有玩家的数据包处理器
      */
     public void unregister() {
-        for (Player player : playerChannels.keySet()) {
+        for (Player player : new ArrayList<>(playerChannels.keySet())) {
             uninject(player);
         }
         playerChannels.clear();
@@ -65,7 +66,7 @@ public class PacketListener {
      */
     public void inject(Player player) {
         Channel channel = getChannel(player);
-        if (channel == null || playerChannels.containsKey(player)) {
+        if (channel == null) {
             return;
         }
 
@@ -88,7 +89,7 @@ public class PacketListener {
             channel.eventLoop().execute(() -> injectHandler(channel, handler));
         }
 
-        playerChannels.put(player, channel);
+        playerChannels.putIfAbsent(player, channel);
     }
 
     /**

@@ -3,8 +3,6 @@ package com.oolonghoo.holograms.hologram;
 import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.action.Action;
 import com.oolonghoo.holograms.action.ClickType;
-import com.oolonghoo.holograms.nms.NmsHologramRenderer;
-import com.oolonghoo.holograms.nms.NmsHologramRendererFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -123,15 +121,6 @@ public class HologramPage {
         return lines.size();
     }
     
-    /**
-     * 获取行数（别名方法）
-     * 
-     * @return 行数
-     */
-    public int getLineCount() {
-        return lines.size();
-    }
-
     /**
      * 检查是否为空
      * 
@@ -350,50 +339,6 @@ public class HologramPage {
     /*
      * 显示/隐藏方法
      */
-
-    /**
-     * 显示给玩家
-     * 
-     * @param player 玩家
-     * @param baseLocation 基础位置
-     * @param factory 渲染器工厂
-     */
-    public void showTo(Player player, Location baseLocation, NmsHologramRendererFactory factory) {
-        if (player == null || !player.isOnline()) {
-            return;
-        }
-
-        for (HologramLine line : lines) {
-            if (line.isEnabled()) {
-                line.show(player);
-            }
-        }
-    }
-
-    /**
-     * 显示给多个玩家
-     * 
-     * @param viewerUuids 查看者 UUID 集合
-     * @param baseLocation 基础位置
-     * @param factory 渲染器工厂
-     */
-    public void showTo(Set<UUID> viewerUuids, Location baseLocation, NmsHologramRendererFactory factory) {
-        List<Player> players = new ArrayList<>();
-        for (UUID uuid : viewerUuids) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline()) {
-                players.add(player);
-            }
-        }
-
-        for (HologramLine line : lines) {
-            if (line.isEnabled()) {
-                for (Player player : players) {
-                    line.show(player);
-                }
-            }
-        }
-    }
 
     /**
      * 从玩家隐藏

@@ -1,6 +1,5 @@
 package com.oolonghoo.holograms.nms.versions;
 
-import com.google.common.base.Strings;
 import com.oolonghoo.holograms.hologram.Brightness;
 import com.oolonghoo.holograms.hologram.TextAlignment;
 import com.oolonghoo.holograms.hologram.Billboard;
@@ -59,16 +58,6 @@ public class EntityMetadataBuilder {
     }
 
     /**
-     * 设置实体为发光
-     *
-     * @return this
-     */
-    EntityMetadataBuilder withGlowing() {
-        watchableObjects.add(EntityMetadataType.ENTITY_PROPERTIES.construct((byte) 0x60)); // 不可见 + 发光
-        return this;
-    }
-
-    /**
      * 设置盔甲架属性
      *
      * @param small  是否小型
@@ -93,34 +82,6 @@ public class EntityMetadataBuilder {
         }
 
         watchableObjects.add(EntityMetadataType.ARMOR_STAND_PROPERTIES.construct(data));
-        return this;
-    }
-
-    /**
-     * 设置自定义名称
-     *
-     * @param customName 自定义名称
-     * @return this
-     */
-    EntityMetadataBuilder withCustomName(String customName) {
-        Component component = CraftChatMessage.fromStringOrNull(customName);
-        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME.construct(component != null ? component : Component.empty()));
-        boolean visible = !Strings.isNullOrEmpty(customName);
-        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME_VISIBLE.construct(visible));
-        return this;
-    }
-
-    /**
-     * 设置自定义名称（带可见性控制）
-     *
-     * @param customName 自定义名称
-     * @param visible    是否可见
-     * @return this
-     */
-    public EntityMetadataBuilder withCustomName(String customName, boolean visible) {
-        Component component = CraftChatMessage.fromStringOrNull(customName);
-        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME.construct(component != null ? component : Component.empty()));
-        watchableObjects.add(EntityMetadataType.ENTITY_CUSTOM_NAME_VISIBLE.construct(visible));
         return this;
     }
 
@@ -166,35 +127,6 @@ public class EntityMetadataBuilder {
      */
     public EntityMetadataBuilder withHeadRotation(float x, float y, float z) {
         watchableObjects.add(EntityMetadataType.ARMOR_STAND_HEAD_POSE.construct(new Rotations(x, y, z)));
-        return this;
-    }
-
-    /**
-     * 设置盔甲架身体旋转
-     *
-     * @param x X 轴旋转（弧度）
-     * @param y Y 轴旋转（弧度）
-     * @param z Z 轴旋转（弧度）
-     * @return this
-     */
-    public EntityMetadataBuilder withBodyRotation(float x, float y, float z) {
-        watchableObjects.add(EntityMetadataType.ARMOR_STAND_BODY_POSE.construct(new Rotations(x, y, z)));
-        return this;
-    }
-
-    /**
-     * 设置阴影效果
-     * 注意：盔甲架本身不支持阴影半径，此方法用于未来扩展
-     * 当前版本通过调整实体位置来模拟阴影效果
-     *
-     * @param shadowRadius   阴影半径
-     * @param shadowStrength 阴影强度
-     * @return this
-     */
-    EntityMetadataBuilder withShadow(float shadowRadius, float shadowStrength) {
-        // 盔甲架不支持直接设置阴影半径和强度
-        // 在 Display Entity 支持后可以添加此功能
-        // 当前版本保留此方法用于未来扩展
         return this;
     }
 
@@ -335,19 +267,6 @@ public class EntityMetadataBuilder {
      */
     public EntityMetadataBuilder withTextOpacity(byte opacity) {
         watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_OPACITY.construct(opacity));
-        return this;
-    }
-
-    /**
-     * 设置透视模式
-     * 通过调整实体属性实现透视效果
-     *
-     * @param seeThrough 是否透视
-     * @return this
-     */
-    EntityMetadataBuilder withSeeThrough(boolean seeThrough) {
-        // 透视效果需要通过特殊的渲染方式实现
-        // 当前版本保留此方法用于未来扩展
         return this;
     }
 

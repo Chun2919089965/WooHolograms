@@ -1,7 +1,6 @@
 package com.oolonghoo.holograms.nms.versions.renderer;
 import com.oolonghoo.holograms.hologram.HeadTexture;
 import com.oolonghoo.holograms.hologram.HologramLine;
-import com.oolonghoo.holograms.nms.NmsHologramPartData;
 import com.oolonghoo.holograms.nms.renderer.NmsIconHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
@@ -33,51 +32,6 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
     public IconHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.itemEntityId = entityIdGenerator.getFreeEntityId();
         this.armorStandEntityId = entityIdGenerator.getFreeEntityId();
-    }
-
-    public void display(Player player, NmsHologramPartData<ItemStack> data) {
-        DecentPosition position = data.getPosition();
-        ItemStack content = data.getContent();
-        EntityPacketsBuilder.create()
-                .withSpawnEntity(armorStandEntityId, EntityType.ARMOR_STAND, offsetPosition(position))
-                .withEntityMetadata(armorStandEntityId, EntityMetadataBuilder.create()
-                        .withInvisible()
-                        .withNoGravity()
-                        .withArmorStandProperties(false, true)
-                        .toWatchableObjects())
-                .withSpawnEntity(itemEntityId, EntityType.ITEM, position)
-                .withEntityMetadata(itemEntityId, EntityMetadataBuilder.create()
-                        .withItemStack(content)
-                        .toWatchableObjects())
-                .withTeleportEntity(itemEntityId, position)
-                .withPassenger(armorStandEntityId, itemEntityId)
-                .sendTo(player);
-    }
-
-    public void updateContent(Player player, NmsHologramPartData<ItemStack> data) {
-        EntityPacketsBuilder.create()
-                .withEntityMetadata(itemEntityId, EntityMetadataBuilder.create()
-                        .withItemStack(data.getContent())
-                        .toWatchableObjects())
-                .sendTo(player);
-    }
-
-    public void move(Player player, NmsHologramPartData<ItemStack> data) {
-        EntityPacketsBuilder.create()
-                .withTeleportEntity(armorStandEntityId, offsetPosition(data.getPosition()))
-                .sendTo(player);
-    }
-
-    public void hide(Player player) {
-        EntityPacketsBuilder.create()
-                .withRemovePassenger(armorStandEntityId)
-                .withRemoveEntity(itemEntityId)
-                .withRemoveEntity(armorStandEntityId)
-                .sendTo(player);
-    }
-
-    public double getHeight(NmsHologramPartData<ItemStack> data) {
-        return 0.5d;
     }
 
     @Override

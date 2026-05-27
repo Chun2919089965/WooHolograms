@@ -30,6 +30,8 @@ import java.util.UUID;
  */
 public class EntityPacketsBuilder {
 
+    private static final Set<net.minecraft.world.entity.RelativeMovement> EMPTY_RELATIVES = Set.of();
+
     private final List<Packet<?>> packets;
 
     private EntityPacketsBuilder() {
@@ -150,11 +152,10 @@ public class EntityPacketsBuilder {
      */
     public EntityPacketsBuilder withTeleportEntity(int entityId, DecentPosition position) {
         Vec3 locationVec3 = new Vec3(position.getX(), position.getY(), position.getZ());
-        Vec3 zeroVec3 = new Vec3(0, 0, 0);
         ClientboundTeleportEntityPacket packet = new ClientboundTeleportEntityPacket(
                 entityId,
-                new PositionMoveRotation(locationVec3, zeroVec3, position.getYaw(), position.getPitch()),
-                Set.of(),
+                new PositionMoveRotation(locationVec3, Vec3.ZERO, position.getYaw(), position.getPitch()),
+                EMPTY_RELATIVES,
                 false
         );
         packets.add(packet);
@@ -183,11 +184,7 @@ public class EntityPacketsBuilder {
     }
 
     private EntityPacketsBuilder updatePassenger(int entityId, int... passengers) {
-        FriendlyByteBufWrapper serializer = FriendlyByteBufWrapper.getInstance();
-        serializer.writeVarInt(entityId);
-        serializer.writeIntArray(passengers);
-
-        ClientboundSetPassengersPacket packet = ClientboundSetPassengersPacket.STREAM_CODEC.decode(serializer.getSerializer());
+        ClientboundSetPassengersPacket packet = new ClientboundSetPassengersPacket(entityId, passengers);
         packets.add(packet);
         return this;
     }

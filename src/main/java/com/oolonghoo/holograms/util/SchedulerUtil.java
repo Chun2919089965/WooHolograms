@@ -15,7 +15,7 @@ import org.bukkit.scheduler.BukkitTask;
 public final class SchedulerUtil {
 
     private static WooHolograms plugin;
-    private static Boolean folia;
+    private static volatile boolean folia;
 
     private SchedulerUtil() {}
 
@@ -26,6 +26,12 @@ public final class SchedulerUtil {
      */
     public static void initialize(WooHolograms plugin) {
         SchedulerUtil.plugin = plugin;
+        try {
+            Class.forName("io.papermc.paper.threadedregions.scheduler.RegionScheduler");
+            folia = true;
+        } catch (ClassNotFoundException e) {
+            folia = false;
+        }
     }
 
     /**
@@ -34,14 +40,6 @@ public final class SchedulerUtil {
      * @return 是否为 Folia
      */
     public static boolean isFolia() {
-        if (folia == null) {
-            try {
-                Class.forName("io.papermc.paper.threadedregions.scheduler.RegionScheduler");
-                folia = true;
-            } catch (ClassNotFoundException e) {
-                folia = false;
-            }
-        }
         return folia;
     }
 

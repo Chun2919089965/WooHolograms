@@ -91,13 +91,6 @@ public class AnimationManager {
     }
 
     /**
-     * 销毁动画管理器
-     */
-    public synchronized void destroy() {
-        this.animationMap.clear();
-    }
-
-    /**
      * 执行一次 tick
      */
     public void tick() {

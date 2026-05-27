@@ -110,7 +110,7 @@ public class WooHologramsAPI {
         if (!isLoaded()) {
             return java.util.Collections.emptyList();
         }
-        return getHologramManager().getAllHolograms();
+        return getHologramManager().getHolograms();
     }
 
     /**

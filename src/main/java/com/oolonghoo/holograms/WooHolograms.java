@@ -152,6 +152,13 @@ public class WooHolograms extends JavaPlugin {
             getLogger().info("PlaceholderAPI 扩展已注册");
         }
         
+        // 检查 DecentHolograms 兼容层
+        if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
+            getLogger().info("检测到 DecentHolograms 已安装，DH 兼容层未激活");
+        } else {
+            getLogger().info("DecentHolograms 兼容层已激活（依赖 DH 的插件将使用 WooHolograms）");
+        }
+
         pluginEnabled = true;
         String version = getPluginMeta().getVersion();
         getLogger().info(() -> "WooHolograms v" + version + " 已启用!");

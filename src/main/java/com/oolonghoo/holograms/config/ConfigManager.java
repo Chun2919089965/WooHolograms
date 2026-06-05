@@ -34,6 +34,8 @@ public class ConfigManager {
     private double defaultItemHeight;
     private double defaultHeadHeight;
     private int defaultBackgroundAlpha;
+    private int defaultBackgroundColor;
+    private int defaultLineWidth;
 
     // 性能设置
     private long renderInterval;
@@ -92,6 +94,8 @@ public class ConfigManager {
         defaultItemHeight = config.getDouble("defaults.item-height", 0.6);
         defaultHeadHeight = config.getDouble("defaults.head-height", 0.6);
         defaultBackgroundAlpha = config.getInt("defaults.default-background-alpha", 128);
+        defaultBackgroundColor = config.getInt("defaults.default-background-color", 0);
+        defaultLineWidth = config.getInt("defaults.default-line-width", 300);
 
         // 性能设置
         renderInterval = config.getLong("performance.render-interval", 2L);
@@ -193,6 +197,14 @@ public class ConfigManager {
 
     public int getDefaultBackgroundAlpha() {
         return defaultBackgroundAlpha;
+    }
+
+    public int getDefaultBackgroundColor() {
+        return defaultBackgroundColor;
+    }
+
+    public int getDefaultLineWidth() {
+        return defaultLineWidth;
     }
 
     public long getRenderInterval() {

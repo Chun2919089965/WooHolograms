@@ -5,6 +5,7 @@ import com.oolonghoo.holograms.hologram.TextAlignment;
 import com.oolonghoo.holograms.hologram.Billboard;
 import net.minecraft.core.Rotations;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.SynchedEntityData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -207,6 +208,37 @@ public class EntityMetadataBuilder {
     public EntityMetadataBuilder withTextDisplayText(String text) {
         Component component = CraftChatMessage.fromStringOrNull(text);
         watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_TEXT.construct(component != null ? component : Component.empty()));
+        return this;
+    }
+
+    /**
+     * 设置 TextDisplay Entity 的文本内容（多行）
+     * 逐行创建 Component，用换行 Component 连接
+     *
+     * @param lines 文本行列表
+     * @return this
+     */
+    public EntityMetadataBuilder withTextDisplayText(List<String> lines) {
+        if (lines == null || lines.isEmpty()) {
+            watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_TEXT.construct(Component.empty()));
+            return this;
+        }
+
+        if (lines.size() == 1) {
+            return withTextDisplayText(lines.get(0));
+        }
+
+        // 多行：逐行创建 Component，用换行 Component 连接
+        MutableComponent root = Component.empty();
+        for (int i = 0; i < lines.size(); i++) {
+            if (i > 0) {
+                root.append(Component.literal("\n"));
+            }
+            Component lineComponent = CraftChatMessage.fromStringOrNull(lines.get(i));
+            root.append(lineComponent != null ? lineComponent : Component.empty());
+        }
+
+        watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_TEXT.construct(root));
         return this;
     }
 

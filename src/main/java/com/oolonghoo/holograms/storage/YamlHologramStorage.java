@@ -81,6 +81,8 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("update-interval", hologram.getUpdateInterval());
             yaml.set("alignment", hologram.getAlignment().getId());
             yaml.set("background-alpha", hologram.getBackgroundAlpha());
+            yaml.set("background-color", hologram.getBackgroundColor());
+            yaml.set("line-width", hologram.getLineWidth());
 
             if (hologram.getPermission() != null && !hologram.getPermission().isEmpty()) {
                 yaml.set("permission", hologram.getPermission());
@@ -326,6 +328,8 @@ public class YamlHologramStorage implements HologramStorage {
         hologram.setUpdateInterval(getCompatInt(section, "update-interval", "updateInterval", 40));
         hologram.setAlignment(TextAlignment.fromId(section.getString("alignment", "LEFT")));
         hologram.setBackgroundAlpha(section.getInt("background-alpha", plugin.getConfigManager().getDefaultBackgroundAlpha()));
+        hologram.setBackgroundColor(section.getInt("background-color", plugin.getConfigManager().getDefaultBackgroundColor()));
+        hologram.setLineWidth(section.getInt("line-width", plugin.getConfigManager().getDefaultLineWidth()));
 
         String permission = section.getString("permission");
         if (permission != null && !permission.isEmpty()) {

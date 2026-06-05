@@ -1,6 +1,7 @@
 package com.oolonghoo.holograms.nms;
 
 import com.oolonghoo.holograms.nms.renderer.*;
+import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
 
 /**
  * 用于创建全息图渲染器的工厂接口
@@ -11,6 +12,13 @@ import com.oolonghoo.holograms.nms.renderer.*;
  * 
  */
 public interface NmsHologramRendererFactory {
+
+    /**
+     * 获取实体ID生成器
+     *
+     * @return {@link EntityIdGenerator} 实例
+     */
+    EntityIdGenerator getEntityIdGenerator();
 
     /**
      * 创建用于显示文本全息图的渲染器

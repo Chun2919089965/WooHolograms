@@ -3,6 +3,8 @@ package com.oolonghoo.holograms.hologram;
 import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.action.Action;
 import com.oolonghoo.holograms.action.ClickType;
+import com.oolonghoo.holograms.hologram.HologramManager;
+import com.oolonghoo.holograms.nms.versions.renderer.PageTextRenderer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -34,6 +36,9 @@ public class HologramPage {
 
     // 标志
     private final Set<EnumFlag> flags;
+
+    // 页面级文本渲染器（合并连续TEXT行为单个TextDisplay实体）
+    private PageTextRenderer pageTextRenderer;
 
     /*
      * 构造函数
@@ -92,7 +97,16 @@ public class HologramPage {
     public double getHeight() {
         double height = 0.0;
         for (HologramLine line : lines) {
-            height += line.getHeight();
+            if (line.getType() == HologramType.TEXT) {
+                // TEXT 行使用 hologram 的 lineHeight
+                if (parent != null) {
+                    height += parent.getLineHeight();
+                } else {
+                    height += line.getHeight();
+                }
+            } else {
+                height += line.getHeight();
+            }
         }
         return height;
     }
@@ -194,12 +208,26 @@ public class HologramPage {
 
         lines.add(index, line);
 
+        // 重建 PageTextRenderer（行结构变化，内部已销毁旧实体）
+        rebuildPageTextRenderer();
+
         // 显示给当前观看者
         if (parent != null) {
             Set<Player> viewers = parent.getViewerPlayers(this.index);
             for (Player player : viewers) {
                 if (player != null && player.isOnline()) {
-                    line.show(player);
+                    // 非 TEXT 行直接显示
+                    if (line.getType() != HologramType.TEXT) {
+                        line.show(player);
+                    }
+                }
+            }
+            // 重新渲染所有文本（rebuildPageTextRenderer 已销毁旧实体，只需 render）
+            if (pageTextRenderer != null) {
+                for (Player player : parent.getViewerPlayers(this.index)) {
+                    if (player != null && player.isOnline()) {
+                        pageTextRenderer.render(player, parent.getLocation());
+                    }
                 }
             }
         }
@@ -237,9 +265,27 @@ public class HologramPage {
         line.setContent(content);
 
         if (line.getType() != previousType) {
-            line.hide();
-            line.show();
+            // 类型变化，需要重建 PageTextRenderer
+            rebuildPageTextRenderer();
+            // 重新渲染整个页面给所有观看者
+            if (parent != null) {
+                for (Player player : parent.getViewerPlayers(this.index)) {
+                    if (player != null && player.isOnline()) {
+                        hideFromPlayer(player);
+                        showTo(player);
+                    }
+                }
+            }
             realignLines();
+        } else if (line.getType() == HologramType.TEXT) {
+            // TEXT 行内容变化，更新 PageTextRenderer
+            if (pageTextRenderer != null && parent != null) {
+                for (Player player : parent.getViewerPlayers(this.index)) {
+                    if (player != null && player.isOnline()) {
+                        pageTextRenderer.updateText(player);
+                    }
+                }
+            }
         }
 
         return true;
@@ -259,6 +305,16 @@ public class HologramPage {
         HologramLine line = lines.remove(index);
         if (line != null) {
             line.destroy();
+            // 重建 PageTextRenderer（行结构变化，内部已销毁旧实体）
+            rebuildPageTextRenderer();
+            // 重新渲染所有文本（rebuildPageTextRenderer 已销毁旧实体，只需 render）
+            if (pageTextRenderer != null && parent != null) {
+                for (Player player : parent.getViewerPlayers(this.index)) {
+                    if (player != null && player.isOnline()) {
+                        pageTextRenderer.render(player, parent.getLocation());
+                    }
+                }
+            }
             realignLines();
         }
 
@@ -278,7 +334,18 @@ public class HologramPage {
         }
 
         Collections.swap(lines, index1, index2);
+        rebuildPageTextRenderer();
         realignLines();
+
+        // 重新渲染给所有观看者
+        if (parent != null) {
+            for (Player player : parent.getViewerPlayers(this.index)) {
+                if (player != null && player.isOnline()) {
+                    pageTextRenderer.render(player, parent.getLocation());
+                }
+            }
+        }
+
         return true;
     }
 
@@ -290,6 +357,8 @@ public class HologramPage {
             line.destroy();
         }
         lines.clear();
+        // 行结构变化，重建 PageTextRenderer
+        rebuildPageTextRenderer();
     }
 
     /**
@@ -321,18 +390,56 @@ public class HologramPage {
         Location currentLocation = parent.getLocation().clone();
         currentLocation.add(0, getHeight(), 0);
 
-        for (HologramLine line : lines) {
-            Location lineLocation = line.getLocation();
-            if (lineLocation != null) {
-                lineLocation.setX(currentLocation.getX() + line.getOffsetX());
-                lineLocation.setY(currentLocation.getY() + line.getOffsetY());
-                lineLocation.setZ(currentLocation.getZ() + line.getOffsetZ());
+        // 遍历行，连续的TEXT行分为一组，共享位置
+        int i = 0;
+        while (i < lines.size()) {
+            HologramLine line = lines.get(i);
+            if (line.getType() == HologramType.TEXT) {
+                // 找到连续TEXT组的结束位置
+                int groupStart = i;
+                while (i < lines.size() && lines.get(i).getType() == HologramType.TEXT) {
+                    i++;
+                }
+                int groupEnd = i;
 
-                line.setLocation(lineLocation);
-                line.updateLocation(true);
+                // 组内所有TEXT行共享第一行的位置
+                Location groupLocation = currentLocation.clone();
+                for (int j = groupStart; j < groupEnd; j++) {
+                    HologramLine textLine = lines.get(j);
+                    Location lineLoc = textLine.getLocation();
+                    if (lineLoc != null) {
+                        lineLoc.setX(groupLocation.getX() + textLine.getOffsetX());
+                        lineLoc.setY(groupLocation.getY() + textLine.getOffsetY());
+                        lineLoc.setZ(groupLocation.getZ() + textLine.getOffsetZ());
+                        textLine.setLocation(lineLoc);
+                    }
+                }
+
+                // TEXT组占据 lineHeight * 行数 的垂直空间
+                double lineHeight = parent.getLineHeight();
+                int lineCount = groupEnd - groupStart;
+                currentLocation.subtract(0, lineHeight * lineCount, 0);
+            } else {
+                // 非TEXT行：使用各自的偏移和高度
+                Location lineLocation = line.getLocation();
+                if (lineLocation != null) {
+                    lineLocation.setX(currentLocation.getX() + line.getOffsetX());
+                    lineLocation.setY(currentLocation.getY() + line.getOffsetY());
+                    lineLocation.setZ(currentLocation.getZ() + line.getOffsetZ());
+                    line.setLocation(lineLocation);
+                    line.updateLocation(true);
+                }
+                currentLocation.subtract(0, line.getHeight(), 0);
+                i++;
             }
+        }
 
-            currentLocation.subtract(0, line.getHeight(), 0);
+        // 更新 PageTextRenderer 的实体位置
+        if (pageTextRenderer != null) {
+            for (UUID uuid : getViewers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) pageTextRenderer.teleport(p);
+            }
         }
     }
 
@@ -342,7 +449,7 @@ public class HologramPage {
 
     /**
      * 从玩家隐藏
-     * 
+     *
      * @param player 玩家
      */
     public void hideFrom(Player player) {
@@ -350,8 +457,16 @@ public class HologramPage {
             return;
         }
 
+        // TEXT 行通过 PageTextRenderer 隐藏
+        if (pageTextRenderer != null) {
+            pageTextRenderer.destroy(player);
+        }
+
+        // 非 TEXT 行通过各自的渲染器隐藏
         for (HologramLine line : lines) {
-            line.hide(player);
+            if (line.getType() != HologramType.TEXT) {
+                line.hide(player);
+            }
         }
 
         // 隐藏可点击实体
@@ -359,11 +474,114 @@ public class HologramPage {
     }
 
     /**
+     * 获取当前正在查看此页的玩家UUID集合
+     */
+    public Set<UUID> getViewers() {
+        Set<UUID> pageViewers = new HashSet<>();
+        if (parent != null) {
+            for (Map.Entry<UUID, Integer> entry : parent.getViewerPages().entrySet()) {
+                if (entry.getValue() == index) {
+                    pageViewers.add(entry.getKey());
+                }
+            }
+        }
+        return pageViewers;
+    }
+
+    /**
+     * 获取或创建 PageTextRenderer
+     */
+    public PageTextRenderer getPageTextRenderer() {
+        if (pageTextRenderer == null) {
+            pageTextRenderer = new PageTextRenderer(this, WooHolograms.getInstance().getRendererFactory().getEntityIdGenerator());
+            // 注册实体ID到 HologramManager
+            if (parent != null) {
+                HologramManager manager = WooHolograms.getInstance().getHologramManager();
+                for (int id : pageTextRenderer.getEntityIds()) {
+                    manager.registerEntityId(id, parent);
+                }
+            }
+        }
+        return pageTextRenderer;
+    }
+
+    /**
+     * 重建 PageTextRenderer（在行结构变化时调用）
+     */
+    public void rebuildPageTextRenderer() {
+        HologramManager manager = WooHolograms.getInstance().getHologramManager();
+        if (pageTextRenderer != null) {
+            // 先销毁旧渲染器的实体
+            for (UUID uuid : getViewers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) pageTextRenderer.destroy(p);
+            }
+            // 注销旧实体ID
+            for (int id : pageTextRenderer.getEntityIds()) {
+                manager.unregisterEntityId(id);
+            }
+            pageTextRenderer.reset();
+            pageTextRenderer.rebuildGroups();
+        } else {
+            pageTextRenderer = new PageTextRenderer(this, WooHolograms.getInstance().getRendererFactory().getEntityIdGenerator());
+        }
+        // 注册新实体ID
+        if (parent != null) {
+            for (int id : pageTextRenderer.getEntityIds()) {
+                manager.registerEntityId(id, parent);
+            }
+        }
+    }
+
+    /**
+     * 显示此页给指定玩家（TEXT行通过PageTextRenderer，非TEXT行通过各自渲染器）
+     */
+    public void showTo(Player player) {
+        // TEXT 行通过 PageTextRenderer 渲染
+        getPageTextRenderer().render(player, parent.getLocation());
+
+        // 非 TEXT 行通过各自的渲染器渲染
+        for (HologramLine line : lines) {
+            if (line.getType() != HologramType.TEXT) {
+                line.show(player);
+            }
+        }
+    }
+
+    /**
+     * 从指定玩家隐藏此页（TEXT行通过PageTextRenderer，非TEXT行通过各自渲染器）
+     */
+    public void hideFromPlayer(Player player) {
+        // TEXT 行通过 PageTextRenderer 销毁
+        if (pageTextRenderer != null) {
+            pageTextRenderer.destroy(player);
+        }
+
+        // 非 TEXT 行通过各自的渲染器隐藏
+        for (HologramLine line : lines) {
+            if (line.getType() != HologramType.TEXT) {
+                line.hide(player);
+            }
+        }
+    }
+
+    /**
      * 从所有玩家隐藏
      */
     public void hideFromAll() {
+        // TEXT 行通过 PageTextRenderer 隐藏
+        if (pageTextRenderer != null) {
+            for (UUID uuid : getViewers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) pageTextRenderer.destroy(p);
+            }
+        }
+
+        // 非 TEXT 行通过各自的渲染器隐藏
         for (HologramLine line : lines) {
-            line.hide();
+            if (line.getType() != HologramType.TEXT) {
+                line.hide();
+            }
         }
 
         if (parent != null) {
@@ -394,8 +612,18 @@ public class HologramPage {
             }
         }
 
+        // TEXT 行通过 PageTextRenderer 更新
+        if (pageTextRenderer != null) {
+            for (Player player : players) {
+                pageTextRenderer.updateText(player);
+            }
+        }
+
+        // 非 TEXT 行通过各自的渲染器更新
         for (HologramLine line : lines) {
-            line.update(players.toArray(new Player[players.size()]));
+            if (line.getType() != HologramType.TEXT) {
+                line.update(players.toArray(new Player[0]));
+            }
         }
     }
 
@@ -413,8 +641,18 @@ public class HologramPage {
             }
         }
 
+        // TEXT 行动画通过 PageTextRenderer 更新
+        if (pageTextRenderer != null) {
+            for (Player player : players) {
+                pageTextRenderer.updateText(player);
+            }
+        }
+
+        // 非 TEXT 行动画通过各自的渲染器更新
         for (HologramLine line : lines) {
-            line.updateAnimations(players.toArray(new Player[players.size()]));
+            if (line.getType() != HologramType.TEXT) {
+                line.updateAnimations(players.toArray(new Player[0]));
+            }
         }
     }
 
@@ -540,10 +778,22 @@ public class HologramPage {
      * @return 是否包含
      */
     public boolean hasEntity(int entityId) {
-        for (HologramLine line : lines) {
-            for (int id : line.getEntityIds()) {
+        // 检查 PageTextRenderer 的实体
+        if (pageTextRenderer != null) {
+            for (int id : pageTextRenderer.getEntityIds()) {
                 if (id == entityId) {
                     return true;
+                }
+            }
+        }
+
+        // 检查非TEXT行的实体
+        for (HologramLine line : lines) {
+            if (line.getType() != HologramType.TEXT) {
+                for (int id : line.getEntityIds()) {
+                    if (id == entityId) {
+                        return true;
+                    }
                 }
             }
         }
@@ -558,10 +808,21 @@ public class HologramPage {
      * @return 行，如果不存在返回 null
      */
     public HologramLine getLineByEntityId(int entityId) {
+        // 先检查 PageTextRenderer 的实体
+        if (pageTextRenderer != null) {
+            HologramLine line = pageTextRenderer.getLineByEntityId(entityId);
+            if (line != null) {
+                return line;
+            }
+        }
+
+        // 检查非TEXT行的实体
         for (HologramLine line : lines) {
-            for (int id : line.getEntityIds()) {
-                if (id == entityId) {
-                    return line;
+            if (line.getType() != HologramType.TEXT) {
+                for (int id : line.getEntityIds()) {
+                    if (id == entityId) {
+                        return line;
+                    }
                 }
             }
         }
@@ -727,6 +988,21 @@ public class HologramPage {
      * 销毁此页
      */
     public void destroy() {
+        // 销毁 PageTextRenderer
+        if (pageTextRenderer != null) {
+            for (UUID uuid : getViewers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) pageTextRenderer.destroy(p);
+            }
+            // 注销实体ID
+            HologramManager manager = WooHolograms.getInstance().getHologramManager();
+            for (int id : pageTextRenderer.getEntityIds()) {
+                manager.unregisterEntityId(id);
+            }
+            pageTextRenderer.destroyAll();
+            pageTextRenderer = null;
+        }
+
         for (HologramLine line : lines) {
             line.destroy();
         }

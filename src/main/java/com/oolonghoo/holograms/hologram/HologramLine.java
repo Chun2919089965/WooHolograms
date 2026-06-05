@@ -306,6 +306,13 @@ public class HologramLine {
                 return;
             }
 
+            // TEXT 行由 PageTextRenderer 统一管理显示
+            if (type == HologramType.TEXT) {
+                // 如果从其他类型变为TEXT，需要清理旧渲染器
+                hidePreviousIfNecessary();
+                return;
+            }
+
             hidePreviousIfNecessary();
 
             List<Player> playerList = (players != null && players.length > 0) 
@@ -358,6 +365,12 @@ public class HologramLine {
             return;
         }
 
+        // TEXT 行由 PageTextRenderer 统一渲染，不需要独立渲染器
+        if (type == HologramType.TEXT) {
+            this.renderer = null;
+            return;
+        }
+
         WooHolograms plugin = WooHolograms.getInstance();
 
         HologramRendererPool pool = plugin.getRendererPool();
@@ -387,6 +400,11 @@ public class HologramLine {
      */
     public void hide(Player... players) {
         synchronized (renderMutex) {
+            // TEXT 行由 PageTextRenderer 统一管理隐藏
+            if (type == HologramType.TEXT) {
+                return;
+            }
+
             hidePreviousIfNecessary();
 
             if (players != null && players.length > 0) {
@@ -433,6 +451,13 @@ public class HologramLine {
                 return;
             }
 
+            // TEXT 行由 PageTextRenderer 统一管理更新
+            if (type == HologramType.TEXT) {
+                // 如果从其他类型变为TEXT，需要清理旧渲染器
+                hidePreviousIfNecessary();
+                return;
+            }
+
             hidePreviousIfNecessary();
 
             if (players != null && players.length > 0) {
@@ -459,7 +484,12 @@ public class HologramLine {
      */
     public void updateAnimations(Player... players) {
         synchronized (renderMutex) {
-            if (!enabled || type != HologramType.TEXT || hasFlag(EnumFlag.DISABLE_ANIMATIONS)) {
+            if (!enabled || hasFlag(EnumFlag.DISABLE_ANIMATIONS)) {
+                return;
+            }
+
+            // TEXT 行动画由 PageTextRenderer 统一管理
+            if (type == HologramType.TEXT) {
                 return;
             }
 
@@ -489,6 +519,11 @@ public class HologramLine {
     public void updateLocation(boolean updateRotation, Player... players) {
         synchronized (renderMutex) {
             if (!enabled) {
+                return;
+            }
+
+            // TEXT 行位置由 PageTextRenderer 统一管理
+            if (type == HologramType.TEXT) {
                 return;
             }
 
@@ -1028,6 +1063,14 @@ public class HologramLine {
      */
     public void destroy() {
         synchronized (renderMutex) {
+            // TEXT 行的渲染器由 PageTextRenderer 管理，此处只清理缓存
+            if (type == HologramType.TEXT) {
+                viewers.clear();
+                playerTextCache.clear();
+                lastTextCache.clear();
+                return;
+            }
+
             if (renderer != null) {
                 unregisterEntityIds(renderer);
                 List<Player> viewerPlayers = new ArrayList<>();
@@ -1084,7 +1127,12 @@ public class HologramLine {
         synchronized (renderMutex) {
             Location oldLocation = this.location;
             this.location = location != null ? location.clone() : null;
-            
+
+            // TEXT 行位置由 PageTextRenderer 管理
+            if (type == HologramType.TEXT) {
+                return;
+            }
+
             if (renderer != null && oldLocation != null && !oldLocation.equals(location)) {
                 for (UUID uuid : viewers) {
                     Player viewer = Bukkit.getPlayer(uuid);
@@ -1129,14 +1177,14 @@ public class HologramLine {
     }
 
     public double getHeight() {
-        double baseHeight = height;
-        if (type == HologramType.TEXT && content != null) {
-            int lineCount = content.split("\n", -1).length;
-            if (lineCount > 1) {
-                baseHeight = height * lineCount;
+        // TEXT 行使用 hologram 的 lineHeight（由 PageTextRenderer 统一管理合并渲染）
+        if (type == HologramType.TEXT) {
+            if (parent != null && parent.getParent() != null) {
+                return parent.getParent().getLineHeight();
             }
+            return DEFAULT_HEIGHT_TEXT;
         }
-        return baseHeight;
+        return height;
     }
 
     public double getBaseHeight() {
@@ -1320,6 +1368,10 @@ public class HologramLine {
     }
 
     public int[] getEntityIds() {
+        // TEXT 行的实体ID由 PageTextRenderer 管理
+        if (type == HologramType.TEXT) {
+            return new int[0];
+        }
         if (renderer == null) {
             return new int[0];
         }

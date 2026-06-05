@@ -18,6 +18,14 @@ public class HologramRendererFactoryImpl implements NmsHologramRendererFactory {
         this.entityIdGenerator = entityIdGenerator;
     }
 
+    /**
+     * 获取实体ID生成器
+     * @return 实体ID生成器
+     */
+    public EntityIdGenerator getEntityIdGenerator() {
+        return entityIdGenerator;
+    }
+
     @Override
     public NmsTextHologramRenderer createTextRenderer() {
         return new TextHologramRendererImpl(entityIdGenerator);

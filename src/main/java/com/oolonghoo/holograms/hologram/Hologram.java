@@ -43,7 +43,9 @@ public class Hologram {
     private boolean doubleSided = false;
     private TextAlignment alignment = TextAlignment.LEFT;
     private int backgroundAlpha;
-    
+    private int backgroundColor;
+    private int lineWidth;
+
     // 全息图类型和显示属性
     private HologramType type;
     private boolean visible;
@@ -107,6 +109,8 @@ public class Hologram {
         this.displayRange = plugin.getConfigManager().getDefaultDisplayRange();
         this.updateRange = plugin.getConfigManager().getDefaultUpdateRange();
         this.backgroundAlpha = plugin.getConfigManager().getDefaultBackgroundAlpha();
+        this.backgroundColor = plugin.getConfigManager().getDefaultBackgroundColor();
+        this.lineWidth = plugin.getConfigManager().getDefaultLineWidth();
         this.updateInterval = plugin.getConfigManager().getDefaultUpdateInterval();
         this.lineHeight = plugin.getConfigManager().getDefaultLineHeight();
         
@@ -356,6 +360,24 @@ public class Hologram {
         refreshAllViewers();
     }
 
+    public int getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public void setBackgroundColor(int backgroundColor) {
+        this.backgroundColor = backgroundColor & 0xFFFFFF; // 只保留 RGB 部分
+        refreshAllViewers();
+    }
+
+    public int getLineWidth() {
+        return lineWidth;
+    }
+
+    public void setLineWidth(int lineWidth) {
+        this.lineWidth = Math.max(1, lineWidth);
+        refreshAllViewers();
+    }
+
     /**
      * 刷新所有观看者的全息图显示
      * 重新渲染所有行和可点击实体
@@ -365,20 +387,17 @@ public class Hologram {
             if (!enabled) {
                 return;
             }
-            
+
             List<Player> viewerList = new ArrayList<>(getViewerPlayers());
             for (Player player : viewerList) {
                 int pageIndex = getPlayerPage(player);
                 HologramPage page = getPage(pageIndex);
                 if (page != null) {
-                    List<HologramLine> lines = new ArrayList<>(page.getLines());
-                    for (HologramLine line : lines) {
-                        line.hide(player);
-                        line.show(player);
-                    }
+                    page.hideFromPlayer(player);
+                    page.showTo(player);
                 }
             }
-            
+
             hideClickableEntitiesAll();
             showClickableEntitiesAll();
         }
@@ -1046,7 +1065,7 @@ public class Hologram {
      * 显示页面给玩家
      */
     private void showPageTo(Player player, HologramPage page, int pageIndex) {
-        page.getLines().forEach(line -> line.show(player));
+        page.showTo(player);
         viewerPages.put(player.getUniqueId(), pageIndex);
         viewers.add(player.getUniqueId());
         showClickableEntities(player);
@@ -1056,7 +1075,7 @@ public class Hologram {
      * 从玩家隐藏页面
      */
     private void hidePageFrom(Player player, HologramPage page) {
-        page.getLines().forEach(line -> line.hide(player));
+        page.hideFromPlayer(player);
         hideClickableEntities(player);
     }
 
@@ -1233,9 +1252,16 @@ public class Hologram {
             return;
         }
 
-        // 5. 更新文本内容
+        // 5. 更新文本内容（TEXT行通过PageTextRenderer，非TEXT行通过各自渲染器）
+        // TEXT 行通过 PageTextRenderer 更新
+        if (page.getPageTextRenderer() != null) {
+            page.getPageTextRenderer().updateText(player);
+        }
+        // 非 TEXT 行通过各自的渲染器更新
         for (HologramLine line : page.getLines()) {
-            line.update(force, player);
+            if (line.getType() != HologramType.TEXT) {
+                line.update(force, player);
+            }
         }
     }
 
@@ -1262,8 +1288,18 @@ public class Hologram {
     public void updateText() {
         synchronized (visibilityMutex) {
             for (HologramPage page : pages) {
+                // TEXT 行通过 PageTextRenderer 更新
+                if (page.getPageTextRenderer() != null) {
+                    for (UUID uuid : page.getViewers()) {
+                        Player p = Bukkit.getPlayer(uuid);
+                        if (p != null) page.getPageTextRenderer().updateText(p);
+                    }
+                }
+                // 非 TEXT 行通过各自的渲染器更新
                 for (HologramLine line : page.getLines()) {
-                    line.update(true);
+                    if (line.getType() != HologramType.TEXT) {
+                        line.update(true);
+                    }
                 }
             }
         }
@@ -1332,10 +1368,17 @@ public class Hologram {
             return;
         }
 
-        // 5. 更新动画（复制列表避免并发修改）
+        // 5. TEXT 行动画通过 PageTextRenderer 更新
+        if (page.getPageTextRenderer() != null) {
+            page.getPageTextRenderer().updateText(player);
+        }
+
+        // 6. 非 TEXT 行动画通过各自的渲染器更新
         List<HologramLine> lines = new ArrayList<>(page.getLines());
         for (HologramLine line : lines) {
-            line.updateAnimations(player);
+            if (line.getType() != HologramType.TEXT) {
+                line.updateAnimations(player);
+            }
         }
     }
 
@@ -1390,8 +1433,18 @@ public class Hologram {
                     teleportClickableEntitiesAll();
 
                     for (HologramPage page : pages) {
+                        // TEXT 行通过 PageTextRenderer 传送
+                        if (page.getPageTextRenderer() != null) {
+                            for (UUID uuid : page.getViewers()) {
+                                Player p = Bukkit.getPlayer(uuid);
+                                if (p != null) page.getPageTextRenderer().teleport(p);
+                            }
+                        }
+                        // 非 TEXT 行通过各自的渲染器传送
                         for (HologramLine line : page.getLines()) {
-                            line.updateLocation(true);
+                            if (line.getType() != HologramType.TEXT) {
+                                line.updateLocation(true);
+                            }
                         }
                     }
                 }
@@ -1421,9 +1474,16 @@ public class Hologram {
             // 3. 传送可点击实体
             teleportClickableEntities(player);
 
-            // 4. 更新行的位置
+            // 4. TEXT 行通过 PageTextRenderer 传送
+            if (page.getPageTextRenderer() != null) {
+                page.getPageTextRenderer().teleport(player);
+            }
+
+            // 5. 非 TEXT 行更新位置
             for (HologramLine line : page.getLines()) {
-                line.updateLocation(true, player);
+                if (line.getType() != HologramType.TEXT) {
+                    line.updateLocation(true, player);
+                }
             }
         }
     }
@@ -1562,6 +1622,14 @@ public class Hologram {
      * @return 玩家页面状态映射
      */
     public Map<UUID, Integer> getAllPlayerPageStates() {
+        return Collections.unmodifiableMap(viewerPages);
+    }
+
+    /**
+     * 获取观看者页面映射
+     * @return UUID -> 页码的映射
+     */
+    public Map<UUID, Integer> getViewerPages() {
         return Collections.unmodifiableMap(viewerPages);
     }
 
@@ -2025,6 +2093,8 @@ public class Hologram {
         Hologram hologram = new Hologram(name, location, !temp);
         hologram.setAlignment(this.alignment);
         hologram.setBackgroundAlpha(this.backgroundAlpha);
+        hologram.setBackgroundColor(this.backgroundColor);
+        hologram.setLineWidth(this.lineWidth);
         hologram.setPermission(this.permission);
         hologram.setFacing(this.facing);
         hologram.setDisplayRange(this.displayRange);
@@ -2073,6 +2143,8 @@ public class Hologram {
         map.put("facing", facing);
         map.put("alignment", alignment.getId());
         map.put("background-alpha", backgroundAlpha);
+        map.put("background-color", backgroundColor);
+        map.put("line-width", lineWidth);
         map.put("double-sided", doubleSided);
         map.put("pages", pages.stream().map(HologramPage::serializeToMap).collect(Collectors.toList()));
         return map;

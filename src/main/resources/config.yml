@@ -28,6 +28,9 @@ defaults:
   head-height: 0.6
   # 默认背景透明度 (0=完全透明, 255=完全不透明)
   default-background-alpha: 128
+  default-background-color: 0
+  # 默认行宽度（像素），控制文本自动换行阈值
+  default-line-width: 300
 
 # 性能设置
 performance:

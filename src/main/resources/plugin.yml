@@ -9,6 +9,10 @@ description: A hologram plugin for Paper/Folia 1.21.11+
 softdepend:
   - PlaceholderAPI
   - HeadDatabase
+  - DecentHolograms
+
+provides:
+  - DecentHolograms
 
 commands:
   wooholograms:

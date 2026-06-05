@@ -63,14 +63,15 @@ public class WooHolograms extends JavaPlugin {
         if (dashIdx > 0) mcVersion = mcVersion.substring(0, dashIdx);
         String[] parts = mcVersion.split("\\.");
         boolean supported = false;
-        if (parts.length >= 1) {
+        if (parts.length >= 2) {
             try {
                 int major = Integer.parseInt(parts[0]);
-                if (major >= 26) supported = true;
+                int minor = Integer.parseInt(parts[1]);
+                if (major == 1 && minor >= 21) supported = true;
             } catch (NumberFormatException ignored) {}
         }
         if (!supported) {
-            getLogger().severe("WooHolograms requires Paper/Folia 26.1+. Current server: " + mcVersion);
+            getLogger().severe("WooHolograms requires Paper/Folia 1.21.11+. Current server: " + mcVersion);
             getLogger().severe("Plugin will be disabled.");
             this.pluginEnabled = false;
             getServer().getPluginManager().disablePlugin(this);

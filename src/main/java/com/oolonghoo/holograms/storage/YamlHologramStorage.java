@@ -80,6 +80,7 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("update-range", hologram.getUpdateRange());
             yaml.set("update-interval", hologram.getUpdateInterval());
             yaml.set("alignment", hologram.getAlignment().getId());
+            yaml.set("background-alpha", hologram.getBackgroundAlpha());
 
             if (hologram.getPermission() != null && !hologram.getPermission().isEmpty()) {
                 yaml.set("permission", hologram.getPermission());
@@ -104,7 +105,7 @@ public class YamlHologramStorage implements HologramStorage {
                     String linePath = pagePath + ".lines." + lineIndex;
 
                     yaml.set(linePath + ".content", line.getContent());
-                    yaml.set(linePath + ".height", line.getHeight());
+                    yaml.set(linePath + ".height", line.getBaseHeight());
                     yaml.set(linePath + ".offsetX", line.getOffsetX());
                     yaml.set(linePath + ".offsetY", line.getOffsetY());
                     yaml.set(linePath + ".offsetZ", line.getOffsetZ());
@@ -121,10 +122,6 @@ public class YamlHologramStorage implements HologramStorage {
                     if (line.getBrightness() != null) {
                         yaml.set(linePath + ".brightness",
                                 line.getBrightness().getSkyLight() + "," + line.getBrightness().getBlockLight());
-                    }
-
-                    if (line.getBackgroundAlpha() != plugin.getConfigManager().getDefaultBackgroundAlpha()) {
-                        yaml.set(linePath + ".background-alpha", line.getBackgroundAlpha());
                     }
 
                     if (line.getBillboard() != null) {
@@ -328,6 +325,7 @@ public class YamlHologramStorage implements HologramStorage {
         hologram.setUpdateRange(getCompatDouble(section, "update-range", "updateRange", 48.0));
         hologram.setUpdateInterval(getCompatInt(section, "update-interval", "updateInterval", 40));
         hologram.setAlignment(TextAlignment.fromId(section.getString("alignment", "LEFT")));
+        hologram.setBackgroundAlpha(section.getInt("background-alpha", plugin.getConfigManager().getDefaultBackgroundAlpha()));
 
         String permission = section.getString("permission");
         if (permission != null && !permission.isEmpty()) {
@@ -498,11 +496,6 @@ public class YamlHologramStorage implements HologramStorage {
             }
         }
 
-        Object bgAlphaObj = map.get("background-alpha");
-        if (bgAlphaObj instanceof Number n) {
-            line.setBackgroundAlpha(n.intValue());
-        }
-
         Object billboardObj = map.get("billboard");
         if (billboardObj instanceof String billboardStr) {
             line.setBillboard(Billboard.fromId(billboardStr));
@@ -585,10 +578,6 @@ public class YamlHologramStorage implements HologramStorage {
                     }
                 }
             }
-        }
-
-        if (section.contains("background-alpha")) {
-            line.setBackgroundAlpha(section.getInt("background-alpha"));
         }
 
         if (section.contains("billboard")) {

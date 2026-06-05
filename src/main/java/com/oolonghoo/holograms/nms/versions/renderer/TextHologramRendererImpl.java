@@ -61,7 +61,8 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withTextDisplayText(text)
                 .withBillboard(billboard)
                 .withTextAlignment(hologram.getAlignment())
-                .withTextBackgroundColor(line.getBackgroundAlpha() << 24);
+                .withTextBackgroundColor(hologram.getBackgroundAlpha() << 24)
+                .withTextLineWidth(999);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
             metadataBuilder.withDisplayBrightness(line.getBrightness());
@@ -128,10 +129,13 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         boolean doubleSided = hologram != null && hologram.isDoubleSided();
 
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()
+                .withInvisible()
+                .withNoGravity()
                 .withTextDisplayText(text)
                 .withTextAlignment(hologram.getAlignment())
                 .withBillboard(billboard)
-                .withTextBackgroundColor(line.getBackgroundAlpha() << 24);
+                .withTextBackgroundColor(hologram.getBackgroundAlpha() << 24)
+                .withTextLineWidth(999);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
             metadataBuilder.withDisplayBrightness(line.getBrightness());

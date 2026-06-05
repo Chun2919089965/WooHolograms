@@ -42,6 +42,7 @@ public class Hologram {
     private float facing;
     private boolean doubleSided = false;
     private TextAlignment alignment = TextAlignment.LEFT;
+    private int backgroundAlpha;
     
     // 全息图类型和显示属性
     private HologramType type;
@@ -105,6 +106,7 @@ public class Hologram {
         WooHolograms plugin = WooHolograms.getInstance();
         this.displayRange = plugin.getConfigManager().getDefaultDisplayRange();
         this.updateRange = plugin.getConfigManager().getDefaultUpdateRange();
+        this.backgroundAlpha = plugin.getConfigManager().getDefaultBackgroundAlpha();
         this.updateInterval = plugin.getConfigManager().getDefaultUpdateInterval();
         this.lineHeight = plugin.getConfigManager().getDefaultLineHeight();
         
@@ -342,6 +344,15 @@ public class Hologram {
 
     public void setAlignment(TextAlignment alignment) {
         this.alignment = alignment != null ? alignment : TextAlignment.LEFT;
+        refreshAllViewers();
+    }
+
+    public int getBackgroundAlpha() {
+        return backgroundAlpha;
+    }
+
+    public void setBackgroundAlpha(int backgroundAlpha) {
+        this.backgroundAlpha = Math.max(0, Math.min(255, backgroundAlpha));
         refreshAllViewers();
     }
 
@@ -2013,6 +2024,7 @@ public class Hologram {
     public Hologram clone(String name, Location location, boolean temp) {
         Hologram hologram = new Hologram(name, location, !temp);
         hologram.setAlignment(this.alignment);
+        hologram.setBackgroundAlpha(this.backgroundAlpha);
         hologram.setPermission(this.permission);
         hologram.setFacing(this.facing);
         hologram.setDisplayRange(this.displayRange);
@@ -2060,6 +2072,7 @@ public class Hologram {
         map.put("billboard", billboard != Billboard.CENTER ? billboard.getId() : null);
         map.put("facing", facing);
         map.put("alignment", alignment.getId());
+        map.put("background-alpha", backgroundAlpha);
         map.put("double-sided", doubleSided);
         map.put("pages", pages.stream().map(HologramPage::serializeToMap).collect(Collectors.toList()));
         return map;

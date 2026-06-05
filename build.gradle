@@ -7,10 +7,10 @@ group = 'com.oolonghoo'
 version = '1.0.0'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle('26.1.2.build.+')
+    paperweight.paperDevBundle('1.21.11-R0.1-SNAPSHOT')
     compileOnly 'me.clip:placeholderapi:2.11.6'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
@@ -55,7 +55,7 @@ tasks.register('buildInfo') {
         println "=========================================="
         println "Version: ${version}"
         println "Java: ${java.sourceCompatibility}"
-        println "Paper: 26.1+ (Paper / Folia)"
+        println "Paper: 1.21+ (1.21.x / 1.21.11)"
         println "=========================================="
     }
 }

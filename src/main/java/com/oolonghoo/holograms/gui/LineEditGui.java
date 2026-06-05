@@ -127,7 +127,7 @@ public class LineEditGui extends GuiScreen {
                             if (p != null && lineIndex < p.size()) {
                                 p.setLine(lineIndex, input);
                                 h.save();
-                                h.showToNearby();
+                                h.refreshAllViewers();
                                 player.sendMessage(ColorUtil.colorize("&a已更新行文本！"));
                             }
                         }
@@ -222,49 +222,7 @@ public class LineEditGui extends GuiScreen {
                     });
                 })
                 .build());
-        
-        // 第二行按钮
-        setButton(12, GuiButton.builder(Material.BLACK_STAINED_GLASS_PANE)
-                .name("&f背景透明度")
-                .lore(Arrays.asList(
-                        "&7设置文本背景的透明度",
-                        "&7当前: &f" + line.getBackgroundAlpha() + " (0=透明, 255=不透明)",
-                        "",
-                        "&e点击设置"
-                ))
-                .onClick(context -> {
-                    Player player = context.getPlayer();
-                    player.closeInventory();
-                    
-                    chatInputManager.requestInput(player, "&a请输入背景透明度 (0-255, 0=完全透明, 255=完全不透明):", 
-                            ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
-                        try {
-                            int alpha = Integer.parseInt(input.trim());
-                            if (alpha < 0 || alpha > 255) {
-                                player.sendMessage(ColorUtil.colorize("&c透明度必须在 0-255 之间！"));
-                            } else {
-                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                                if (h != null) {
-                                    HologramPage p = h.getPage(pageIndex);
-                                    if (p != null && lineIndex < p.size()) {
-                                        HologramLine l = p.getLine(lineIndex);
-                                        if (l != null) {
-                                            l.setBackgroundAlpha(alpha);
-                                            h.save();
-                                            h.showToNearby();
-                                            player.sendMessage(ColorUtil.colorize("&a已设置背景透明度为 " + alpha + "！"));
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (NumberFormatException e) {
-                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
-                        }
-                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
-                    });
-                })
-                .build());
-        
+
         // 亮度设置
         Brightness brightness = line.getBrightness();
         String brightnessDisplay = brightness != null && !brightness.isDefault() 
@@ -319,7 +277,7 @@ public class LineEditGui extends GuiScreen {
                                 if (l != null) {
                                     l.clearCustomFacing();
                                     h.save();
-                                    h.showToNearby();
+                                    h.refreshAllViewers();
                                     player.sendMessage(ColorUtil.colorize("&a已清空朝向设置，现在跟随整体！"));
                                 }
                             }
@@ -351,7 +309,7 @@ public class LineEditGui extends GuiScreen {
                                                 l.setCustomYaw(yaw);
                                                 l.setCustomPitch(pitch);
                                                 h.save();
-                                                h.showToNearby();
+                                                h.refreshAllViewers();
                                                 player.sendMessage(ColorUtil.colorize("&a已设置朝向为 (" + yaw + ", " + pitch + ")！"));
                                             }
                                         }
@@ -410,7 +368,7 @@ public class LineEditGui extends GuiScreen {
                                         String newContent = prefix.toUpperCase(Locale.ROOT) + input;
                                         l.setContent(newContent);
                                         h.save();
-                                        h.showToNearby();
+                                        h.refreshAllViewers();
                                         player.sendMessage(ColorUtil.colorize("&a已设置头颅材质！"));
                                     }
                                 }
@@ -444,7 +402,7 @@ public class LineEditGui extends GuiScreen {
                                 if (l != null) {
                                     l.setBillboard(null);
                                     h.save();
-                                    h.showToNearby();
+                                    h.refreshAllViewers();
                                     player.sendMessage(ColorUtil.colorize("&a已重置为跟随整体朝向！"));
                                 }
                             }
@@ -491,7 +449,7 @@ public class LineEditGui extends GuiScreen {
                                 if (p != null && lineIndex < p.size()) {
                                     p.removeLine(lineIndex);
                                     h.save();
-                                    h.showToNearby();
+                                    h.refreshAllViewers();
                                     player.sendMessage(ColorUtil.colorize("&a已删除第 " + (lineIndex + 1) + " 行！"));
                                 }
                             }
@@ -520,7 +478,7 @@ public class LineEditGui extends GuiScreen {
                             if (p != null && lineIndex > 0) {
                                 p.swapLines(lineIndex, lineIndex - 1);
                                 h.save();
-                                h.showToNearby();
+                                h.refreshAllViewers();
                                 player.sendMessage(ColorUtil.colorize("&a已上移！"));
                             }
                         }
@@ -546,7 +504,7 @@ public class LineEditGui extends GuiScreen {
                             if (p != null && lineIndex < p.size() - 1) {
                                 p.swapLines(lineIndex, lineIndex + 1);
                                 h.save();
-                                h.showToNearby();
+                                h.refreshAllViewers();
                                 player.sendMessage(ColorUtil.colorize("&a已下移！"));
                             }
                         }

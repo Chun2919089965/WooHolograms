@@ -590,31 +590,51 @@ public class HologramDetailGui extends GuiScreen {
                 .build());
         
         setButton(47, GuiButton.builder(Material.ENDER_EYE)
-                .name("&f设置范围")
+                .name("&f范围设置")
                 .lore(Arrays.asList(
-                        "&7当前范围: &f" + hologram.getDisplayRange() + " 格",
+                        "&7显示范围: &f" + hologram.getDisplayRange() + " 格",
+                        "&7更新范围: &f" + hologram.getUpdateRange() + " 格",
                         "",
-                        "&e点击设置"
+                        "&e左键 &7设置显示范围",
+                        "&e右键 &7设置更新范围"
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
                     player.closeInventory();
-                    
-                    chatInputManager.requestInput(player, "&a请输入显示范围 (格):", 
-                            ChatInputManager.InputType.DISPLAY_RANGE, hologramName, input -> {
-                        try {
-                            int range = Integer.parseInt(input);
-                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                            if (h != null) {
-                                h.setDisplayRange(range);
-                                h.save();
-                                player.sendMessage(ColorUtil.colorize("&a已设置显示范围为 " + range + " 格！"));
+
+                    if (context.getClickType().isRightClick()) {
+                        chatInputManager.requestInput(player, "&a请输入更新范围 (格，玩家超出此范围将停止更新占位符):",
+                                ChatInputManager.InputType.GENERIC, hologramName, input -> {
+                            try {
+                                int range = Integer.parseInt(input);
+                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                if (h != null) {
+                                    h.setUpdateRange(range);
+                                    h.save();
+                                    player.sendMessage(ColorUtil.colorize("&a已设置更新范围为 " + range + " 格！"));
+                                }
+                            } catch (NumberFormatException e) {
+                                player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
                             }
-                        } catch (NumberFormatException e) {
-                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
-                        }
-                        guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
-                    });
+                            guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                        });
+                    } else {
+                        chatInputManager.requestInput(player, "&a请输入显示范围 (格，玩家超出此范围将看不到全息图):",
+                                ChatInputManager.InputType.GENERIC, hologramName, input -> {
+                            try {
+                                int range = Integer.parseInt(input);
+                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                if (h != null) {
+                                    h.setDisplayRange(range);
+                                    h.save();
+                                    player.sendMessage(ColorUtil.colorize("&a已设置显示范围为 " + range + " 格！"));
+                                }
+                            } catch (NumberFormatException e) {
+                                player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                            }
+                            guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                        });
+                    }
                 })
                 .build());
         
@@ -688,35 +708,6 @@ public class HologramDetailGui extends GuiScreen {
                 })
                 .build());
         
-        setButton(49, GuiButton.builder(Material.SPYGLASS)
-                .name("&f更新范围")
-                .lore(Arrays.asList(
-                        "&7动画更新可见距离",
-                        "&7当前: &f" + hologram.getUpdateRange() + " 格",
-                        "",
-                        "&e点击设置"
-                ))
-                .onClick(context -> {
-                    Player player = context.getPlayer();
-                    player.closeInventory();
-
-                    chatInputManager.requestInput(player, "&a请输入更新范围 (格):",
-                            ChatInputManager.InputType.DISPLAY_RANGE, hologramName, input -> {
-                        try {
-                            int range = Integer.parseInt(input);
-                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                            if (h != null) {
-                                h.setUpdateRange(range);
-                                h.save();
-                                player.sendMessage(ColorUtil.colorize("&a已设置更新范围为 " + range + " 格！"));
-                            }
-                        } catch (NumberFormatException e) {
-                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
-                        }
-                        guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
-                    });
-                })
-                .build());
 
         setButton(52, GuiButton.builder(Material.RAIL)
                 .name("&f行间距")
@@ -760,6 +751,40 @@ public class HologramDetailGui extends GuiScreen {
                 ))
                 .onClick(context -> {
                     guiManager.openGui(context.getPlayer(), new AlignmentSelectGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                })
+                .build());
+
+        setButton(45, GuiButton.builder(Material.BLACK_STAINED_GLASS_PANE)
+                .name("&f背景透明度")
+                .lore(Arrays.asList(
+                        "&7设置文本背景的透明度",
+                        "&7当前: &f" + hologram.getBackgroundAlpha() + " (0=透明, 255=不透明)",
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    player.closeInventory();
+                    
+                    chatInputManager.requestInput(player, "&a请输入背景透明度 (0-255, 0=完全透明, 255=完全不透明):", 
+                            ChatInputManager.InputType.GENERIC, hologramName, input -> {
+                        try {
+                            int alpha = Integer.parseInt(input.trim());
+                            if (alpha < 0 || alpha > 255) {
+                                player.sendMessage(ColorUtil.colorize("&c透明度必须在 0-255 之间！"));
+                            } else {
+                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                if (h != null) {
+                                    h.setBackgroundAlpha(alpha);
+                                    h.save();
+                                    player.sendMessage(ColorUtil.colorize("&a已设置背景透明度为 " + alpha + "！"));
+                                }
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                        }
+                        guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
+                    });
                 })
                 .build());
 

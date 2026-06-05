@@ -91,7 +91,7 @@ public class ConfigManager {
         defaultTextHeight = config.getDouble("defaults.text-height", 0.3);
         defaultItemHeight = config.getDouble("defaults.item-height", 0.6);
         defaultHeadHeight = config.getDouble("defaults.head-height", 0.6);
-        defaultBackgroundAlpha = config.getInt("defaults.default-background-alpha", 64);
+        defaultBackgroundAlpha = config.getInt("defaults.default-background-alpha", 128);
 
         // 性能设置
         renderInterval = config.getLong("performance.render-interval", 2L);

@@ -77,7 +77,6 @@ public class WooHolograms extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        getLogger().info("Server version: " + mcVersion);
 
         // 初始化调度器工具
         SchedulerUtil.initialize(this);
@@ -85,12 +84,10 @@ public class WooHolograms extends JavaPlugin {
         // 初始化配置
         configManager = new ConfigManager(this);
         configManager.initialize();
-        getLogger().info("配置加载完成");
         
         // 初始化消息
         messages = new Messages(this);
         messages.initialize();
-        getLogger().info("消息文件加载完成");
         
         // 初始化存储器
         storage = new YamlHologramStorage(this);

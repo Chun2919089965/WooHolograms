@@ -312,8 +312,6 @@ public class HologramManager {
 
         // 启动更新任务
         startUpdateTask();
-
-        plugin.getLogger().info(() -> "已加载 " + loaded.size() + " 个全息图");
     }
 
     /**

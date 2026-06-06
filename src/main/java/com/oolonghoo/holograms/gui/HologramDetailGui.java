@@ -445,54 +445,15 @@ public class HologramDetailGui extends GuiScreen {
                 })
                 .build());
 
-        setButton(41, GuiButton.builder(Material.ENDER_PEARL)
-                .name("&f移动到坐标")
+        setButton(41, GuiButton.builder(Material.COMPASS)
+                .name("&f移动全息图")
                 .lore(Arrays.asList(
-                        "&7将全息图移动到指定坐标",
-                        "&7格式: x y z [世界]",
+                        "&7移动到坐标或按轴微调",
                         "",
-                        "&e点击输入"
+                        "&e点击打开"
                 ))
                 .onClick(context -> {
-                    Player player = context.getPlayer();
-                    player.closeInventory();
-
-                    chatInputManager.requestInput(player, "&a请输入坐标 (x y z [世界]):",
-                            ChatInputManager.InputType.GENERIC, hologramName, input -> {
-                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                        if (h == null) {
-                            player.sendMessage(ColorUtil.colorize("&c全息图不存在！"));
-                            guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
-                            return;
-                        }
-
-                        String[] parts = input.split(" ");
-                        if (parts.length < 3) {
-                            player.sendMessage(ColorUtil.colorize("&c格式错误！请输入: x y z [世界]"));
-                            guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
-                            return;
-                        }
-
-                        try {
-                            double x = Double.parseDouble(parts[0]);
-                            double y = Double.parseDouble(parts[1]);
-                            double z = Double.parseDouble(parts[2]);
-                            World world = parts.length > 3 ? Bukkit.getWorld(parts[3]) : h.getLocation().getWorld();
-
-                            if (world == null) {
-                                player.sendMessage(ColorUtil.colorize("&c世界不存在！"));
-                            } else {
-                                Location loc = new Location(world, x, y, z, h.getLocation().getYaw(), h.getLocation().getPitch());
-                                h.setLocation(loc);
-                                h.save();
-                                h.showToNearby();
-                                player.sendMessage(ColorUtil.colorize("&a已移动到 " + world.getName() + " (" + x + ", " + y + ", " + z + ")！"));
-                            }
-                        } catch (NumberFormatException e) {
-                            player.sendMessage(ColorUtil.colorize("&c坐标格式错误！"));
-                        }
-                        guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, currentPageIndex));
-                    });
+                    guiManager.openGui(context.getPlayer(), new HologramMoveGui(plugin, guiManager, chatInputManager, hologramName));
                 })
                 .build());
 
@@ -691,7 +652,7 @@ public class HologramDetailGui extends GuiScreen {
         if (billboard == Billboard.FIXED_ANGLE) {
             facingDisplay += " (" + hologram.getFacing() + "度)";
         }
-        setButton(49, GuiButton.builder(Material.COMPASS)
+        setButton(49, GuiButton.builder(Material.SPYGLASS)
                 .name("&f朝向设置")
                 .lore(Arrays.asList(
                         "&7设置全息图的朝向模式",

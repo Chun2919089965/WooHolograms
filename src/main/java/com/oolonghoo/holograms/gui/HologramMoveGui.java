@@ -119,7 +119,9 @@ public class HologramMoveGui extends GuiScreen {
         List<String> lore = new ArrayList<>();
         if (h != null) {
             Location loc = h.getLocation();
-            lore.add("&7世界: &f" + loc.getWorld().getName());
+            if (loc.getWorld() != null) {
+                lore.add("&7世界: &f" + loc.getWorld().getName());
+            }
             lore.add("&cX: &f" + String.format("%.1f", loc.getX()));
             lore.add("&aY: &f" + String.format("%.1f", loc.getY()));
             lore.add("&9Z: &f" + String.format("%.1f", loc.getZ()));

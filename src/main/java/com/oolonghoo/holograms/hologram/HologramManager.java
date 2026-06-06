@@ -473,8 +473,7 @@ public class HologramManager {
             for (Map.Entry<String, Hologram> entry : pending.entrySet()) {
                 String name = entry.getKey();
                 Hologram hologram = entry.getValue();
-                if (!holograms.containsKey(name)) {
-                    holograms.put(name, hologram);
+                if (holograms.putIfAbsent(name, hologram) == null) {
                     addToWorldCache(hologram);
                     showToNearby(hologram);
                 }

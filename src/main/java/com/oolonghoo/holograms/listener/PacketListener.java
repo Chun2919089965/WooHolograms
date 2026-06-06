@@ -82,22 +82,21 @@ public class PacketListener {
             }
         };
 
-        // 在 Netty EventLoop 中执行管道操作，确保线程安全
+        // 在 Netty EventLoop 中执行管道操作和 map 记录，确保线程安全
         if (channel.eventLoop().inEventLoop()) {
-            injectHandler(channel, handler);
+            injectHandler(player, channel, handler);
         } else {
-            channel.eventLoop().execute(() -> injectHandler(channel, handler));
+            channel.eventLoop().execute(() -> injectHandler(player, channel, handler));
         }
-
-        playerChannels.putIfAbsent(player, channel);
     }
 
     /**
-     * 在管道中注入处理器
+     * 在管道中注入处理器，成功后记录到 playerChannels
      */
-    private void injectHandler(Channel channel, ChannelDuplexHandler handler) {
+    private void injectHandler(Player player, Channel channel, ChannelDuplexHandler handler) {
         try {
             channel.pipeline().addBefore("packet_handler", HANDLER_NAME, handler);
+            playerChannels.putIfAbsent(player, channel);
         } catch (Exception e) {
             if (plugin.getConfigManager().isDebug()) {
                 plugin.getLogger().warning(() -> "注入数据包处理器失败: " + e.getMessage());
@@ -107,19 +106,24 @@ public class PacketListener {
 
     /**
      * 为玩家移除数据包处理器
+     * 在 EventLoop 中执行 map 移除和 handler 移除，避免与 inject 竞态
      *
      * @param player 玩家
      */
     public void uninject(Player player) {
-        Channel channel = playerChannels.remove(player);
+        Channel channel = playerChannels.get(player);
         if (channel == null) {
             return;
         }
 
         if (channel.eventLoop().inEventLoop()) {
+            playerChannels.remove(player);
             removeHandler(channel);
         } else {
-            channel.eventLoop().execute(() -> removeHandler(channel));
+            channel.eventLoop().execute(() -> {
+                playerChannels.remove(player);
+                removeHandler(channel);
+            });
         }
     }
 
@@ -163,6 +167,7 @@ public class PacketListener {
     /**
      * 处理实体交互数据包
      * 使用 STREAM_CODEC 解码数据包获取实体 ID 和动作类型
+     * 仅在 Netty 线程提取数据，所有 Bukkit API 调用调度到主线程
      *
      * @param player 玩家
      * @param packet 交互数据包
@@ -180,10 +185,11 @@ public class PacketListener {
                 return false;
             }
 
-            ClickType clickType = mapActionToClickType(player, actionOrdinal);
-
-            // 切换到主线程处理点击逻辑
-            SchedulerUtil.runTask(player, () -> handleClick(player, entityId, clickType));
+            // 切换到主线程处理点击逻辑（mapActionToClickType 需要调用 Bukkit API）
+            SchedulerUtil.runTask(player, () -> {
+                ClickType clickType = mapActionToClickType(player, actionOrdinal);
+                handleClick(player, entityId, clickType);
+            });
 
             return false;
         } catch (Exception e) {

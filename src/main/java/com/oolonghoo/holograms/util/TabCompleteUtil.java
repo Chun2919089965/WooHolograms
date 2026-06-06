@@ -31,7 +31,7 @@ public class TabCompleteUtil {
     // 常用变量（从 PlaceholderUtil 派生）
     public static final Map<String, String> PLACEHOLDERS = new HashMap<>();
     static {
-        for (String key : PlaceholderUtil.BUILTIN_PLACEHOLDERS.keySet()) {
+        for (String key : PlaceholderUtil.getBuiltinPlaceholders().keySet()) {
             PLACEHOLDERS.put("{" + key + "}", "");
         }
     }

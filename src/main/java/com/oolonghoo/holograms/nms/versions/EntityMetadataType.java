@@ -24,7 +24,7 @@ import java.lang.reflect.Field;
 class EntityMetadataType<T> {
 
     // 实体属性（不可见、着火等）
-    private static final EntityDataAccessor<Byte> ENTITY_PROPERTIES_OBJECT = getAccessor(Entity.class, "DATA_SHARED_FLAGS_ID");
+    static final EntityDataAccessor<Byte> ENTITY_PROPERTIES_OBJECT = getAccessor(Entity.class, "DATA_SHARED_FLAGS_ID");
 
     // 实体自定义名称
     private static final EntityDataAccessor<Component> ENTITY_CUSTOM_NAME_OBJECT = getAccessor(Entity.class, "DATA_CUSTOM_NAME");

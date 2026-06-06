@@ -127,12 +127,12 @@ public class ColorUtil {
         }
 
         Matcher matcher = HEX_COLOR_PATTERN.matcher(text);
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
 
         while (matcher.find()) {
             String hex = matcher.group(1);
             // 转换为 MiniMessage 格式
-            matcher.appendReplacement(result, "<color:#" + hex + ">");
+            matcher.appendReplacement(result, Matcher.quoteReplacement("<color:#" + hex + ">"));
         }
         matcher.appendTail(result);
 
@@ -396,7 +396,7 @@ public class ColorUtil {
         }
 
         Matcher matcher = LEGACY_COLOR_PATTERN.matcher(text);
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             char code = Character.toLowerCase(matcher.group(1).charAt(0));
             int index;

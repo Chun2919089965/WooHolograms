@@ -118,7 +118,7 @@ public class AnimationManager {
         }
 
         Matcher matcher = ANIMATION_PATTERN.matcher(string);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean found = false;
 
         while (matcher.find()) {

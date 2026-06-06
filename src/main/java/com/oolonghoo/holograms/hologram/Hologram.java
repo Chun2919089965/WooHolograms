@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -31,12 +32,12 @@ public class Hologram {
     // 基本信息
     private final String name;
     private Location location;
-    private boolean enabled;
+    private volatile boolean enabled;
     private boolean saveToFile;
 
     // 显示设置
-    private double displayRange;
-    private double updateRange;
+    private volatile double displayRange;
+    private volatile double updateRange;
     private int updateInterval;
     private Billboard billboard = Billboard.CENTER;
     private float facing;
@@ -48,9 +49,9 @@ public class Hologram {
 
     // 全息图类型和显示属性
     private HologramType type;
-    private boolean visible;
+    private volatile boolean visible;
     private boolean persistent;
-    private double lineHeight;
+    private volatile double lineHeight;
 
     // 权限
     private String permission;
@@ -120,13 +121,13 @@ public class Hologram {
         this.persistent = saveToFile;
         this.permission = null;
         this.flags = ConcurrentHashMap.newKeySet();
-        this.pages = new ArrayList<>();
+        this.pages = new CopyOnWriteArrayList<>();
         this.viewers = ConcurrentHashMap.newKeySet();
         this.viewerPages = new ConcurrentHashMap<>();
         this.hidePlayers = ConcurrentHashMap.newKeySet();
         this.showPlayers = ConcurrentHashMap.newKeySet();
         this.defaultVisibleState = true;
-        this.clickableRenderers = new ArrayList<>();
+        this.clickableRenderers = new CopyOnWriteArrayList<>();
 
         // 添加默认页（直接创建，避免在构造函数中调用可覆盖的方法）
         pages.add(new HologramPage(this, 0));
@@ -206,7 +207,11 @@ public class Hologram {
      * @param enabled 是否启用
      */
     public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+        if (enabled) {
+            enable();
+        } else {
+            disable();
+        }
     }
 
     /**
@@ -300,8 +305,10 @@ public class Hologram {
      * @param facing 朝向
      */
     public void setFacing(float facing) {
-        this.facing = facing;
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.facing = facing;
+            refreshAllViewers();
+        }
     }
 
     /**
@@ -319,8 +326,10 @@ public class Hologram {
      * @param billboard Billboard 模式
      */
     public void setBillboard(Billboard billboard) {
-        this.billboard = billboard;
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.billboard = billboard;
+            refreshAllViewers();
+        }
     }
 
     /**
@@ -338,8 +347,10 @@ public class Hologram {
      * @param doubleSided 是否双面显示
      */
     public void setDoubleSided(boolean doubleSided) {
-        this.doubleSided = doubleSided;
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.doubleSided = doubleSided;
+            refreshAllViewers();
+        }
     }
 
     public TextAlignment getAlignment() {
@@ -347,8 +358,10 @@ public class Hologram {
     }
 
     public void setAlignment(TextAlignment alignment) {
-        this.alignment = alignment != null ? alignment : TextAlignment.LEFT;
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.alignment = alignment != null ? alignment : TextAlignment.LEFT;
+            refreshAllViewers();
+        }
     }
 
     public int getBackgroundAlpha() {
@@ -356,8 +369,10 @@ public class Hologram {
     }
 
     public void setBackgroundAlpha(int backgroundAlpha) {
-        this.backgroundAlpha = Math.max(0, Math.min(255, backgroundAlpha));
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.backgroundAlpha = Math.max(0, Math.min(255, backgroundAlpha));
+            refreshAllViewers();
+        }
     }
 
     public int getBackgroundColor() {
@@ -365,8 +380,10 @@ public class Hologram {
     }
 
     public void setBackgroundColor(int backgroundColor) {
-        this.backgroundColor = backgroundColor & 0xFFFFFF; // 只保留 RGB 部分
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.backgroundColor = backgroundColor & 0xFFFFFF; // 只保留 RGB 部分
+            refreshAllViewers();
+        }
     }
 
     public int getLineWidth() {
@@ -374,8 +391,10 @@ public class Hologram {
     }
 
     public void setLineWidth(int lineWidth) {
-        this.lineWidth = Math.max(1, lineWidth);
-        refreshAllViewers();
+        synchronized (visibilityMutex) {
+            this.lineWidth = Math.max(1, lineWidth);
+            refreshAllViewers();
+        }
     }
 
     /**
@@ -482,11 +501,13 @@ public class Hologram {
      * @param visible 是否可见
      */
     public void setVisible(boolean visible) {
-        this.visible = visible;
-        if (visible) {
-            showAll();
-        } else {
-            hideAll();
+        synchronized (visibilityMutex) {
+            this.visible = visible;
+            if (visible) {
+                showAll();
+            } else {
+                hideAll();
+            }
         }
     }
     
@@ -792,21 +813,34 @@ public class Hologram {
 
             // 5. 更新观看者的页码
             if (!pages.isEmpty()) {
+                // 先收集需要修改的条目，避免在迭代中修改 viewerPages
+                Map<UUID, Integer> updates = new LinkedHashMap<>();
                 for (Map.Entry<UUID, Integer> entry : viewerPages.entrySet()) {
                     UUID uuid = entry.getKey();
                     int currentPage = entry.getValue();
-                    Player player = Bukkit.getPlayer(uuid);
 
                     if (currentPage == index) {
                         // 当前观看的页面被删除，切换到第一页
+                        Player player = Bukkit.getPlayer(uuid);
                         if (player != null && player.isOnline()) {
-                            show(player, 0);
+                            updates.put(uuid, -1); // 标记需要 show(player, 0)
                         } else {
-                            viewerPages.put(uuid, 0);
+                            updates.put(uuid, 0);
                         }
                     } else if (currentPage > index) {
                         // 当前观看的页面索引需要减一
-                        viewerPages.put(uuid, currentPage - 1);
+                        updates.put(uuid, currentPage - 1);
+                    }
+                }
+
+                // 应用修改
+                for (Map.Entry<UUID, Integer> update : updates.entrySet()) {
+                    UUID uuid = update.getKey();
+                    int newPage = update.getValue();
+                    if (newPage == -1) {
+                        show(Bukkit.getPlayer(uuid), 0);
+                    } else {
+                        viewerPages.put(uuid, newPage);
                     }
                 }
             } else {
@@ -1858,12 +1892,17 @@ public class Hologram {
      */
     public NmsHologramRenderer getClickableRenderer(int index) {
         if (index >= clickableRenderers.size()) {
-            NmsHologramRenderer renderer = WooHolograms.getInstance()
-                    .getRendererFactory()
-                    .createClickableRenderer();
-            clickableRenderers.add(renderer);
-            for (int id : renderer.getEntityIds()) {
-                WooHolograms.getInstance().getHologramManager().registerEntityId(id, this);
+            synchronized (this) {
+                // Double-check after acquiring lock
+                if (index >= clickableRenderers.size()) {
+                    NmsHologramRenderer renderer = WooHolograms.getInstance()
+                            .getRendererFactory()
+                            .createClickableRenderer();
+                    clickableRenderers.add(renderer);
+                    for (int id : renderer.getEntityIds()) {
+                        WooHolograms.getInstance().getHologramManager().registerEntityId(id, this);
+                    }
+                }
             }
         }
         return clickableRenderers.get(index);
@@ -1998,10 +2037,12 @@ public class Hologram {
      * @param player 玩家
      */
     public void onQuit(Player player) {
-        hide(player);
-        removeShowPlayer(player);
-        removeHidePlayer(player);
-        viewerPages.remove(player.getUniqueId());
+        synchronized (visibilityMutex) {
+            hide(player);
+            removeShowPlayer(player);
+            removeHidePlayer(player);
+            viewerPages.remove(player.getUniqueId());
+        }
     }
 
     /*

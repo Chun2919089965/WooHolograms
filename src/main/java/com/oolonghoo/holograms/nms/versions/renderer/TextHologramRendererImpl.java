@@ -29,7 +29,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
 
     private final int frontEntityId;
     private final int backEntityId;
-    private boolean destroyed = false;
+    private volatile boolean destroyed = false;
     private float currentYaw = 0.0f;
     private float currentPitch = 0.0f;
     private boolean currentDoubleSided = false;
@@ -59,6 +59,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         float hologramFacing = hologram != null ? hologram.getFacing() : 0f;
         TextAlignment alignment = hologram != null ? hologram.getAlignment() : TextAlignment.LEFT;
         int lineWidth = hologram != null ? hologram.getLineWidth() : 300;
+        int backgroundColor = hologram != null ? (hologram.getBackgroundAlpha() << 24) | hologram.getBackgroundColor() : 0;
 
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()
                 .withInvisible()
@@ -66,7 +67,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withTextDisplayText(text)
                 .withBillboard(billboard)
                 .withTextAlignment(alignment)
-                .withTextBackgroundColor((hologram.getBackgroundAlpha() << 24) | hologram.getBackgroundColor())
+                .withTextBackgroundColor(backgroundColor)
                 .withTextLineWidth(lineWidth);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
@@ -134,6 +135,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
         boolean doubleSided = hologram != null && hologram.isDoubleSided();
         TextAlignment alignment = hologram != null ? hologram.getAlignment() : TextAlignment.LEFT;
         int lineWidth = hologram != null ? hologram.getLineWidth() : 300;
+        int backgroundColor = hologram != null ? (hologram.getBackgroundAlpha() << 24) | hologram.getBackgroundColor() : 0;
 
         EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()
                 .withInvisible()
@@ -141,7 +143,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withTextDisplayText(text)
                 .withBillboard(billboard)
                 .withTextAlignment(alignment)
-                .withTextBackgroundColor((hologram.getBackgroundAlpha() << 24) | hologram.getBackgroundColor())
+                .withTextBackgroundColor(backgroundColor)
                 .withTextLineWidth(lineWidth);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {

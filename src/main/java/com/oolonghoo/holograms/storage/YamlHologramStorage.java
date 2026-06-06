@@ -35,6 +35,9 @@ public class YamlHologramStorage implements HologramStorage {
     private final File hologramsDir;
     private final ReentrantLock saveLock = new ReentrantLock();
 
+    // 世界未加载时暂存的全息图 ID，按世界名分组
+    private final Map<String, List<String>> pendingHolograms = new HashMap<>();
+
     public YamlHologramStorage(WooHolograms plugin) {
         this.plugin = plugin;
         this.hologramsDir = new File(plugin.getDataFolder(), "holograms");
@@ -44,6 +47,9 @@ public class YamlHologramStorage implements HologramStorage {
     }
 
     private File getHologramFile(String id) {
+        if (id.contains("..") || id.contains("/") || id.contains("\\") || !id.matches("[a-zA-Z0-9_\\-]+")) {
+            throw new IllegalArgumentException("Invalid hologram ID: " + id);
+        }
         return new File(hologramsDir, id + ".yml");
     }
 
@@ -191,10 +197,56 @@ public class YamlHologramStorage implements HologramStorage {
             Hologram hologram = load(id);
             if (hologram != null) {
                 holograms.put(id, hologram);
+            } else {
+                // 尝试获取世界名，若世界未加载则加入 pending
+                String worldName = getWorldNameFromFile(id);
+                if (worldName != null && plugin.getServer().getWorld(worldName) == null) {
+                    pendingHolograms.computeIfAbsent(worldName, k -> new ArrayList<>()).add(id);
+                }
             }
         }
 
         return holograms;
+    }
+
+    /**
+     * 从文件中读取全息图的世界名（不完整加载全息图）
+     */
+    private String getWorldNameFromFile(String id) {
+        File file = getHologramFile(id);
+        if (!file.exists()) return null;
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        // 优先从 location 字符串解析
+        String locStr = yaml.getString("location");
+        if (locStr != null && !locStr.isEmpty()) {
+            String[] parts = locStr.split(",");
+            if (parts.length > 0) return parts[0];
+        }
+        // 兼容旧格式
+        return yaml.getString("world");
+    }
+
+    /**
+     * 加载指定世界的待处理全息图
+     * 当世界加载后调用，尝试加载之前因世界未加载而失败的全息图
+     *
+     * @param worldName 世界名称
+     * @return 成功加载的全息图映射
+     */
+    public Map<String, Hologram> loadPendingForWorld(String worldName) {
+        List<String> pendingIds = pendingHolograms.remove(worldName);
+        if (pendingIds == null || pendingIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, Hologram> loaded = new HashMap<>();
+        for (String id : pendingIds) {
+            Hologram hologram = load(id);
+            if (hologram != null) {
+                loaded.put(id, hologram);
+            }
+        }
+        return loaded;
     }
 
     @Override
@@ -219,7 +271,112 @@ public class YamlHologramStorage implements HologramStorage {
 
     @Override
     public void saveAsync(Hologram hologram) {
-        SchedulerUtil.runTaskAsynchronously(() -> save(hologram));
+        // 在主线程读取 Hologram 状态生成 YamlConfiguration，避免异步线程读取导致数据竞争
+        YamlConfiguration yaml = new YamlConfiguration();
+        File file;
+        saveLock.lock();
+        try {
+            String id = hologram.getId();
+            file = getHologramFile(id);
+
+            Location loc = hologram.getLocation();
+            if (loc == null) {
+                plugin.getLogger().warning(() -> "Cannot save hologram " + id + ": location is null");
+                return;
+            }
+
+            World world = loc.getWorld();
+            if (world == null) {
+                plugin.getLogger().warning(() -> "Cannot save hologram " + id + ": world is null");
+                return;
+            }
+
+            yaml.set("location", LocationUtil.toString(loc));
+            yaml.set("enabled", hologram.isEnabled());
+            yaml.set("type", hologram.getType().getId());
+            yaml.set("visible", hologram.isVisible());
+            yaml.set("persistent", hologram.isPersistent());
+            yaml.set("line-height", hologram.getLineHeight());
+            yaml.set("billboard", hologram.getBillboard().getId());
+            yaml.set("facing", hologram.getFacing());
+            yaml.set("double-sided", hologram.isDoubleSided());
+            yaml.set("display-range", hologram.getDisplayRange());
+            yaml.set("update-range", hologram.getUpdateRange());
+            yaml.set("update-interval", hologram.getUpdateInterval());
+            yaml.set("alignment", hologram.getAlignment().getId());
+            yaml.set("background-alpha", hologram.getBackgroundAlpha());
+            yaml.set("background-color", hologram.getBackgroundColor());
+            yaml.set("line-width", hologram.getLineWidth());
+
+            if (hologram.getPermission() != null && !hologram.getPermission().isEmpty()) {
+                yaml.set("permission", hologram.getPermission());
+            }
+
+            if (!hologram.getFlags().isEmpty()) {
+                yaml.set("flags", hologram.getFlags().stream()
+                        .map(EnumFlag::name)
+                        .collect(Collectors.toList()));
+            }
+
+            List<HologramPage> pages = hologram.getPages();
+            for (int pageIndex = 0; pageIndex < pages.size(); pageIndex++) {
+                HologramPage page = pages.get(pageIndex);
+                String pagePath = "pages." + pageIndex;
+
+                saveActions(yaml, pagePath + ".actions", page.getActions());
+
+                List<HologramLine> lines = page.getLines();
+                for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+                    HologramLine line = lines.get(lineIndex);
+                    String linePath = pagePath + ".lines." + lineIndex;
+
+                    yaml.set(linePath + ".content", line.getContent());
+                    yaml.set(linePath + ".height", line.getBaseHeight());
+                    yaml.set(linePath + ".offsetX", line.getOffsetX());
+                    yaml.set(linePath + ".offsetY", line.getOffsetY());
+                    yaml.set(linePath + ".offsetZ", line.getOffsetZ());
+                    yaml.set(linePath + ".facing", line.getFacing());
+
+                    if (line.getCustomYaw() != null) {
+                        yaml.set(linePath + ".custom-yaw", line.getCustomYaw());
+                    }
+
+                    if (line.getCustomPitch() != null) {
+                        yaml.set(linePath + ".custom-pitch", line.getCustomPitch());
+                    }
+
+                    if (line.getBrightness() != null) {
+                        yaml.set(linePath + ".brightness",
+                                line.getBrightness().getSkyLight() + "," + line.getBrightness().getBlockLight());
+                    }
+
+                    if (line.getBillboard() != null) {
+                        yaml.set(linePath + ".billboard", line.getBillboard().getId());
+                    }
+
+                    if (line.getPermission() != null && !line.getPermission().isEmpty()) {
+                        yaml.set(linePath + ".permission", line.getPermission());
+                    }
+
+                    if (!line.getFlags().isEmpty()) {
+                        yaml.set(linePath + ".flags", line.getFlags().stream()
+                                .map(EnumFlag::name)
+                                .collect(Collectors.toList()));
+                    }
+
+                    if (line.hasActions()) {
+                        saveActions(yaml, linePath + ".actions", line.getActions());
+                    }
+                }
+            }
+        } finally {
+            saveLock.unlock();
+        }
+
+        // 仅将文件写入操作提交到异步线程
+        YamlConfiguration yamlSnapshot = yaml;
+        File fileSnapshot = file;
+        SchedulerUtil.runTaskAsynchronously(() -> saveYaml(yamlSnapshot, fileSnapshot));
     }
 
     @Override

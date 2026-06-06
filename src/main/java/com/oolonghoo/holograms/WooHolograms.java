@@ -169,28 +169,56 @@ public class WooHolograms extends JavaPlugin {
         }
         
         // 保存所有全息图
-        hologramManager.saveAll();
+        try {
+            hologramManager.saveAll();
+        } catch (Exception e) {
+            getLogger().severe("保存全息图时出错: " + e.getMessage());
+        }
         
         // 注销数据包监听器
-        packetListener.unregister();
+        try {
+            packetListener.unregister();
+        } catch (Exception e) {
+            getLogger().severe("注销数据包监听器时出错: " + e.getMessage());
+        }
         
         // 注销 PlaceholderAPI
-        if (placeholderHook != null) {
-            placeholderHook.unregister();
+        try {
+            if (placeholderHook != null) {
+                placeholderHook.unregister();
+            }
+        } catch (Exception e) {
+            getLogger().severe("注销 PlaceholderAPI 时出错: " + e.getMessage());
         }
         
         // 清理 GUI
-        guiManager.clear();
+        try {
+            guiManager.clear();
+        } catch (Exception e) {
+            getLogger().severe("清理 GUI 时出错: " + e.getMessage());
+        }
         
         // 清理全息图
-        hologramManager.clear();
+        try {
+            hologramManager.clear();
+        } catch (Exception e) {
+            getLogger().severe("清理全息图时出错: " + e.getMessage());
+        }
         
         // 清理动画
-        animationManager.clear();
+        try {
+            animationManager.clear();
+        } catch (Exception e) {
+            getLogger().severe("清理动画时出错: " + e.getMessage());
+        }
         
         // 清理渲染器缓存池
-        if (rendererPool != null) {
-            rendererPool.clear();
+        try {
+            if (rendererPool != null) {
+                rendererPool.clear();
+            }
+        } catch (Exception e) {
+            getLogger().severe("清理渲染器缓存池时出错: " + e.getMessage());
         }
         
         pluginEnabled = false;

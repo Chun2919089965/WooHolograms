@@ -35,7 +35,7 @@ public class PageTextRenderer {
     private final HologramPage page;
     private final EntityIdGenerator entityIdGenerator;
     private List<TextGroup> textGroups = new ArrayList<>();
-    private boolean destroyed = false;
+    private volatile boolean destroyed = false;
 
     private float currentYaw = 0.0f;
     private float currentPitch = 0.0f;
@@ -55,6 +55,21 @@ public class PageTextRenderer {
      * 遍历页面所有行，将连续的TEXT行分为一组
      */
     public void rebuildGroups() {
+        // 先移除旧实体，避免实体ID泄漏
+        if (!textGroups.isEmpty()) {
+            EntityPacketsBuilder removePackets = EntityPacketsBuilder.create();
+            for (TextGroup group : textGroups) {
+                removePackets.withRemoveEntity(group.frontEntityId);
+                removePackets.withRemoveEntity(group.backEntityId);
+            }
+            for (UUID uuid : lastTextPerPlayerGroup.keySet()) {
+                org.bukkit.entity.Player viewer = org.bukkit.Bukkit.getPlayer(uuid);
+                if (viewer != null && viewer.isOnline()) {
+                    removePackets.sendTo(viewer);
+                }
+            }
+        }
+
         textGroups.clear();
         lastTextPerPlayerGroup.clear();
 

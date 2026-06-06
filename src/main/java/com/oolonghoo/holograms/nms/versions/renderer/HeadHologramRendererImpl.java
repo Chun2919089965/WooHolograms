@@ -26,9 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
 
+    /** 缓存的 HeadDatabaseAPI 实例，避免每次调用都通过反射创建 */
+    private static volatile Object cachedHeadDatabaseApi;
+    private static volatile Method cachedGetItemMethod;
+
     protected final int entityId;
     protected final boolean small;
-    protected boolean destroyed = false;
+    protected volatile boolean destroyed = false;
     protected final Map<UUID, String> lastContentPerPlayer = new ConcurrentHashMap<>();
 
     public HeadHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
@@ -229,9 +233,13 @@ public class HeadHologramRendererImpl implements NmsHeadHologramRenderer {
     protected ItemStack createHeadFromHDB(String hdbId) {
         if (Bukkit.getPluginManager().getPlugin("HeadDatabase") != null) {
             try {
-                Object api = Class.forName("ar.com.zir.libs.headdatabase.api.HeadDatabaseAPI").getDeclaredConstructor().newInstance();
-                Method getItemMethod = api.getClass().getMethod("getItem", String.class);
-                ItemStack head = (ItemStack) getItemMethod.invoke(api, hdbId);
+                if (cachedHeadDatabaseApi == null || cachedGetItemMethod == null) {
+                    Object api = Class.forName("ar.com.zir.libs.headdatabase.api.HeadDatabaseAPI").getDeclaredConstructor().newInstance();
+                    Method getItemMethod = api.getClass().getMethod("getItem", String.class);
+                    cachedHeadDatabaseApi = api;
+                    cachedGetItemMethod = getItemMethod;
+                }
+                ItemStack head = (ItemStack) cachedGetItemMethod.invoke(cachedHeadDatabaseApi, hdbId);
                 if (head != null) {
                     return head;
                 }

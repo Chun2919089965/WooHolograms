@@ -85,15 +85,11 @@ public class HologramManager {
         if (!isValidName(name)) {
             return null;
         }
-        
-        if (holograms.containsKey(name)) {
-            return null;
-        }
-        
+
         if (location == null || location.getWorld() == null) {
             return null;
         }
-        
+
         int maxPerWorld = plugin.getConfigManager().getMaxHologramsPerWorld();
         if (maxPerWorld > 0) {
             int currentCount = getHologramsInWorld(location.getWorld().getName()).size();
@@ -113,7 +109,9 @@ public class HologramManager {
             return null;
         }
 
-        holograms.put(name, hologram);
+        if (holograms.putIfAbsent(name, hologram) != null) {
+            return null;
+        }
 
         addToWorldCache(hologram);
 
@@ -125,10 +123,6 @@ public class HologramManager {
     public Hologram cloneHologram(String sourceName, String targetName, Location location, boolean temp) {
         Hologram source = holograms.get(sourceName);
         if (source == null) {
-            return null;
-        }
-
-        if (holograms.containsKey(targetName)) {
             return null;
         }
 
@@ -146,7 +140,10 @@ public class HologramManager {
             return null;
         }
 
-        holograms.put(targetName, cloned);
+        if (holograms.putIfAbsent(targetName, cloned) != null) {
+            return null;
+        }
+
         addToWorldCache(cloned);
         showToNearby(cloned);
 
@@ -465,11 +462,28 @@ public class HologramManager {
      */
 
     /**
-     * 世界加载时显示全息图
+     * 世界加载时显示全息图，并加载因世界未加载而暂存的全息图
      * 
      * @param worldName 世界名称
      */
     public void onWorldLoad(String worldName) {
+        // 加载因世界未加载而暂存的全息图
+        if (storage instanceof com.oolonghoo.holograms.storage.YamlHologramStorage yamlStorage) {
+            Map<String, Hologram> pending = yamlStorage.loadPendingForWorld(worldName);
+            for (Map.Entry<String, Hologram> entry : pending.entrySet()) {
+                String name = entry.getKey();
+                Hologram hologram = entry.getValue();
+                if (!holograms.containsKey(name)) {
+                    holograms.put(name, hologram);
+                    addToWorldCache(hologram);
+                    showToNearby(hologram);
+                }
+            }
+            if (!pending.isEmpty()) {
+                plugin.getLogger().info(() -> "世界 " + worldName + " 加载后，恢复了 " + pending.size() + " 个暂存全息图");
+            }
+        }
+
         for (Hologram hologram : getHologramsInWorld(worldName)) {
             showToNearby(hologram);
         }
@@ -607,13 +621,10 @@ public class HologramManager {
         if (loc == null || loc.getWorld() == null) {
             return;
         }
-        List<Hologram> list = hologramsByWorld.get(loc.getWorld().getName());
-        if (list != null) {
+        hologramsByWorld.computeIfPresent(loc.getWorld().getName(), (k, list) -> {
             list.remove(hologram);
-            if (list.isEmpty()) {
-                hologramsByWorld.remove(loc.getWorld().getName());
-            }
-        }
+            return list.isEmpty() ? null : list;
+        });
     }
 
     public void updateWorldCache(Hologram hologram, String oldWorldName) {

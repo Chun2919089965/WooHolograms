@@ -129,13 +129,21 @@ public class GuiManager implements Listener {
         }
 
         Player player = (Player) event.getPlayer();
+        UUID playerId = player.getUniqueId();
         InventoryHolder holder = event.getInventory().getHolder();
 
         if (holder instanceof GuiScreen) {
             GuiScreen gui = (GuiScreen) holder;
             
-            if (openGuis.get(player.getUniqueId()) == gui) {
-                openGuis.remove(player.getUniqueId());
+            if (openGuis.get(playerId) == gui) {
+                openGuis.remove(playerId);
+            }
+
+            // 清理 previousGuis：只有当存储的 previousGui 就是当前关闭的 GUI 时才移除，
+            // 避免误删用户通过 goBack 存储的其他 previous GUI
+            GuiScreen previousGui = previousGuis.get(playerId);
+            if (previousGui == gui) {
+                previousGuis.remove(playerId);
             }
         }
     }

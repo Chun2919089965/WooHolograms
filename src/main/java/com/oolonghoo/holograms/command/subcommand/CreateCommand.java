@@ -39,6 +39,11 @@ public class CreateCommand extends Subcommand {
 
         String name = args[0];
 
+        if (!name.matches("[a-zA-Z0-9_\\-]+")) {
+            player.sendMessage(ColorUtil.colorize(plugin.getMessages().getWithPrefix("create.invalid-name", "name", name)));
+            return true;
+        }
+
         if (plugin.getHologramManager().containsHologram(name)) {
             player.sendMessage(ColorUtil.colorize(plugin.getMessages().getWithPrefix("general.hologram-exists", "name", name)));
             return true;

@@ -129,7 +129,9 @@ public class LocationUtil {
             return false;
         }
         
-        if (!loc1.getWorld().equals(loc2.getWorld())) {
+        World w1 = loc1.getWorld();
+        World w2 = loc2.getWorld();
+        if (w1 == null || w2 == null || !w1.equals(w2)) {
             return false;
         }
         

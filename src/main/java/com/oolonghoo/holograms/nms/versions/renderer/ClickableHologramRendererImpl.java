@@ -18,7 +18,7 @@ import java.util.Collection;
 public class ClickableHologramRendererImpl implements NmsClickableHologramRenderer {
 
     private final int entityId;
-    private boolean destroyed = false;
+    private volatile boolean destroyed = false;
 
     public ClickableHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.entityId = entityIdGenerator.getFreeEntityId();
@@ -31,7 +31,7 @@ public class ClickableHologramRendererImpl implements NmsClickableHologramRender
                 .withEntityMetadata(entityId, EntityMetadataBuilder.create()
                         .withInvisible()
                         .withNoGravity()
-                        .withArmorStandProperties(false, false)
+                        .withArmorStandProperties(false, true)
                         .toWatchableObjects())
                 .sendTo(player);
     }

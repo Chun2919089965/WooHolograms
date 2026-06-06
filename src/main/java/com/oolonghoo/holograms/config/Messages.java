@@ -8,8 +8,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 消息管理器
@@ -25,7 +25,7 @@ public class Messages {
 
     public Messages(WooHolograms plugin) {
         this.plugin = plugin;
-        this.messages = new HashMap<>();
+        this.messages = new ConcurrentHashMap<>();
     }
 
     /**

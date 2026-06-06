@@ -1,5 +1,6 @@
 package com.oolonghoo.holograms.action;
 
+import com.oolonghoo.holograms.WooHolograms;
 import org.bukkit.entity.Player;
 
 /**
@@ -63,8 +64,15 @@ public class Action {
             String rest = s.substring(end + 1).trim();
             s = rest.isEmpty() ? typeName : typeName + ":" + rest;
         }
-        if (s.toUpperCase().startsWith("CONNECT:") || s.equalsIgnoreCase("CONNECT")) {
-            s = s.toUpperCase().replaceFirst("CONNECT", "SERVER");
+        // 只在类型前缀部分替换 CONNECT，避免误替换 data 部分中的 CONNECT
+        if (s.contains(":")) {
+            String[] parts = s.split(":", 2);
+            if (parts[0].equalsIgnoreCase("CONNECT")) {
+                parts[0] = "SERVER";
+            }
+            s = parts[0] + ":" + parts[1];
+        } else if (s.equalsIgnoreCase("CONNECT")) {
+            s = "SERVER";
         }
         return s;
     }
@@ -173,6 +181,7 @@ public class Action {
         try {
             return new Action(string);
         } catch (IllegalArgumentException e) {
+            WooHolograms.getInstance().getLogger().warning("Invalid action format: " + string);
             return null;
         }
     }

@@ -16,7 +16,7 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
 
     private final int entityId;
     private EntityType entityType = EntityType.ZOMBIE;
-    private boolean destroyed = false;
+    private volatile boolean destroyed = false;
 
     public EntityHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
         this.entityId = entityIdGenerator.getFreeEntityId();

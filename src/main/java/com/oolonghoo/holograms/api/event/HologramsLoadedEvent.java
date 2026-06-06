@@ -5,6 +5,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,10 +25,10 @@ public class HologramsLoadedEvent extends Event {
 
     /**
      * 获取已加载的全息图列表
-     * @return 全息图列表
+     * @return 不可修改的全息图列表
      */
     public List<Hologram> getHolograms() {
-        return holograms;
+        return Collections.unmodifiableList(holograms);
     }
 
     /**

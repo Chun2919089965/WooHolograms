@@ -6,6 +6,7 @@ import com.oolonghoo.holograms.hologram.Billboard;
 import net.minecraft.core.Rotations;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -145,10 +146,32 @@ public class EntityMetadataBuilder {
         }
 
         if (brightness.getBlockLight() >= 15 || brightness.getSkyLight() >= 15) {
-            watchableObjects.add(EntityMetadataType.ENTITY_PROPERTIES.construct((byte) 0x60));
+            // 合并 invisible(0x20) 和 glow(0x40) 标志，避免与 withInvisible() 产生重复 accessor
+            byte glowFlags = 0x40;
+            mergeEntityProperties(glowFlags);
         }
 
         return this;
+    }
+
+    /**
+     * 合并实体属性标志位，如果已存在 ENTITY_PROPERTIES 条目则合并，否则新增
+     */
+    private void mergeEntityProperties(byte flags) {
+        EntityDataAccessor<Byte> targetAccessor = EntityMetadataType.ENTITY_PROPERTIES_OBJECT;
+        for (int i = 0; i < watchableObjects.size(); i++) {
+            SynchedEntityData.DataItem<?> item = watchableObjects.get(i);
+            if (item.getAccessor().equals(targetAccessor)) {
+                // 合并标志位
+                @SuppressWarnings("unchecked")
+                SynchedEntityData.DataItem<Byte> byteItem = (SynchedEntityData.DataItem<Byte>) item;
+                byte existing = byteItem.getValue();
+                watchableObjects.set(i, EntityMetadataType.ENTITY_PROPERTIES.construct((byte) (existing | flags)));
+                return;
+            }
+        }
+        // 不存在则新增
+        watchableObjects.add(EntityMetadataType.ENTITY_PROPERTIES.construct(flags));
     }
 
     /**

@@ -3,6 +3,7 @@ package com.oolonghoo.holograms.config;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.bukkit.configuration.file.FileConfiguration;
@@ -83,7 +84,7 @@ public class ConfigManager {
         // 基本设置
         debug = config.getBoolean("settings.debug", false);
         language = config.getString("settings.language", "zh-CN");
-        autoSaveInterval = config.getInt("settings.auto-save-interval", 300);
+        autoSaveInterval = Math.max(1, config.getInt("settings.auto-save-interval", 300));
 
         // 默认值设置
         defaultDisplayRange = config.getDouble("defaults.display-range", 48.0);
@@ -100,7 +101,7 @@ public class ConfigManager {
         // 性能设置
         renderInterval = config.getLong("performance.render-interval", 2L);
         placeholderInterval = config.getLong("performance.placeholder-interval", 40L);
-        cacheSize = config.getInt("performance.cache-size", 500);
+        cacheSize = Math.max(1, config.getInt("performance.cache-size", 500));
         maxUpdatesPerTick = config.getInt("performance.max-updates-per-tick", 50);
 
         // 动画设置
@@ -112,8 +113,8 @@ public class ConfigManager {
         clickCooldown = config.getInt("interaction.click-cooldown", 500);
 
         // 限制设置
-        maxHologramsPerWorld = config.getInt("limits.max-holograms-per-world", 100);
-        maxLinesPerHologram = config.getInt("limits.max-lines-per-hologram", 20);
+        maxHologramsPerWorld = Math.max(1, config.getInt("limits.max-holograms-per-world", 100));
+        maxLinesPerHologram = Math.max(1, config.getInt("limits.max-lines-per-hologram", 20));
 
         // 渲染器缓存池设置
         rendererPoolEnabled = config.getBoolean("renderer-pool.enabled", true);

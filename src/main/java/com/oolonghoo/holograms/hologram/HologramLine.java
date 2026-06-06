@@ -30,6 +30,9 @@ public class HologramLine {
     // 动画匹配模式 - 与 AnimationManager 保持一致
     private static final Pattern ANIMATION_PATTERN = Pattern.compile("[<{]#?ANIM:(\\w+)(:\\S+)?[}>](.*?)[<{]/#?ANIM[}>]");
 
+    // 缓存的空实体ID数组
+    private static final int[] EMPTY_IDS = new int[0];
+
     // 默认配置值
     private static final double DEFAULT_HEIGHT_TEXT = 0.25;
     private static final double DEFAULT_HEIGHT_ICON = 0.5;
@@ -870,7 +873,7 @@ public class HologramLine {
             map.put("offsetZ", offsetZ);
         }
 
-        if (parent == null || facing != parent.getParent().getFacing()) {
+        if (parent == null || parent.getParent() == null || facing != parent.getParent().getFacing()) {
             map.put("facing", facing);
         }
 
@@ -1065,6 +1068,13 @@ public class HologramLine {
         synchronized (renderMutex) {
             // TEXT 行的渲染器由 PageTextRenderer 管理，此处只清理缓存
             if (type == HologramType.TEXT) {
+                // 清理 previousRenderer（从其他类型变为TEXT时遗留的旧渲染器）
+                if (previousRenderer != null) {
+                    unregisterEntityIds(previousRenderer);
+                    previousRenderer.destroy(getViewerPlayers());
+                    WooHolograms.getInstance().getRendererPool().release(previousRenderer);
+                    previousRenderer = null;
+                }
                 viewers.clear();
                 playerTextCache.clear();
                 lastTextCache.clear();
@@ -1269,7 +1279,8 @@ public class HologramLine {
     }
 
     public List<Action> getActions(ClickType clickType) {
-        return actions.getOrDefault(clickType, new ArrayList<>());
+        List<Action> list = actions.get(clickType);
+        return list != null ? new ArrayList<>(list) : new ArrayList<>();
     }
 
     public Map<ClickType, List<Action>> getActions() {
@@ -1370,10 +1381,10 @@ public class HologramLine {
     public int[] getEntityIds() {
         // TEXT 行的实体ID由 PageTextRenderer 管理
         if (type == HologramType.TEXT) {
-            return new int[0];
+            return EMPTY_IDS;
         }
         if (renderer == null) {
-            return new int[0];
+            return EMPTY_IDS;
         }
         return renderer.getEntityIds().stream().mapToInt(Integer::intValue).toArray();
     }

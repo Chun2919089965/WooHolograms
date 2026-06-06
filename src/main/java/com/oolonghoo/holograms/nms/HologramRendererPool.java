@@ -63,6 +63,9 @@ public class HologramRendererPool {
 
     public void clear() {
         for (Queue<NmsHologramRenderer> queue : pool.values()) {
+            for (NmsHologramRenderer renderer : queue) {
+                renderer.destroy(java.util.Collections.emptyList());
+            }
             queue.clear();
         }
     }

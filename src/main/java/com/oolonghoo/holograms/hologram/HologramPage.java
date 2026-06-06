@@ -38,7 +38,10 @@ public class HologramPage {
     private final Set<EnumFlag> flags;
 
     // 页面级文本渲染器（合并连续TEXT行为单个TextDisplay实体）
-    private PageTextRenderer pageTextRenderer;
+    private volatile PageTextRenderer pageTextRenderer;
+
+    // pageTextRenderer 惰性创建的锁对象
+    private final Object textRendererLock = new Object();
 
     /*
      * 构造函数
@@ -493,12 +496,16 @@ public class HologramPage {
      */
     public PageTextRenderer getPageTextRenderer() {
         if (pageTextRenderer == null) {
-            pageTextRenderer = new PageTextRenderer(this, WooHolograms.getInstance().getRendererFactory().getEntityIdGenerator());
-            // 注册实体ID到 HologramManager
-            if (parent != null) {
-                HologramManager manager = WooHolograms.getInstance().getHologramManager();
-                for (int id : pageTextRenderer.getEntityIds()) {
-                    manager.registerEntityId(id, parent);
+            synchronized (textRendererLock) {
+                if (pageTextRenderer == null) {
+                    pageTextRenderer = new PageTextRenderer(this, WooHolograms.getInstance().getRendererFactory().getEntityIdGenerator());
+                    // 注册实体ID到 HologramManager
+                    if (parent != null) {
+                        HologramManager manager = WooHolograms.getInstance().getHologramManager();
+                        for (int id : pageTextRenderer.getEntityIds()) {
+                            manager.registerEntityId(id, parent);
+                        }
+                    }
                 }
             }
         }
@@ -703,7 +710,8 @@ public class HologramPage {
      * @return 动作列表
      */
     public List<Action> getActions(ClickType clickType) {
-        return actions.getOrDefault(clickType, new ArrayList<>());
+        List<Action> list = actions.get(clickType);
+        return list != null ? new ArrayList<>(list) : new ArrayList<>();
     }
 
     /**

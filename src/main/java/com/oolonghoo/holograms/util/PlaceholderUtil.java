@@ -3,6 +3,7 @@ package com.oolonghoo.holograms.util;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,7 +20,7 @@ public class PlaceholderUtil {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([^}]+)}|%([^%]+)%");
     
-    public static final Map<String, Function<Player, String>> BUILTIN_PLACEHOLDERS = new HashMap<>();
+    private static final Map<String, Function<Player, String>> BUILTIN_PLACEHOLDERS = new HashMap<>();
     
     static {
         BUILTIN_PLACEHOLDERS.put("player", Player::getName);
@@ -51,12 +52,12 @@ public class PlaceholderUtil {
         }
         
         Matcher matcher = PLACEHOLDER_PATTERN.matcher(text);
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         
         while (matcher.find()) {
             String placeholder = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
             String replacement = resolvePlaceholder(placeholder.toLowerCase(), player);
-            matcher.appendReplacement(result, replacement != null ? replacement : matcher.group());
+            matcher.appendReplacement(result, replacement != null ? Matcher.quoteReplacement(replacement) : Matcher.quoteReplacement(matcher.group()));
         }
         
         matcher.appendTail(result);

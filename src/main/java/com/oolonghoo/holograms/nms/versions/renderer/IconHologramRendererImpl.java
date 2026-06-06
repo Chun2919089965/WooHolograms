@@ -26,7 +26,7 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
 
     private final int itemEntityId;
     private final int armorStandEntityId;
-    private boolean destroyed = false;
+    private volatile boolean destroyed = false;
     private final Map<UUID, String> lastContentPerPlayer = new ConcurrentHashMap<>();
 
     public IconHologramRendererImpl(EntityIdGenerator entityIdGenerator) {
@@ -136,7 +136,10 @@ public class IconHologramRendererImpl implements NmsIconHologramRenderer {
         }
         DecentPosition position = DecentPosition.fromLocation(location);
         EntityPacketsBuilder.create()
+                .withRemovePassenger(armorStandEntityId)
                 .withTeleportEntity(armorStandEntityId, offsetPosition(position))
+                .withTeleportEntity(itemEntityId, position)
+                .withPassenger(armorStandEntityId, itemEntityId)
                 .sendTo(player);
     }
 

@@ -31,6 +31,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(PlayerQuitEvent event) {
+        plugin.getPacketListener().uninject(event.getPlayer());
         plugin.getHologramManager().onPlayerQuit(event.getPlayer());
     }
 }

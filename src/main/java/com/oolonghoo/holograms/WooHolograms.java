@@ -72,7 +72,7 @@ public class WooHolograms extends JavaPlugin {
             } catch (NumberFormatException ignored) {}
         }
         if (!supported) {
-            getLogger().severe("WooHolograms requires Paper/Folia 1.21.11+. Current server: " + mcVersion);
+            getLogger().severe("WooHolograms requires Paper/Folia 1.21+. Current server: " + mcVersion);
             getLogger().severe("Plugin will be disabled.");
             this.pluginEnabled = false;
             getServer().getPluginManager().disablePlugin(this);

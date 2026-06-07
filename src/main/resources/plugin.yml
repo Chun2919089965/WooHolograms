@@ -4,7 +4,7 @@ main: com.oolonghoo.holograms.WooHolograms
 api-version: '1.21'
 folia-supported: true
 author: oolongho
-description: A hologram plugin for Paper/Folia 1.21.11+
+description: A hologram plugin for Paper/Folia 1.21+
 
 softdepend:
   - PlaceholderAPI

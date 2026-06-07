@@ -33,6 +33,7 @@ public class TypewriterAnimation extends TextAnimation {
 
     @Override
     protected String[] precompile(String text, String... args) {
+        String formatting = extractFormattingCodes(text);
         String stripped = stripSpecialColors(text);
         int length = stripped.length();
 
@@ -45,7 +46,7 @@ public class TypewriterAnimation extends TextAnimation {
         char[] chars = stripped.toCharArray();
 
         for (int i = 0; i < length; i++) {
-            String result = new String(Arrays.copyOfRange(chars, 0, i + 1));
+            String result = formatting + new String(Arrays.copyOfRange(chars, 0, i + 1));
             if (i < length - 1) {
                 result += "|";
             }

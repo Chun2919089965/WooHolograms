@@ -36,6 +36,7 @@ public class ScrollAnimation extends TextAnimation {
 
     @Override
     protected String[] precompile(String text, String... args) {
+        String formatting = extractFormattingCodes(text);
         String stripped = stripSpecialColors(text);
         int length = stripped.length();
 
@@ -45,7 +46,7 @@ public class ScrollAnimation extends TextAnimation {
 
         int width = args != null && args.length > 0 ? parseWidth(args[0]) : DEFAULT_WIDTH;
 
-        // 文本比宽度短，无需滚动
+        // 文本比宽度短，无需滚动，保留原始格式
         if (length <= width) {
             return new String[]{text};
         }
@@ -55,11 +56,11 @@ public class ScrollAnimation extends TextAnimation {
         for (int offset = 0; offset < length; offset++) {
             int endIndex = offset + width;
             if (endIndex <= length) {
-                frames[offset] = stripped.substring(offset, endIndex);
+                frames[offset] = formatting + stripped.substring(offset, endIndex);
             } else {
                 // 循环滚动：末尾 + 开头
                 int overflow = endIndex - length;
-                frames[offset] = stripped.substring(offset) + " " + stripped.substring(0, overflow);
+                frames[offset] = formatting + stripped.substring(offset) + " " + formatting + stripped.substring(0, overflow);
             }
         }
 

@@ -31,6 +31,7 @@ public class WaveAnimation extends TextAnimation {
 
     @Override
     protected String[] precompile(String text, String... args) {
+        String formatting = extractFormattingCodes(text);
         String stripped = stripSpecialColors(text);
         int length = stripped.length();
 
@@ -55,7 +56,7 @@ public class WaveAnimation extends TextAnimation {
             String mid = length > index2 ? stripped.substring(index1, index2) : stripped.substring(index1);
             String end = length > index2 ? stripped.substring(index2) : "";
 
-            frames[currentStep] = colPrimary + start + colSecondary + mid + colPrimary + end;
+            frames[currentStep] = colPrimary + formatting + start + colSecondary + formatting + mid + colPrimary + formatting + end;
         }
 
         return frames;

@@ -109,6 +109,37 @@ public abstract class TextAnimation extends Animation {
     }
 
     /**
+     * 提取文本中的特殊格式代码（加粗、斜体、下划线、删除线、混淆等）
+     * 参考 DecentHolograms 的 StripColorUtil.extractSpecialColorsFormatting
+     * 
+     * @param string 原始文本
+     * @return 提取出的格式代码字符串（如 "&l&n"）
+     */
+    protected String extractFormattingCodes(String string) {
+        if (string == null || string.isEmpty()) {
+            return "";
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            if ((c == '&' || c == '§') && i + 1 < string.length()) {
+                char next = string.charAt(i + 1);
+                if (isFormattingChar(next)) {
+                    result.append(c).append(next);
+                    i++;
+                }
+            }
+        }
+        return result.toString();
+    }
+
+    private boolean isFormattingChar(char c) {
+        // k=混淆, l=加粗, m=删除线, n=下划线, o=斜体, r=重置
+        char lower = Character.toLowerCase(c);
+        return lower == 'k' || lower == 'l' || lower == 'm' || lower == 'n' || lower == 'o' || lower == 'r';
+    }
+
+    /**
      * 获取文本的实际长度（不包含颜色代码）
      * 
      * @param string 文本

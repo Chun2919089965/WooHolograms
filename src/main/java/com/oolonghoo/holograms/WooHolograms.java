@@ -13,7 +13,7 @@ import com.oolonghoo.holograms.listener.PacketListener;
 import com.oolonghoo.holograms.listener.PlayerListener;
 import com.oolonghoo.holograms.listener.WorldListener;
 import com.oolonghoo.holograms.nms.NmsHologramRendererFactory;
-import org.bstats.bukkit.Metrics;
+import com.oolonghoo.holograms.util.Metrics;
 import com.oolonghoo.holograms.nms.HologramRendererPool;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
 import com.oolonghoo.holograms.nms.versions.HologramRendererFactoryImpl;

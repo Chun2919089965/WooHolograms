@@ -1,6 +1,9 @@
 package com.oolonghoo.holograms.command.subcommand;
 
 import com.oolonghoo.holograms.WooHolograms;
+import com.oolonghoo.holograms.action.Action;
+import com.oolonghoo.holograms.action.ActionType;
+import com.oolonghoo.holograms.action.ClickType;
 import com.oolonghoo.holograms.command.Subcommand;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramPage;
@@ -19,8 +22,8 @@ import java.util.Map;
 
 /**
  * 数据转换命令
- * 支持从 HolographicDisplays 插件导入全息图数据
- * /wh convert holographicdisplays 或 /wh convert hd
+ * 支持从 HolographicDisplays、CMI 插件导入全息图数据
+ * /wh convert holographicdisplays 或 /wh convert hd 或 /wh convert cmi
  *
  */
 public class ConvertCommand extends Subcommand {
@@ -28,7 +31,7 @@ public class ConvertCommand extends Subcommand {
     private final WooHolograms plugin;
 
     public ConvertCommand(WooHolograms plugin) {
-        super("convert", "从其他插件导入全息图数据", "/wh convert <holographicdisplays|hd>", "wooholograms.convert", Arrays.asList("cv"));
+        super("convert", "从其他插件导入全息图数据", "/wh convert <holographicdisplays|hd|cmi>", "wooholograms.convert", Arrays.asList("cv"));
         this.plugin = plugin;
     }
 
@@ -42,6 +45,7 @@ public class ConvertCommand extends Subcommand {
         String source = args[0].toLowerCase();
         switch (source) {
             case "holographicdisplays", "hd" -> convertHolographicDisplays(sender);
+            case "cmi" -> convertCMI(sender);
             default -> sender.sendMessage(ColorUtil.colorize(plugin.getMessages().getWithPrefix("convert.unknown-source", "source", args[0])));
         }
         return true;
@@ -176,11 +180,185 @@ public class ConvertCommand extends Subcommand {
         }
     }
 
+    /**
+     * 从 CMI 导入全息图数据
+     * CMI 的数据存储在 plugins/CMI/Saves/holograms.yml 或 plugins/CMI/holograms.yml
+     */
+    private void convertCMI(CommandSender sender) {
+        File pluginsDir = plugin.getDataFolder().getParentFile();
+
+        // 优先查找 Saves 子目录下的文件，回退到 CMI 根目录
+        File cmiFile = new File(pluginsDir, "CMI/Saves/holograms.yml");
+        if (!cmiFile.exists()) {
+            cmiFile = new File(pluginsDir, "CMI/holograms.yml");
+        }
+
+        if (!cmiFile.exists()) {
+            sender.sendMessage(ColorUtil.colorize(plugin.getMessages().getWithPrefix("convert.cmi-not-found")));
+            return;
+        }
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(cmiFile);
+
+        int imported = 0;
+        int skipped = 0;
+        int failed = 0;
+
+        for (String holoName : config.getKeys(false)) {
+            // 跳过 CMI 自动生成的翻页按钮全息图
+            if (holoName.endsWith("#>") || holoName.endsWith("#<")) {
+                plugin.getLogger().info("跳过 CMI 自动生成的翻页按钮全息图: " + holoName);
+                skipped++;
+                continue;
+            }
+
+            // 检查名称合法性
+            if (!plugin.getHologramManager().isValidName(holoName)) {
+                plugin.getLogger().warning("跳过非法名称的全息图: " + holoName);
+                skipped++;
+                continue;
+            }
+
+            // 检查是否已存在
+            if (plugin.getHologramManager().containsHologram(holoName)) {
+                plugin.getLogger().warning("跳过已存在的全息图: " + holoName);
+                skipped++;
+                continue;
+            }
+
+            // 解析位置：CMI 格式为 world;x;y;z，需将分号替换为冒号后解析
+            String locationStr = config.getString(holoName + ".Loc");
+            Location location = parseCmiLocation(locationStr);
+            if (location == null) {
+                plugin.getLogger().warning("跳过位置无效的全息图: " + holoName + " (Loc: " + locationStr + ")");
+                failed++;
+                continue;
+            }
+
+            // 解析行内容
+            List<String> rawLines = config.getStringList(holoName + ".Lines");
+            if (rawLines.isEmpty()) {
+                plugin.getLogger().warning("跳过无内容的全息图: " + holoName);
+                skipped++;
+                continue;
+            }
+
+            // 按 !nextpage! 分割为多页
+            List<List<String>> pages = new ArrayList<>();
+            List<String> currentPage = new ArrayList<>();
+            for (String line : rawLines) {
+                if (line.equalsIgnoreCase("!nextpage!")) {
+                    pages.add(currentPage);
+                    currentPage = new ArrayList<>();
+                } else {
+                    // CMI 的 ICON: 行需要加 # 前缀以兼容 WooHolograms
+                    if (line.toUpperCase().startsWith("ICON:")) {
+                        line = "#" + line;
+                    }
+                    currentPage.add(line);
+                }
+            }
+            if (!currentPage.isEmpty()) {
+                pages.add(currentPage);
+            }
+
+            if (pages.isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            // 创建全息图
+            Hologram hologram = plugin.getHologramManager().createHologram(holoName, location);
+            if (hologram == null) {
+                failed++;
+                continue;
+            }
+
+            // 第一页内容
+            HologramPage firstPage = hologram.getPage(0);
+            if (firstPage != null) {
+                for (String line : pages.get(0)) {
+                    firstPage.addLine(line);
+                }
+            }
+
+            // 多页时添加后续页面和翻页动作
+            boolean hasMultiplePages = pages.size() > 1;
+            for (int i = 1; i < pages.size(); i++) {
+                HologramPage newPage = hologram.addPage();
+                for (String line : pages.get(i)) {
+                    newPage.addLine(line);
+                }
+            }
+
+            // 为每一页添加翻页动作
+            if (hasMultiplePages) {
+                for (int i = 0; i < hologram.getPageCount(); i++) {
+                    HologramPage page = hologram.getPage(i);
+                    if (page == null) continue;
+
+                    // 左键 = 上一页
+                    if (i > 0) {
+                        page.addAction(ClickType.LEFT, new Action(ActionType.PREV_PAGE, holoName));
+                    }
+                    // 右键 = 下一页
+                    if (i < hologram.getPageCount() - 1) {
+                        page.addAction(ClickType.RIGHT, new Action(ActionType.NEXT_PAGE, holoName));
+                    }
+                }
+            }
+
+            imported++;
+        }
+
+        // 输出统计结果
+        sender.sendMessage(ColorUtil.colorize(plugin.getMessages().getWithPrefix("convert.cmi-result",
+                "imported", String.valueOf(imported),
+                "skipped", String.valueOf(skipped),
+                "failed", String.valueOf(failed))));
+    }
+
+    /**
+     * 解析 CMI 的位置格式: world;x;y;z（分号分隔）
+     * 内部将分号替换为冒号后按 world:x:y:z 解析
+     *
+     * @param locationStr 位置字符串
+     * @return Location 对象，解析失败返回 null
+     */
+    private Location parseCmiLocation(String locationStr) {
+        if (locationStr == null || locationStr.isEmpty()) {
+            return null;
+        }
+
+        // CMI 使用分号分隔，替换为冒号后统一解析
+        String normalized = locationStr.replace(";", ":");
+        String[] parts = normalized.split(":");
+        if (parts.length < 4) {
+            return null;
+        }
+
+        try {
+            String worldName = parts[0].trim();
+            double x = Double.parseDouble(parts[1].trim());
+            double y = Double.parseDouble(parts[2].trim());
+            double z = Double.parseDouble(parts[3].trim());
+
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                return null;
+            }
+
+            return new Location(world, x, y, z);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
         if (args.length == 1) {
             String input = args[0].toLowerCase();
-            List<String> sources = Arrays.asList("holographicdisplays", "hd");
+            List<String> sources = Arrays.asList("holographicdisplays", "hd", "cmi");
             List<String> result = new ArrayList<>();
             for (String source : sources) {
                 if (source.startsWith(input)) {

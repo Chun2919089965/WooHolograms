@@ -147,13 +147,16 @@ animation:
 
 # 数据转换相关
 convert:
-  usage: "&c用法: /wh convert <holographicdisplays|hd>"
+  usage: "&c用法: /wh convert <holographicdisplays|hd|cmi>"
   unknown-source: "&c未知的转换源: {source}"
   hd-not-found: "&c未找到 HolographicDisplays 插件数据目录！"
   hd-v3-unsupported: "&c暂不支持 HolographicDisplays 3.x（数据库存储）的导入！"
   hd-no-data: "&cHolographicDisplays 目录下未找到可导入的数据！"
   hd-start: "&e开始从 HolographicDisplays 导入数据，共 {count} 个文件..."
   hd-result: "&a导入完成！成功: {imported}，跳过: {skipped}，失败: {failed}"
+  cmi-not-found: "&c未找到 CMI 插件数据！"
+  cmi-start: "&e开始从 CMI 导入全息图数据..."
+  cmi-result: "&a导入完成！成功: {imported}，跳过: {skipped}，失败: {failed}"
 
 # 调试消息
 debug:

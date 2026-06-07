@@ -448,14 +448,25 @@ WooHolograms 内置了 DecentHolograms API 兼容层，通过 `provides: DecentH
 - 传送全息图
 - 显示/隐藏全息图
 
-## HolographicDisplays 数据导入
+## 数据导入
 
-使用 `/wh convert holographicdisplays` 命令从 HolographicDisplays 导入数据：
+### HolographicDisplays
+
+使用 `/wh convert holographicdisplays`（别名 `hd`）导入：
 
 - 扫描 `plugins/HolographicDisplays/` 目录下的 `.yml` 文件
 - 自动解析 HD 格式的全息图位置和文本内容
 - 名称冲突时自动跳过并提示
 - 不支持 HD 3.x 数据库文件（会提示）
+
+### CMI
+
+使用 `/wh convert cmi` 导入：
+
+- 读取 `plugins/CMI/Saves/holograms.yml`（回退 `plugins/CMI/holograms.yml`）
+- 自动跳过 CMI 生成的翻页按钮全息图（`#>` / `#<` 结尾）
+- `!nextpage!` 分页符自动分割为多页，每页添加翻页动作
+- `ICON:` 行自动转换为 `#ICON:` 格式
 
 ## 性能分析器
 

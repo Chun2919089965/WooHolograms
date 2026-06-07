@@ -147,13 +147,16 @@ animation:
 
 # Convert related
 convert:
-  usage: "&cUsage: /wh convert <holographicdisplays|hd>"
+  usage: "&cUsage: /wh convert <holographicdisplays|hd|cmi>"
   unknown-source: "&cUnknown convert source: {source}"
   hd-not-found: "&cHolographicDisplays data directory not found!"
   hd-v3-unsupported: "&cHolographicDisplays 3.x (database storage) import is not supported yet!"
   hd-no-data: "&cNo importable data found in HolographicDisplays directory!"
   hd-start: "&eStarting import from HolographicDisplays, {count} file(s) found..."
   hd-result: "&aImport complete! Imported: {imported}, Skipped: {skipped}, Failed: {failed}"
+  cmi-not-found: "&cCMI plugin data not found!"
+  cmi-start: "&eStarting import from CMI..."
+  cmi-result: "&aImport complete! Imported: {imported}, Skipped: {skipped}, Failed: {failed}"
 
 # Debug messages
 debug:

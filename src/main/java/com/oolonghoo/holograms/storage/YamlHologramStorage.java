@@ -89,6 +89,17 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("background-alpha", hologram.getBackgroundAlpha());
             yaml.set("background-color", hologram.getBackgroundColor());
             yaml.set("line-width", hologram.getLineWidth());
+            yaml.set("scale-x", hologram.getScaleX());
+            yaml.set("scale-y", hologram.getScaleY());
+            yaml.set("scale-z", hologram.getScaleZ());
+            yaml.set("translation-x", hologram.getTranslationX());
+            yaml.set("translation-y", hologram.getTranslationY());
+            yaml.set("translation-z", hologram.getTranslationZ());
+            yaml.set("shadow-radius", hologram.getShadowRadius());
+            yaml.set("shadow-strength", hologram.getShadowStrength());
+            yaml.set("glow-color", hologram.getGlowColor());
+            yaml.set("chroma-background", hologram.isChromaBackground());
+            yaml.set("chroma-glow", hologram.isChromaGlow());
 
             if (hologram.getPermission() != null && !hologram.getPermission().isEmpty()) {
                 yaml.set("permission", hologram.getPermission());
@@ -106,6 +117,12 @@ public class YamlHologramStorage implements HologramStorage {
                 String pagePath = "pages." + pageIndex;
 
                 saveActions(yaml, pagePath + ".actions", page.getActions());
+
+                if (!page.getFlags().isEmpty()) {
+                    yaml.set(pagePath + ".flags", page.getFlags().stream()
+                            .map(EnumFlag::name)
+                            .collect(Collectors.toList()));
+                }
 
                 List<HologramLine> lines = page.getLines();
                 for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
@@ -134,6 +151,39 @@ public class YamlHologramStorage implements HologramStorage {
 
                     if (line.getBillboard() != null) {
                         yaml.set(linePath + ".billboard", line.getBillboard().getId());
+                    }
+
+                    // Display Entity 行级别属性
+                    if (line.getScaleX() != null || line.getScaleY() != null || line.getScaleZ() != null) {
+                        if (line.getScaleX() != null) yaml.set(linePath + ".scale-x", line.getScaleX());
+                        if (line.getScaleY() != null) yaml.set(linePath + ".scale-y", line.getScaleY());
+                        if (line.getScaleZ() != null) yaml.set(linePath + ".scale-z", line.getScaleZ());
+                    }
+
+                    if (line.getTranslationX() != null || line.getTranslationY() != null || line.getTranslationZ() != null) {
+                        if (line.getTranslationX() != null) yaml.set(linePath + ".translation-x", line.getTranslationX());
+                        if (line.getTranslationY() != null) yaml.set(linePath + ".translation-y", line.getTranslationY());
+                        if (line.getTranslationZ() != null) yaml.set(linePath + ".translation-z", line.getTranslationZ());
+                    }
+
+                    if (line.getShadowRadius() != null) {
+                        yaml.set(linePath + ".shadow-radius", line.getShadowRadius());
+                    }
+
+                    if (line.getShadowStrength() != null) {
+                        yaml.set(linePath + ".shadow-strength", line.getShadowStrength());
+                    }
+
+                    if (line.getGlowColor() != null) {
+                        yaml.set(linePath + ".glow-color", line.getGlowColor());
+                    }
+
+                    if (line.getChromaBackground() != null) {
+                        yaml.set(linePath + ".chroma-background", line.getChromaBackground());
+                    }
+
+                    if (line.getChromaGlow() != null) {
+                        yaml.set(linePath + ".chroma-glow", line.getChromaGlow());
                     }
 
                     if (line.getPermission() != null && !line.getPermission().isEmpty()) {
@@ -307,6 +357,17 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("background-alpha", hologram.getBackgroundAlpha());
             yaml.set("background-color", hologram.getBackgroundColor());
             yaml.set("line-width", hologram.getLineWidth());
+            yaml.set("scale-x", hologram.getScaleX());
+            yaml.set("scale-y", hologram.getScaleY());
+            yaml.set("scale-z", hologram.getScaleZ());
+            yaml.set("translation-x", hologram.getTranslationX());
+            yaml.set("translation-y", hologram.getTranslationY());
+            yaml.set("translation-z", hologram.getTranslationZ());
+            yaml.set("shadow-radius", hologram.getShadowRadius());
+            yaml.set("shadow-strength", hologram.getShadowStrength());
+            yaml.set("glow-color", hologram.getGlowColor());
+            yaml.set("chroma-background", hologram.isChromaBackground());
+            yaml.set("chroma-glow", hologram.isChromaGlow());
 
             if (hologram.getPermission() != null && !hologram.getPermission().isEmpty()) {
                 yaml.set("permission", hologram.getPermission());
@@ -324,6 +385,12 @@ public class YamlHologramStorage implements HologramStorage {
                 String pagePath = "pages." + pageIndex;
 
                 saveActions(yaml, pagePath + ".actions", page.getActions());
+
+                if (!page.getFlags().isEmpty()) {
+                    yaml.set(pagePath + ".flags", page.getFlags().stream()
+                            .map(EnumFlag::name)
+                            .collect(Collectors.toList()));
+                }
 
                 List<HologramLine> lines = page.getLines();
                 for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
@@ -352,6 +419,39 @@ public class YamlHologramStorage implements HologramStorage {
 
                     if (line.getBillboard() != null) {
                         yaml.set(linePath + ".billboard", line.getBillboard().getId());
+                    }
+
+                    // Display Entity 行级别属性
+                    if (line.getScaleX() != null || line.getScaleY() != null || line.getScaleZ() != null) {
+                        if (line.getScaleX() != null) yaml.set(linePath + ".scale-x", line.getScaleX());
+                        if (line.getScaleY() != null) yaml.set(linePath + ".scale-y", line.getScaleY());
+                        if (line.getScaleZ() != null) yaml.set(linePath + ".scale-z", line.getScaleZ());
+                    }
+
+                    if (line.getTranslationX() != null || line.getTranslationY() != null || line.getTranslationZ() != null) {
+                        if (line.getTranslationX() != null) yaml.set(linePath + ".translation-x", line.getTranslationX());
+                        if (line.getTranslationY() != null) yaml.set(linePath + ".translation-y", line.getTranslationY());
+                        if (line.getTranslationZ() != null) yaml.set(linePath + ".translation-z", line.getTranslationZ());
+                    }
+
+                    if (line.getShadowRadius() != null) {
+                        yaml.set(linePath + ".shadow-radius", line.getShadowRadius());
+                    }
+
+                    if (line.getShadowStrength() != null) {
+                        yaml.set(linePath + ".shadow-strength", line.getShadowStrength());
+                    }
+
+                    if (line.getGlowColor() != null) {
+                        yaml.set(linePath + ".glow-color", line.getGlowColor());
+                    }
+
+                    if (line.getChromaBackground() != null) {
+                        yaml.set(linePath + ".chroma-background", line.getChromaBackground());
+                    }
+
+                    if (line.getChromaGlow() != null) {
+                        yaml.set(linePath + ".chroma-glow", line.getChromaGlow());
                     }
 
                     if (line.getPermission() != null && !line.getPermission().isEmpty()) {
@@ -488,6 +588,23 @@ public class YamlHologramStorage implements HologramStorage {
         hologram.setBackgroundColor(section.getInt("background-color", plugin.getConfigManager().getDefaultBackgroundColor()));
         hologram.setLineWidth(section.getInt("line-width", plugin.getConfigManager().getDefaultLineWidth()));
 
+        // Display Entity 全局属性
+        hologram.setScale(
+                (float) getCompatDouble(section, "scale-x", "scaleX", 1.0),
+                (float) getCompatDouble(section, "scale-y", "scaleY", 1.0),
+                (float) getCompatDouble(section, "scale-z", "scaleZ", 1.0)
+        );
+        hologram.setTranslation(
+                getCompatDouble(section, "translation-x", "translationX", 0),
+                getCompatDouble(section, "translation-y", "translationY", 0),
+                getCompatDouble(section, "translation-z", "translationZ", 0)
+        );
+        hologram.setShadowRadius((float) getCompatDouble(section, "shadow-radius", "shadowRadius", 0));
+        hologram.setShadowStrength((float) getCompatDouble(section, "shadow-strength", "shadowStrength", 1.0));
+        hologram.setGlowColor(getCompatInt(section, "glow-color", "glowColor", -1));
+        hologram.setChromaBackground(getCompatBoolean(section, "chroma-background", "chromaBackground", false));
+        hologram.setChromaGlow(getCompatBoolean(section, "chroma-glow", "chromaGlow", false));
+
         String permission = section.getString("permission");
         if (permission != null && !permission.isEmpty()) {
             hologram.setPermission(permission);
@@ -520,6 +637,21 @@ public class YamlHologramStorage implements HologramStorage {
 
                 if (pageSection != null) {
                     loadPageActions(pageSection.getConfigurationSection("actions"), page);
+
+                    // 加载页面级 flags
+                    if (pageSection.contains("flags")) {
+                        List<String> pageFlagList = pageSection.getStringList("flags");
+                        for (String flagStr : pageFlagList) {
+                            try {
+                                EnumFlag flag = EnumFlag.valueOf(flagStr.toUpperCase());
+                                page.addFlags(flag);
+                            } catch (IllegalArgumentException e) {
+                                if (plugin.getConfigManager().isDebug()) {
+                                    plugin.getLogger().warning(() -> "Unknown flag '" + flagStr + "' for page " + pageIndex + " in hologram " + id);
+                                }
+                            }
+                        }
+                    }
 
                     ConfigurationSection linesSection = pageSection.getConfigurationSection("lines");
                     if (linesSection != null) {
@@ -556,6 +688,19 @@ public class YamlHologramStorage implements HologramStorage {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> actionsMap = (Map<String, Object>) actionsObj;
                         loadPageActionsFromMap(actionsMap, page);
+                    }
+
+                    // 加载页面级 flags
+                    Object pageFlagsObj = pageMap.get("flags");
+                    if (pageFlagsObj instanceof List<?> pageFlagList) {
+                        for (Object flagObj : pageFlagList) {
+                            if (flagObj instanceof String flagStr) {
+                                try {
+                                    page.addFlags(EnumFlag.valueOf(flagStr.toUpperCase()));
+                                } catch (IllegalArgumentException ignored) {
+                                }
+                            }
+                        }
                     }
 
                     Object linesObj = pageMap.get("lines");
@@ -662,6 +807,53 @@ public class YamlHologramStorage implements HologramStorage {
             line.setBillboard(Billboard.fromId(billboardStr));
         }
 
+        // Display Entity 行级别属性
+        Object scaleXObj = map.get("scale-x");
+        if (scaleXObj == null) scaleXObj = map.get("scaleX");
+        Object scaleYObj = map.get("scale-y");
+        if (scaleYObj == null) scaleYObj = map.get("scaleY");
+        Object scaleZObj = map.get("scale-z");
+        if (scaleZObj == null) scaleZObj = map.get("scaleZ");
+        if (scaleXObj instanceof Number || scaleYObj instanceof Number || scaleZObj instanceof Number) {
+            Float sx = scaleXObj instanceof Number n ? n.floatValue() : null;
+            Float sy = scaleYObj instanceof Number n ? n.floatValue() : null;
+            Float sz = scaleZObj instanceof Number n ? n.floatValue() : null;
+            line.setScale(sx, sy, sz);
+        }
+
+        Object translationXObj = map.get("translation-x");
+        if (translationXObj == null) translationXObj = map.get("translationX");
+        Object translationYObj = map.get("translation-y");
+        if (translationYObj == null) translationYObj = map.get("translationY");
+        Object translationZObj = map.get("translation-z");
+        if (translationZObj == null) translationZObj = map.get("translationZ");
+        if (translationXObj instanceof Number || translationYObj instanceof Number || translationZObj instanceof Number) {
+            Double tx = translationXObj instanceof Number n ? n.doubleValue() : null;
+            Double ty = translationYObj instanceof Number n ? n.doubleValue() : null;
+            Double tz = translationZObj instanceof Number n ? n.doubleValue() : null;
+            line.setTranslation(tx, ty, tz);
+        }
+
+        Object shadowRadiusObj = map.get("shadow-radius");
+        if (shadowRadiusObj == null) shadowRadiusObj = map.get("shadowRadius");
+        if (shadowRadiusObj instanceof Number n) line.setShadowRadius(n.floatValue());
+
+        Object shadowStrengthObj = map.get("shadow-strength");
+        if (shadowStrengthObj == null) shadowStrengthObj = map.get("shadowStrength");
+        if (shadowStrengthObj instanceof Number n) line.setShadowStrength(n.floatValue());
+
+        Object glowColorObj = map.get("glow-color");
+        if (glowColorObj == null) glowColorObj = map.get("glowColor");
+        if (glowColorObj instanceof Number n) line.setGlowColor(n.intValue());
+
+        Object chromaBgObj = map.get("chroma-background");
+        if (chromaBgObj == null) chromaBgObj = map.get("chromaBackground");
+        if (chromaBgObj instanceof Boolean b) line.setChromaBackground(b);
+
+        Object chromaGlowObj = map.get("chroma-glow");
+        if (chromaGlowObj == null) chromaGlowObj = map.get("chromaGlow");
+        if (chromaGlowObj instanceof Boolean b) line.setChromaGlow(b);
+
         Object permissionObj = map.get("permission");
         if (permissionObj instanceof String permStr && !permStr.isEmpty()) {
             line.setPermission(permStr);
@@ -744,6 +936,51 @@ public class YamlHologramStorage implements HologramStorage {
         if (section.contains("billboard")) {
             String billboardId = section.getString("billboard");
             line.setBillboard(billboardId != null && !billboardId.isEmpty() ? Billboard.fromId(billboardId) : null);
+        }
+
+        // Display Entity 行级别属性
+        if (section.contains("scale-x") || section.contains("scaleX") ||
+                section.contains("scale-y") || section.contains("scaleY") ||
+                section.contains("scale-z") || section.contains("scaleZ")) {
+            Float sx = section.contains("scale-x") ? (float) section.getDouble("scale-x") :
+                    section.contains("scaleX") ? (float) section.getDouble("scaleX") : null;
+            Float sy = section.contains("scale-y") ? (float) section.getDouble("scale-y") :
+                    section.contains("scaleY") ? (float) section.getDouble("scaleY") : null;
+            Float sz = section.contains("scale-z") ? (float) section.getDouble("scale-z") :
+                    section.contains("scaleZ") ? (float) section.getDouble("scaleZ") : null;
+            line.setScale(sx, sy, sz);
+        }
+
+        if (section.contains("translation-x") || section.contains("translationX") ||
+                section.contains("translation-y") || section.contains("translationY") ||
+                section.contains("translation-z") || section.contains("translationZ")) {
+            Double tx = section.contains("translation-x") ? section.getDouble("translation-x") :
+                    section.contains("translationX") ? section.getDouble("translationX") : null;
+            Double ty = section.contains("translation-y") ? section.getDouble("translation-y") :
+                    section.contains("translationY") ? section.getDouble("translationY") : null;
+            Double tz = section.contains("translation-z") ? section.getDouble("translation-z") :
+                    section.contains("translationZ") ? section.getDouble("translationZ") : null;
+            line.setTranslation(tx, ty, tz);
+        }
+
+        if (section.contains("shadow-radius") || section.contains("shadowRadius")) {
+            line.setShadowRadius((float) getCompatDouble(section, "shadow-radius", "shadowRadius", 0));
+        }
+
+        if (section.contains("shadow-strength") || section.contains("shadowStrength")) {
+            line.setShadowStrength((float) getCompatDouble(section, "shadow-strength", "shadowStrength", 1.0));
+        }
+
+        if (section.contains("glow-color") || section.contains("glowColor")) {
+            line.setGlowColor(getCompatInt(section, "glow-color", "glowColor", -1));
+        }
+
+        if (section.contains("chroma-background") || section.contains("chromaBackground")) {
+            line.setChromaBackground(getCompatBoolean(section, "chroma-background", "chromaBackground", false));
+        }
+
+        if (section.contains("chroma-glow") || section.contains("chromaGlow")) {
+            line.setChromaGlow(getCompatBoolean(section, "chroma-glow", "chromaGlow", false));
         }
 
         String linePermission = section.getString("permission");

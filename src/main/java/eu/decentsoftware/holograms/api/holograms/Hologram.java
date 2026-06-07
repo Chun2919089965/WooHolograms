@@ -266,6 +266,80 @@ public class Hologram {
 		return cloned != null ? new Hologram(cloned) : null;
 	}
 
+	// ===== Display Entity 属性 =====
+
+	public float getScaleX() {
+		return handle.getScaleX();
+	}
+
+	public float getScaleY() {
+		return handle.getScaleY();
+	}
+
+	public float getScaleZ() {
+		return handle.getScaleZ();
+	}
+
+	public void setScale(float x, float y, float z) {
+		handle.setScale(x, y, z);
+	}
+
+	public double getTranslationX() {
+		return handle.getTranslationX();
+	}
+
+	public double getTranslationY() {
+		return handle.getTranslationY();
+	}
+
+	public double getTranslationZ() {
+		return handle.getTranslationZ();
+	}
+
+	public void setTranslation(double x, double y, double z) {
+		handle.setTranslation(x, y, z);
+	}
+
+	public float getShadowRadius() {
+		return handle.getShadowRadius();
+	}
+
+	public void setShadowRadius(float shadowRadius) {
+		handle.setShadowRadius(shadowRadius);
+	}
+
+	public float getShadowStrength() {
+		return handle.getShadowStrength();
+	}
+
+	public void setShadowStrength(float shadowStrength) {
+		handle.setShadowStrength(shadowStrength);
+	}
+
+	public int getGlowColor() {
+		return handle.getGlowColor();
+	}
+
+	public void setGlowColor(int glowColor) {
+		handle.setGlowColor(glowColor);
+	}
+
+	public boolean isChromaBackground() {
+		return handle.isChromaBackground();
+	}
+
+	public void setChromaBackground(boolean chromaBackground) {
+		handle.setChromaBackground(chromaBackground);
+	}
+
+	public boolean isChromaGlow() {
+		return handle.isChromaGlow();
+	}
+
+	public void setChromaGlow(boolean chromaGlow) {
+		handle.setChromaGlow(chromaGlow);
+	}
+
 	// ===== 内部访问 =====
 
 	public com.oolonghoo.holograms.hologram.Hologram getHandle() {

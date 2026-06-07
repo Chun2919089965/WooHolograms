@@ -31,6 +31,24 @@ defaults:
   default-background-color: 0
   # 默认行宽度（像素），控制文本自动换行阈值
   default-line-width: 300
+  # 默认 Display Entity 缩放
+  default-scale-x: 1.0
+  default-scale-y: 1.0
+  default-scale-z: 1.0
+  # 默认 Display Entity 平移
+  default-translation-x: 0.0
+  default-translation-y: 0.0
+  default-translation-z: 0.0
+  # 默认 Display Entity 阴影半径
+  default-shadow-radius: 0
+  # 默认 Display Entity 阴影强度
+  default-shadow-strength: 1.0
+  # 默认 Display Entity 发光颜色 (-1 表示不覆盖)
+  default-glow-color: -1
+  # 默认 Chroma 彩虹色背景
+  default-chroma-background: false
+  # 默认 Chroma 彩虹色发光
+  default-chroma-glow: false
 
 # 性能设置
 performance:

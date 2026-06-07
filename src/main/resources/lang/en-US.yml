@@ -145,9 +145,58 @@ animation:
   gradient: "Gradient"
   custom: "Custom"
 
+# Convert related
+convert:
+  usage: "&cUsage: /wh convert <holographicdisplays|hd>"
+  unknown-source: "&cUnknown convert source: {source}"
+  hd-not-found: "&cHolographicDisplays data directory not found!"
+  hd-v3-unsupported: "&cHolographicDisplays 3.x (database storage) import is not supported yet!"
+  hd-no-data: "&cNo importable data found in HolographicDisplays directory!"
+  hd-start: "&eStarting import from HolographicDisplays, {count} file(s) found..."
+  hd-result: "&aImport complete! Imported: {imported}, Skipped: {skipped}, Failed: {failed}"
+
 # Debug messages
 debug:
   enabled: "&eDebug mode enabled"
   disabled: "&eDebug mode disabled"
   hologram-info: "&eHologram info: {info}"
   viewer-count: "&eCurrent viewer count: {count}"
+
+# Flag related
+flag:
+  invalid-flag: "&cInvalid flag: {flag}! Available flags: disable_placeholders, disable_updating, disable_animations, disable_actions, always_face_player, clickable"
+  invalid-line: "&cInvalid line number: {line}!"
+  already-has-flag: "&cLine {line} already has flag {flag}!"
+  already-has-flag-holo: "&cHologram {name} already has flag {flag}!"
+  not-has-flag: "&cLine {line} does not have flag {flag}!"
+  not-has-flag-holo: "&cHologram {name} does not have flag {flag}!"
+  added-holo: "&aAdded flag {flag} to hologram {name}!"
+  added-line: "&aAdded flag {flag} to line {line}!"
+  removed-holo: "&aRemoved flag {flag} from hologram {name}!"
+  removed-line: "&aRemoved flag {flag} from line {line}!"
+
+# Profiler
+profiler:
+  header: "&e========== Profiler =========="
+  no-data: "&7No data"
+  not-enabled: "&eProfiler is not enabled. Use /wh profiler on to enable"
+  enabled: "&aProfiler enabled"
+  disabled: "&eProfiler disabled, statistics cleared"
+  reset: "&aProfiler statistics reset"
+  usage: "&cUsage: /wh profiler [on|off|reset]"
+
+# Display Entity properties
+display:
+  scale-set: "&aScale set to ({x}, {y}, {z})!"
+  scale-set-line: "&aLine {line} scale set to ({x}, {y}, {z})!"
+  shadow-set: "&aShadow set to (radius: {radius}, strength: {strength})!"
+  shadow-set-line: "&aLine {line} shadow set to (radius: {radius}, strength: {strength})!"
+  glow-color-set: "&aGlow color set to {color}!"
+  glow-color-set-line: "&aLine {line} glow color set to {color}!"
+  glow-color-reset: "&aGlow color reset!"
+  glow-color-reset-line: "&aLine {line} glow color reset!"
+  invalid-color: "&cInvalid color format! Use #RRGGBB or color name (red, green, blue, etc.)"
+  chroma-background-set: "&aChroma background set to {value}!"
+  chroma-background-set-line: "&aLine {line} chroma background set to {value}!"
+  chroma-glow-set: "&aChroma glow set to {value}!"
+  chroma-glow-set-line: "&aLine {line} chroma glow set to {value}!"

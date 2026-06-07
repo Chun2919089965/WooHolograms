@@ -5,7 +5,7 @@ import com.oolonghoo.holograms.animation.TextAnimation;
 /**
  * 闪烁动画
  * 创建闪烁效果的文本动画
- * 
+ *
  */
 public class BlinkAnimation extends TextAnimation {
 
@@ -13,7 +13,7 @@ public class BlinkAnimation extends TextAnimation {
      * 构造函数
      */
     public BlinkAnimation() {
-        super("blink", 10, 10);
+        super("blink", 10, 0);
     }
 
     @Override
@@ -22,32 +22,15 @@ public class BlinkAnimation extends TextAnimation {
             return string;
         }
 
-        // 获取闪烁速度参数
-        int blinkSpeed = args != null && args.length > 0 ? parseSpeed(args[0]) : 10;
-
-        // 计算当前是否显示
-        int actualStep = (int) (step / blinkSpeed);
-        boolean visible = actualStep % 2 == 0;
-
-        if (visible) {
-            return string;
-        } else {
-            // 返回空字符串或透明文本
-            return "";
-        }
+        String[] frames = getPrecompiledFrames(string, args);
+        if (frames == null || frames.length == 0) return string;
+        int index = getCurrentStep(step, frames.length);
+        return frames[index];
     }
 
-    /**
-     * 解析速度参数
-     * 
-     * @param arg 参数字符串
-     * @return 速度值
-     */
-    private int parseSpeed(String arg) {
-        try {
-            return Integer.parseInt(arg);
-        } catch (NumberFormatException e) {
-            return 10;
-        }
+    @Override
+    protected String[] precompile(String text, String... args) {
+        // 闪烁只有两帧：显示和隐藏
+        return new String[]{text, ""};
     }
 }

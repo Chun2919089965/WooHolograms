@@ -30,9 +30,9 @@ public interface NmsHologramRendererFactory {
     /**
      * 创建用于显示图标全息图的渲染器
      *
-     * @return 新的 {@link NmsIconHologramRenderer} 实例
+     * @return 新的 {@link NmsItemDisplayRenderer} 实例
      */
-    NmsIconHologramRenderer createIconRenderer();
+    NmsItemDisplayRenderer createIconRenderer();
 
     /**
      * 创建用于显示头颅全息图的渲染器
@@ -47,6 +47,13 @@ public interface NmsHologramRendererFactory {
      * @return 新的 {@link NmsSmallHeadHologramRenderer} 实例
      */
     NmsSmallHeadHologramRenderer createSmallHeadRenderer();
+
+    /**
+     * 创建用于显示方块全息图的渲染器
+     *
+     * @return 新的 {@link NmsBlockHologramRenderer} 实例
+     */
+    NmsBlockHologramRenderer createBlockRenderer();
 
     NmsEntityHologramRenderer createEntityRenderer();
 

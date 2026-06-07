@@ -53,6 +53,7 @@ public class HologramLine {
     private double height;
     private HeadTexture headTexture;
     private org.bukkit.entity.EntityType entityType = org.bukkit.entity.EntityType.ZOMBIE;
+    private org.bukkit.Material blockMaterial = org.bukkit.Material.STONE;
 
     // 偏移
     private double offsetX;
@@ -71,6 +72,21 @@ public class HologramLine {
 
     // Billboard 模式
     private Billboard billboard;
+
+    // Display Entity 属性（null 表示继承全息图级别值）
+    private Float scaleX = null;
+    private Float scaleY = null;
+    private Float scaleZ = null;
+    private Double translationX = null;
+    private Double translationY = null;
+    private Double translationZ = null;
+    private Float shadowRadius = null;  // null 表示继承
+    private Float shadowStrength = null; // null 表示继承
+    private Integer glowColor = null;    // null 表示不覆盖
+
+    // Chroma 彩虹色（null 表示继承全息图级别值）
+    private Boolean chromaBackground = null;
+    private Boolean chromaGlow = null;
 
     // 权限
     private String permission;
@@ -167,6 +183,14 @@ public class HologramLine {
                     this.renderer = null;
                 }
                 this.headTexture = HeadTexture.parse(content);
+            } else if (upperContent.startsWith("#BLOCK:")) {
+                this.type = HologramType.BLOCK;
+                if (prevType != this.type) {
+                    this.height = HologramType.BLOCK.getDefaultHeight();
+                    this.previousRenderer = this.renderer;
+                    this.renderer = null;
+                }
+                parseBlockType(content);
             } else if (upperContent.startsWith("#ENTITY:")) {
                 this.type = HologramType.ENTITY;
                 if (prevType != this.type) {
@@ -294,6 +318,26 @@ public class HologramLine {
         }
     }
 
+    /**
+     * 解析方块类型
+     * @param content 内容
+     */
+    private void parseBlockType(String content) {
+        if (content == null || content.isEmpty()) {
+            this.blockMaterial = org.bukkit.Material.STONE;
+            return;
+        }
+
+        String upperContent = content.toUpperCase(Locale.ROOT);
+        if (upperContent.startsWith("#BLOCK:")) {
+            String materialName = content.substring(7).trim();
+            org.bukkit.Material material = org.bukkit.Material.matchMaterial(materialName);
+            this.blockMaterial = material != null && material.isBlock() ? material : org.bukkit.Material.STONE;
+        } else {
+            this.blockMaterial = org.bukkit.Material.STONE;
+        }
+    }
+
     /*
      * 显示/隐藏方法
      */
@@ -390,6 +434,7 @@ public class HologramLine {
             case ICON -> factory.createIconRenderer();
             case HEAD -> factory.createHeadRenderer();
             case SMALLHEAD -> factory.createSmallHeadRenderer();
+            case BLOCK -> factory.createBlockRenderer();
             case ENTITY -> factory.createEntityRenderer();
             default -> factory.createTextRenderer();
         };
@@ -771,9 +816,16 @@ public class HologramLine {
         if (flags.contains(flag)) {
             return true;
         }
-        // 检查父级标志
-        if (parent != null && parent.getParent() != null) {
-            return parent.getParent().hasFlag(flag);
+        // 继承页面级标志
+        if (parent != null) {
+            if (parent.hasFlag(flag)) {
+                return true;
+            }
+            // 继承全息图级标志
+            Hologram holo = parent.getParent();
+            if (holo != null && holo.hasFlag(flag)) {
+                return true;
+            }
         }
         return false;
     }
@@ -893,6 +945,35 @@ public class HologramLine {
             map.put("billboard", billboard.getId());
         }
 
+        // Display Entity 属性
+        if (scaleX != null) map.put("scale-x", scaleX);
+        if (scaleY != null) map.put("scale-y", scaleY);
+        if (scaleZ != null) map.put("scale-z", scaleZ);
+
+        if (translationX != null) map.put("translation-x", translationX);
+        if (translationY != null) map.put("translation-y", translationY);
+        if (translationZ != null) map.put("translation-z", translationZ);
+
+        if (shadowRadius != null) {
+            map.put("shadow-radius", shadowRadius);
+        }
+
+        if (shadowStrength != null) {
+            map.put("shadow-strength", shadowStrength);
+        }
+
+        if (glowColor != null) {
+            map.put("glow-color", glowColor);
+        }
+
+        if (chromaBackground != null) {
+            map.put("chroma-background", chromaBackground);
+        }
+
+        if (chromaGlow != null) {
+            map.put("chroma-glow", chromaGlow);
+        }
+
         if (hasActions()) {
             Map<String, List<String>> actionsMap = new LinkedHashMap<>();
             for (Map.Entry<ClickType, List<Action>> entry : actions.entrySet()) {
@@ -982,6 +1063,59 @@ public class HologramLine {
             line.setBillboard(null);
         }
 
+        // Display Entity 属性（支持扁平格式和嵌套 Map 格式）
+        if (map.containsKey("scale") && map.get("scale") instanceof Map<?, ?> scaleMap) {
+            // 旧格式：嵌套 Map
+            Float sx = scaleMap.containsKey("x") && scaleMap.get("x") instanceof Number n ? n.floatValue() : null;
+            Float sy = scaleMap.containsKey("y") && scaleMap.get("y") instanceof Number n ? n.floatValue() : null;
+            Float sz = scaleMap.containsKey("z") && scaleMap.get("z") instanceof Number n ? n.floatValue() : null;
+            line.setScale(sx, sy, sz);
+        } else {
+            // 新格式：扁平键
+            Float sx = map.containsKey("scale-x") && map.get("scale-x") instanceof Number n ? n.floatValue() : null;
+            Float sy = map.containsKey("scale-y") && map.get("scale-y") instanceof Number n ? n.floatValue() : null;
+            Float sz = map.containsKey("scale-z") && map.get("scale-z") instanceof Number n ? n.floatValue() : null;
+            if (sx != null || sy != null || sz != null) {
+                line.setScale(sx, sy, sz);
+            }
+        }
+
+        if (map.containsKey("translation") && map.get("translation") instanceof Map<?, ?> translationMap) {
+            // 旧格式：嵌套 Map
+            Double tx = translationMap.containsKey("x") && translationMap.get("x") instanceof Number n ? n.doubleValue() : null;
+            Double ty = translationMap.containsKey("y") && translationMap.get("y") instanceof Number n ? n.doubleValue() : null;
+            Double tz = translationMap.containsKey("z") && translationMap.get("z") instanceof Number n ? n.doubleValue() : null;
+            line.setTranslation(tx, ty, tz);
+        } else {
+            // 新格式：扁平键
+            Double tx = map.containsKey("translation-x") && map.get("translation-x") instanceof Number n ? n.doubleValue() : null;
+            Double ty = map.containsKey("translation-y") && map.get("translation-y") instanceof Number n ? n.doubleValue() : null;
+            Double tz = map.containsKey("translation-z") && map.get("translation-z") instanceof Number n ? n.doubleValue() : null;
+            if (tx != null || ty != null || tz != null) {
+                line.setTranslation(tx, ty, tz);
+            }
+        }
+
+        if (map.containsKey("shadow-radius") && map.get("shadow-radius") instanceof Number shadowRadius) {
+            line.setShadowRadius(shadowRadius.floatValue());
+        }
+
+        if (map.containsKey("shadow-strength") && map.get("shadow-strength") instanceof Number shadowStrength) {
+            line.setShadowStrength(shadowStrength.floatValue());
+        }
+
+        if (map.containsKey("glow-color") && map.get("glow-color") instanceof Number glowColor) {
+            line.setGlowColor(glowColor.intValue());
+        }
+
+        if (map.containsKey("chroma-background") && map.get("chroma-background") instanceof Boolean chromaBg) {
+            line.setChromaBackground(chromaBg);
+        }
+
+        if (map.containsKey("chroma-glow") && map.get("chroma-glow") instanceof Boolean chromaGl) {
+            line.setChromaGlow(chromaGl);
+        }
+
         if (map.containsKey("custom-yaw") && map.get("custom-yaw") instanceof Number customYaw) {
             line.setCustomYaw(customYaw.floatValue());
         }
@@ -1032,6 +1166,13 @@ public class HologramLine {
         line.setBillboard(this.billboard);
         line.setCustomYaw(this.customYaw);
         line.setCustomPitch(this.customPitch);
+        line.setScale(this.scaleX, this.scaleY, this.scaleZ);
+        line.setTranslation(this.translationX, this.translationY, this.translationZ);
+        line.setShadowRadius(this.shadowRadius);
+        line.setShadowStrength(this.shadowStrength);
+        line.setGlowColor(this.glowColor);
+        line.setChromaBackground(this.chromaBackground);
+        line.setChromaGlow(this.chromaGlow);
         line.addFlags(this.flags.toArray(EnumFlag[]::new));
         for (Map.Entry<ClickType, List<Action>> entry : this.actions.entrySet()) {
             for (Action action : entry.getValue()) {
@@ -1184,6 +1325,10 @@ public class HologramLine {
     
     public org.bukkit.entity.EntityType getEntityType() {
         return entityType;
+    }
+
+    public org.bukkit.Material getBlockMaterial() {
+        return blockMaterial;
     }
 
     public double getHeight() {
@@ -1376,6 +1521,160 @@ public class HologramLine {
 
     public void setBillboard(Billboard billboard) {
         this.billboard = billboard;
+    }
+
+    // ==================== Display Entity 属性方法 ====================
+
+    /**
+     * 获取 X 轴缩放（null 表示继承全息图级别值）
+     */
+    public Float getScaleX() {
+        return scaleX;
+    }
+
+    /**
+     * 获取 Y 轴缩放（null 表示继承全息图级别值）
+     */
+    public Float getScaleY() {
+        return scaleY;
+    }
+
+    /**
+     * 获取 Z 轴缩放（null 表示继承全息图级别值）
+     */
+    public Float getScaleZ() {
+        return scaleZ;
+    }
+
+    /**
+     * 设置缩放（null 表示继承全息图级别值）
+     */
+    public void setScale(Float x, Float y, Float z) {
+        this.scaleX = x;
+        this.scaleY = y;
+        this.scaleZ = z;
+    }
+
+    /**
+     * 获取 X 轴平移（null 表示继承全息图级别值）
+     */
+    public Double getTranslationX() {
+        return translationX;
+    }
+
+    /**
+     * 获取 Y 轴平移（null 表示继承全息图级别值）
+     */
+    public Double getTranslationY() {
+        return translationY;
+    }
+
+    /**
+     * 获取 Z 轴平移（null 表示继承全息图级别值）
+     */
+    public Double getTranslationZ() {
+        return translationZ;
+    }
+
+    /**
+     * 设置平移（null 表示继承全息图级别值）
+     */
+    public void setTranslation(Double x, Double y, Double z) {
+        this.translationX = x;
+        this.translationY = y;
+        this.translationZ = z;
+    }
+
+    /**
+     * 获取阴影半径（null 表示继承全息图级别值）
+     */
+    public Float getShadowRadius() {
+        return shadowRadius;
+    }
+
+    /**
+     * 设置阴影半径（null 表示继承全息图级别值）
+     */
+    public void setShadowRadius(Float shadowRadius) {
+        this.shadowRadius = shadowRadius;
+    }
+
+    /**
+     * 获取阴影强度（null 表示继承全息图级别值）
+     */
+    public Float getShadowStrength() {
+        return shadowStrength;
+    }
+
+    /**
+     * 设置阴影强度（null 表示继承全息图级别值）
+     */
+    public void setShadowStrength(Float shadowStrength) {
+        this.shadowStrength = shadowStrength;
+    }
+
+    /**
+     * 获取发光颜色覆盖（null 表示不覆盖）
+     */
+    public Integer getGlowColor() {
+        return glowColor;
+    }
+
+    /**
+     * 设置发光颜色覆盖（null 表示不覆盖）
+     */
+    public void setGlowColor(Integer glowColor) {
+        this.glowColor = glowColor;
+    }
+
+    /**
+     * 获取 Chroma 背景色状态（null 表示继承全息图级别值）
+     */
+    public Boolean getChromaBackground() {
+        return chromaBackground;
+    }
+
+    /**
+     * 获取有效的 Chroma 背景色状态（继承全息图级别值）
+     */
+    public boolean isChromaBackground() {
+        if (chromaBackground != null) {
+            return chromaBackground;
+        }
+        Hologram holo = getHologram();
+        return holo != null && holo.isChromaBackground();
+    }
+
+    /**
+     * 设置 Chroma 背景色（null 表示继承全息图级别值）
+     */
+    public void setChromaBackground(Boolean chromaBackground) {
+        this.chromaBackground = chromaBackground;
+    }
+
+    /**
+     * 获取 Chroma 发光色状态（null 表示继承全息图级别值）
+     */
+    public Boolean getChromaGlow() {
+        return chromaGlow;
+    }
+
+    /**
+     * 获取有效的 Chroma 发光色状态（继承全息图级别值）
+     */
+    public boolean isChromaGlow() {
+        if (chromaGlow != null) {
+            return chromaGlow;
+        }
+        Hologram holo = getHologram();
+        return holo != null && holo.isChromaGlow();
+    }
+
+    /**
+     * 设置 Chroma 发光色（null 表示继承全息图级别值）
+     */
+    public void setChromaGlow(Boolean chromaGlow) {
+        this.chromaGlow = chromaGlow;
     }
 
     public int[] getEntityIds() {

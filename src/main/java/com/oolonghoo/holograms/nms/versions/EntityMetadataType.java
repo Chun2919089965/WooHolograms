@@ -9,6 +9,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.lang.reflect.Field;
 
@@ -56,6 +58,30 @@ class EntityMetadataType<T> {
     // Display Entity - 亮度覆盖
     private static final EntityDataAccessor<Integer> DISPLAY_BRIGHTNESS_OBJECT = getAccessor(Display.class, "DATA_BRIGHTNESS_OVERRIDE_ID");
 
+    // Display Entity - 平移
+    private static final EntityDataAccessor<Vec3> DISPLAY_TRANSLATION_OBJECT = getAccessor(Display.class, "DATA_TRANSLATION_ID");
+
+    // Display Entity - 缩放
+    private static final EntityDataAccessor<org.joml.Vector3f> DISPLAY_SCALE_OBJECT = getAccessor(Display.class, "DATA_SCALE_ID");
+
+    // Display Entity - 左旋转
+    private static final EntityDataAccessor<org.joml.Quaternionf> DISPLAY_LEFT_ROTATION_OBJECT = getAccessor(Display.class, "DATA_LEFT_ROTATION_ID");
+
+    // Display Entity - 右旋转
+    private static final EntityDataAccessor<org.joml.Quaternionf> DISPLAY_RIGHT_ROTATION_OBJECT = getAccessor(Display.class, "DATA_RIGHT_ROTATION_ID");
+
+    // Display Entity - 阴影半径
+    private static final EntityDataAccessor<Float> DISPLAY_SHADOW_RADIUS_OBJECT = getAccessor(Display.class, "DATA_SHADOW_RADIUS_ID");
+
+    // Display Entity - 阴影强度
+    private static final EntityDataAccessor<Float> DISPLAY_SHADOW_STRENGTH_OBJECT = getAccessor(Display.class, "DATA_SHADOW_STRENGTH_ID");
+
+    // Display Entity - 发光颜色覆盖
+    private static final EntityDataAccessor<Integer> DISPLAY_GLOW_COLOR_OVERRIDE_OBJECT = getAccessor(Display.class, "DATA_GLOW_COLOR_OVERRIDE_ID");
+
+    // ItemDisplay Entity - 物品
+    private static final EntityDataAccessor<ItemStack> ITEM_DISPLAY_ITEM_STACK_OBJECT = getAccessor(Display.ItemDisplay.class, "DATA_ITEM_STACK_ID");
+
     // TextDisplay Entity - 文本内容
     private static final EntityDataAccessor<Component> TEXT_DISPLAY_TEXT_OBJECT = getAccessor(Display.TextDisplay.class, "DATA_TEXT_ID");
 
@@ -70,6 +96,9 @@ class EntityMetadataType<T> {
 
     // TextDisplay Entity - 样式标志（包含对齐方式）
     private static final EntityDataAccessor<Byte> TEXT_DISPLAY_STYLE_FLAGS_OBJECT = getAccessor(Display.TextDisplay.class, "DATA_STYLE_FLAGS_ID");
+
+    // BlockDisplay Entity - 方块状态
+    private static final EntityDataAccessor<BlockState> BLOCK_DISPLAY_BLOCK_STATE_OBJECT = getAccessor(Display.BlockDisplay.class, "DATA_BLOCK_STATE_ID");
 
     /**
      * 通过反射获取 EntityDataAccessor 字段
@@ -100,6 +129,16 @@ class EntityMetadataType<T> {
     // Display Entity 静态实例
     static final EntityMetadataType<Byte> DISPLAY_BILLBOARD = new EntityMetadataType<>(DISPLAY_BILLBOARD_OBJECT);
     static final EntityMetadataType<Integer> DISPLAY_BRIGHTNESS = new EntityMetadataType<>(DISPLAY_BRIGHTNESS_OBJECT);
+    static final EntityMetadataType<Vec3> DISPLAY_TRANSLATION = new EntityMetadataType<>(DISPLAY_TRANSLATION_OBJECT);
+    static final EntityMetadataType<org.joml.Vector3f> DISPLAY_SCALE = new EntityMetadataType<>(DISPLAY_SCALE_OBJECT);
+    static final EntityMetadataType<org.joml.Quaternionf> DISPLAY_LEFT_ROTATION = new EntityMetadataType<>(DISPLAY_LEFT_ROTATION_OBJECT);
+    static final EntityMetadataType<org.joml.Quaternionf> DISPLAY_RIGHT_ROTATION = new EntityMetadataType<>(DISPLAY_RIGHT_ROTATION_OBJECT);
+    static final EntityMetadataType<Float> DISPLAY_SHADOW_RADIUS = new EntityMetadataType<>(DISPLAY_SHADOW_RADIUS_OBJECT);
+    static final EntityMetadataType<Float> DISPLAY_SHADOW_STRENGTH = new EntityMetadataType<>(DISPLAY_SHADOW_STRENGTH_OBJECT);
+    static final EntityMetadataType<Integer> DISPLAY_GLOW_COLOR_OVERRIDE = new EntityMetadataType<>(DISPLAY_GLOW_COLOR_OVERRIDE_OBJECT);
+
+    // ItemDisplay Entity 静态实例
+    static final EntityMetadataType<ItemStack> ITEM_DISPLAY_ITEM_STACK = new EntityMetadataType<>(ITEM_DISPLAY_ITEM_STACK_OBJECT);
 
     // TextDisplay Entity 静态实例
     static final EntityMetadataType<Component> TEXT_DISPLAY_TEXT = new EntityMetadataType<>(TEXT_DISPLAY_TEXT_OBJECT);
@@ -107,6 +146,9 @@ class EntityMetadataType<T> {
     static final EntityMetadataType<Byte> TEXT_DISPLAY_OPACITY = new EntityMetadataType<>(TEXT_DISPLAY_OPACITY_OBJECT);
     static final EntityMetadataType<Integer> TEXT_DISPLAY_BACKGROUND_COLOR = new EntityMetadataType<>(TEXT_DISPLAY_BACKGROUND_COLOR_OBJECT);
     static final EntityMetadataType<Byte> TEXT_DISPLAY_STYLE_FLAGS = new EntityMetadataType<>(TEXT_DISPLAY_STYLE_FLAGS_OBJECT);
+
+    // BlockDisplay Entity 静态实例
+    static final EntityMetadataType<BlockState> BLOCK_DISPLAY_BLOCK_STATE = new EntityMetadataType<>(BLOCK_DISPLAY_BLOCK_STATE_OBJECT);
 
     private final EntityDataAccessor<T> entityDataAccessor;
 

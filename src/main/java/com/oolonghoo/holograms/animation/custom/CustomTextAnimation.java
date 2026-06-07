@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 自定义文本动画
  * 从配置文件加载的自定义动画
- * 
+ *
  */
 public class CustomTextAnimation extends TextAnimation {
 
@@ -21,7 +21,7 @@ public class CustomTextAnimation extends TextAnimation {
 
     /**
      * 构造函数
-     * 
+     *
      * @param name 动画名称
      * @param speed 动画速度
      * @param pause 暂停时间
@@ -38,22 +38,30 @@ public class CustomTextAnimation extends TextAnimation {
             return string;
         }
 
-        // 获取当前帧
-        int currentStep = getCurrentStep(step, frames.size());
-        String frame = frames.get(currentStep);
+        String[] precompiled = getPrecompiledFrames(string, args);
+        if (precompiled == null || precompiled.length == 0) return string;
+        int index = getCurrentStep(step, precompiled.length);
+        return precompiled[index];
+    }
 
-        // 如果帧包含 {text} 占位符，替换为原始文本
-        if (frame.contains("{text}")) {
-            return frame.replace("{text}", string);
+    @Override
+    protected String[] precompile(String text, String... args) {
+        // 将 {text} 占位符替换后的结果缓存
+        String[] result = new String[frames.size()];
+        for (int i = 0; i < frames.size(); i++) {
+            String frame = frames.get(i);
+            if (frame.contains("{text}")) {
+                result[i] = frame.replace("{text}", text);
+            } else {
+                result[i] = frame;
+            }
         }
-
-        // 否则返回帧内容
-        return frame;
+        return result;
     }
 
     /**
      * 获取帧列表
-     * 
+     *
      * @return 帧列表
      */
     public List<String> getFrames() {
@@ -62,7 +70,7 @@ public class CustomTextAnimation extends TextAnimation {
 
     /**
      * 从文件加载自定义动画
-     * 
+     *
      * @param file 配置文件
      * @return 动画实例
      * @throws IllegalArgumentException 如果配置无效
@@ -88,7 +96,7 @@ public class CustomTextAnimation extends TextAnimation {
 
     /**
      * 从配置创建自定义动画
-     * 
+     *
      * @param name 动画名称
      * @param config 配置
      * @return 动画实例

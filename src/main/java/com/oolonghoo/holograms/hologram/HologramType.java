@@ -32,6 +32,12 @@ public enum HologramType {
      */
     SMALLHEAD("SMALLHEAD", "小头颅", 0.4, -1.1875),
 
+    /**
+     * 方块类型
+     * 使用 BlockDisplay 实体展示方块
+     */
+    BLOCK("BLOCK", "方块", 0.5, -0.5),
+
     ENTITY("ENTITY", "实体", 0.7, 0),
 
     NEXT("NEXT", "下一页", 0.25, -0.5),
@@ -102,6 +108,8 @@ public enum HologramType {
             return SMALLHEAD;
         } else if (upperContent.startsWith("#HEAD:")) {
             return HEAD;
+        } else if (upperContent.startsWith("#BLOCK:")) {
+            return BLOCK;
         } else if (upperContent.startsWith("#ENTITY:")) {
             return ENTITY;
         } else if (upperContent.equals("#NEXT") || upperContent.startsWith("#NEXT ")) {
@@ -143,6 +151,8 @@ public enum HologramType {
                 return "#HEAD:";
             case SMALLHEAD:
                 return "#SMALLHEAD:";
+            case BLOCK:
+                return "#BLOCK:";
             case ENTITY:
                 return "#ENTITY:";
             default:

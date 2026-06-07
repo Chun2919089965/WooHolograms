@@ -8,7 +8,7 @@ import java.util.Arrays;
  * 打字机动画
  * 参考 DecentHolograms 的 TypewriterAnimation 实现
  * 创建逐字显示的打字机效果
- * 
+ *
  */
 public class TypewriterAnimation extends TextAnimation {
 
@@ -25,26 +25,33 @@ public class TypewriterAnimation extends TextAnimation {
             return string;
         }
 
-        // 移除颜色代码获取纯文本
-        String stripped = stripSpecialColors(string);
+        String[] frames = getPrecompiledFrames(string, args);
+        if (frames == null || frames.length == 0) return string;
+        int index = getCurrentStep(step, frames.length);
+        return frames[index];
+    }
+
+    @Override
+    protected String[] precompile(String text, String... args) {
+        String stripped = stripSpecialColors(text);
         int length = stripped.length();
 
         if (length == 0) {
-            return string;
+            return new String[]{text};
         }
 
-        // 获取当前步骤
-        int currentStep = getCurrentStep(step, length);
-
-        // 截取文本到当前步骤
+        // 帧0到帧length-2：逐字显示 + 光标，帧length-1：完整文本无光标
+        String[] frames = new String[length];
         char[] chars = stripped.toCharArray();
-        String result = new String(Arrays.copyOfRange(chars, 0, Math.min(currentStep, length)));
 
-        // 添加光标效果（可选）
-        if (currentStep < length) {
-            result += "|";
+        for (int i = 0; i < length; i++) {
+            String result = new String(Arrays.copyOfRange(chars, 0, i + 1));
+            if (i < length - 1) {
+                result += "|";
+            }
+            frames[i] = result;
         }
 
-        return result;
+        return frames;
     }
 }

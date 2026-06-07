@@ -6,7 +6,7 @@ import com.oolonghoo.holograms.animation.TextAnimation;
  * 滚动动画
  * 参考 DecentHolograms 的 ScrollAnimation 实现
  * 创建文本滚动效果
- * 
+ *
  */
 public class ScrollAnimation extends TextAnimation {
 
@@ -28,41 +28,47 @@ public class ScrollAnimation extends TextAnimation {
             return string;
         }
 
-        // 移除颜色代码获取纯文本
-        String stripped = stripSpecialColors(string);
+        String[] frames = getPrecompiledFrames(string, args);
+        if (frames == null || frames.length == 0) return string;
+        int index = getCurrentStep(step, frames.length);
+        return frames[index];
+    }
+
+    @Override
+    protected String[] precompile(String text, String... args) {
+        String stripped = stripSpecialColors(text);
         int length = stripped.length();
 
         if (length == 0) {
-            return string;
+            return new String[]{text};
         }
 
-        // 获取显示宽度参数
         int width = args != null && args.length > 0 ? parseWidth(args[0]) : DEFAULT_WIDTH;
 
-        // 如果文本比宽度短，直接返回
+        // 文本比宽度短，无需滚动
         if (length <= width) {
-            return string;
+            return new String[]{text};
         }
 
-        // 计算滚动位置
-        int currentStep = getCurrentStep(step, length);
-
-        // 计算显示窗口
-        int endIndex = currentStep + width;
-
-        if (endIndex <= length) {
-            // 正常滚动
-            return stripped.substring(currentStep, endIndex);
-        } else {
-            // 循环滚动：末尾 + 开头
-            int overflow = endIndex - length;
-            return stripped.substring(currentStep) + " " + stripped.substring(0, overflow);
+        // 预计算每一帧的滚动偏移
+        String[] frames = new String[length];
+        for (int offset = 0; offset < length; offset++) {
+            int endIndex = offset + width;
+            if (endIndex <= length) {
+                frames[offset] = stripped.substring(offset, endIndex);
+            } else {
+                // 循环滚动：末尾 + 开头
+                int overflow = endIndex - length;
+                frames[offset] = stripped.substring(offset) + " " + stripped.substring(0, overflow);
+            }
         }
+
+        return frames;
     }
 
     /**
      * 解析宽度参数
-     * 
+     *
      * @param arg 参数字符串
      * @return 宽度值
      */

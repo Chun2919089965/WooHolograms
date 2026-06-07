@@ -128,6 +128,88 @@ public class HologramLine {
 		handle.removeFlag(flag.toWoo());
 	}
 
+	// ===== Display Entity 属性 =====
+
+	public Float getScaleX() {
+		return handle.getScaleX();
+	}
+
+	public Float getScaleY() {
+		return handle.getScaleY();
+	}
+
+	public Float getScaleZ() {
+		return handle.getScaleZ();
+	}
+
+	public void setScale(Float x, Float y, Float z) {
+		handle.setScale(x, y, z);
+	}
+
+	public Double getTranslationX() {
+		return handle.getTranslationX();
+	}
+
+	public Double getTranslationY() {
+		return handle.getTranslationY();
+	}
+
+	public Double getTranslationZ() {
+		return handle.getTranslationZ();
+	}
+
+	public void setTranslation(Double x, Double y, Double z) {
+		handle.setTranslation(x, y, z);
+	}
+
+	public Float getShadowRadius() {
+		return handle.getShadowRadius();
+	}
+
+	public void setShadowRadius(Float shadowRadius) {
+		handle.setShadowRadius(shadowRadius);
+	}
+
+	public Float getShadowStrength() {
+		return handle.getShadowStrength();
+	}
+
+	public void setShadowStrength(Float shadowStrength) {
+		handle.setShadowStrength(shadowStrength);
+	}
+
+	public Integer getGlowColor() {
+		return handle.getGlowColor();
+	}
+
+	public void setGlowColor(Integer glowColor) {
+		handle.setGlowColor(glowColor);
+	}
+
+	public Boolean getChromaBackground() {
+		return handle.getChromaBackground();
+	}
+
+	public boolean isChromaBackground() {
+		return handle.isChromaBackground();
+	}
+
+	public void setChromaBackground(Boolean chromaBackground) {
+		handle.setChromaBackground(chromaBackground);
+	}
+
+	public Boolean getChromaGlow() {
+		return handle.getChromaGlow();
+	}
+
+	public boolean isChromaGlow() {
+		return handle.isChromaGlow();
+	}
+
+	public void setChromaGlow(Boolean chromaGlow) {
+		handle.setChromaGlow(chromaGlow);
+	}
+
 	public com.oolonghoo.holograms.hologram.HologramLine getHandle() {
 		return handle;
 	}

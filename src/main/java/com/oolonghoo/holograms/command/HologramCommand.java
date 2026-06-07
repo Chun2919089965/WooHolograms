@@ -60,7 +60,15 @@ public class HologramCommand implements CommandExecutor, TabCompleter {
         register(new HeightCommand(plugin));
         register(new ReloadCommand(plugin));
         register(new SetPageCommand(plugin));
+        register(new ConvertCommand(plugin));
         register(new GuiCommand(plugin));
+        register(new ProfilerCommand(plugin));
+        register(new AddFlagCommand(plugin));
+        register(new RemoveFlagCommand(plugin));
+        register(new SetScaleCommand(plugin));
+        register(new SetShadowCommand(plugin));
+        register(new SetGlowColorCommand(plugin));
+        register(new SetChromaCommand(plugin));
         register(new HelpCommand(plugin, subcommandMap));
     }
 

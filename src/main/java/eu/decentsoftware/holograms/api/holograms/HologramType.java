@@ -10,6 +10,7 @@ public enum HologramType {
 	ICON,
 	HEAD,
 	SMALLHEAD,
+	BLOCK,
 	ENTITY;
 
 	public static HologramType fromWoo(com.oolonghoo.holograms.hologram.HologramType wooType) {
@@ -19,6 +20,7 @@ public enum HologramType {
 			case ICON -> ICON;
 			case HEAD -> HEAD;
 			case SMALLHEAD -> SMALLHEAD;
+			case BLOCK -> BLOCK;
 			case ENTITY -> ENTITY;
 		};
 	}

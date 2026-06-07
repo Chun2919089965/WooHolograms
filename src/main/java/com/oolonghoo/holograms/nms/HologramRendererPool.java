@@ -3,8 +3,10 @@ package com.oolonghoo.holograms.nms;
 import com.oolonghoo.holograms.hologram.HologramType;
 import com.oolonghoo.holograms.nms.renderer.NmsTextHologramRenderer;
 import com.oolonghoo.holograms.nms.renderer.NmsIconHologramRenderer;
+import com.oolonghoo.holograms.nms.renderer.NmsItemDisplayRenderer;
 import com.oolonghoo.holograms.nms.renderer.NmsHeadHologramRenderer;
 import com.oolonghoo.holograms.nms.renderer.NmsSmallHeadHologramRenderer;
+import com.oolonghoo.holograms.nms.renderer.NmsBlockHologramRenderer;
 import com.oolonghoo.holograms.nms.renderer.NmsEntityHologramRenderer;
 
 import java.util.EnumMap;
@@ -97,6 +99,8 @@ public class HologramRendererPool {
                 return factory.createHeadRenderer();
             case SMALLHEAD:
                 return factory.createSmallHeadRenderer();
+            case BLOCK:
+                return factory.createBlockRenderer();
             case ENTITY:
                 return factory.createEntityRenderer();
             default:
@@ -105,7 +109,9 @@ public class HologramRendererPool {
     }
 
     private HologramType getRendererType(NmsHologramRenderer renderer) {
-        if (renderer instanceof NmsTextHologramRenderer) {
+        if (renderer instanceof NmsItemDisplayRenderer) {
+            return HologramType.ICON;
+        } else if (renderer instanceof NmsTextHologramRenderer) {
             return HologramType.TEXT;
         } else if (renderer instanceof NmsIconHologramRenderer) {
             return HologramType.ICON;
@@ -113,6 +119,8 @@ public class HologramRendererPool {
             return HologramType.SMALLHEAD;
         } else if (renderer instanceof NmsHeadHologramRenderer) {
             return HologramType.HEAD;
+        } else if (renderer instanceof NmsBlockHologramRenderer) {
+            return HologramType.BLOCK;
         } else if (renderer instanceof NmsEntityHologramRenderer) {
             return HologramType.ENTITY;
         }

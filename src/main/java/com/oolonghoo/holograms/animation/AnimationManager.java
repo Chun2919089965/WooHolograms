@@ -7,6 +7,7 @@ import com.oolonghoo.holograms.animation.text.GradientAnimation;
 import com.oolonghoo.holograms.animation.text.ScrollAnimation;
 import com.oolonghoo.holograms.animation.text.TypewriterAnimation;
 import com.oolonghoo.holograms.animation.text.WaveAnimation;
+import com.oolonghoo.holograms.util.Profiler;
 import com.oolonghoo.holograms.util.SchedulerUtil;
 
 import java.io.File;
@@ -117,6 +118,10 @@ public class AnimationManager {
             return string;
         }
 
+        Profiler profiler = Profiler.getInstance();
+        if (profiler.isEnabled()) profiler.start("动画");
+        try {
+
         Matcher matcher = ANIMATION_PATTERN.matcher(string);
         StringBuilder sb = new StringBuilder();
         boolean found = false;
@@ -142,6 +147,10 @@ public class AnimationManager {
 
         matcher.appendTail(sb);
         return sb.toString();
+
+        } finally {
+            if (profiler.isEnabled()) profiler.stop("动画");
+        }
     }
 
     /**

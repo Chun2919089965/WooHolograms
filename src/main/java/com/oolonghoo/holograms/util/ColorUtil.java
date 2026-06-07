@@ -422,4 +422,53 @@ public class ColorUtil {
         matcher.appendTail(result);
         return result.toString();
     }
+
+    // ==================== Chroma 彩虹色工具方法 ====================
+
+    /**
+     * 计算 Chroma 颜色
+     * 通过 HSL 色轮循环实现动态渐变效果
+     *
+     * @param step 当前步骤（通常基于系统时间）
+     * @return ARGB 颜色值
+     */
+    public static int chromaColor(long step) {
+        float hue = (float) ((step * 5.0) % 360.0); // 每5步旋转1度，使用 double 避免长时间运行精度下降
+        return hslToArgb(hue, 1.0f, 0.5f);
+    }
+
+    /**
+     * HSL 转 ARGB
+     *
+     * @param hue        色相 (0-360)
+     * @param saturation 饱和度 (0-1)
+     * @param lightness  亮度 (0-1)
+     * @return ARGB 颜色值
+     */
+    public static int hslToArgb(float hue, float saturation, float lightness) {
+        float c = (1.0f - Math.abs(2.0f * lightness - 1.0f)) * saturation;
+        float x = c * (1.0f - Math.abs((hue / 60.0f) % 2.0f - 1.0f));
+        float m = lightness - c / 2.0f;
+
+        float r, g, b;
+        if (hue < 60) {
+            r = c; g = x; b = 0;
+        } else if (hue < 120) {
+            r = x; g = c; b = 0;
+        } else if (hue < 180) {
+            r = 0; g = c; b = x;
+        } else if (hue < 240) {
+            r = 0; g = x; b = c;
+        } else if (hue < 300) {
+            r = x; g = 0; b = c;
+        } else {
+            r = c; g = 0; b = x;
+        }
+
+        int red = Math.round((r + m) * 255.0f);
+        int green = Math.round((g + m) * 255.0f);
+        int blue = Math.round((b + m) * 255.0f);
+
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
+    }
 }

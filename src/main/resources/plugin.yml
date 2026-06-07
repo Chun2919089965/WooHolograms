@@ -65,4 +65,12 @@ permissions:
       wooholograms.command.reload: true
       wooholograms.command.setpage: true
       wooholograms.command.gui: true
+      wooholograms.command.convert: true
       wooholograms.command.help: true
+      wooholograms.command.profiler: true
+      wooholograms.command.addflag: true
+      wooholograms.command.removeflag: true
+      wooholograms.command.setscale: true
+      wooholograms.command.setshadow: true
+      wooholograms.command.setglowcolor: true
+      wooholograms.command.setchroma: true

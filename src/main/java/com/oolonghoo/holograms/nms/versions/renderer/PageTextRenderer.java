@@ -5,6 +5,8 @@ import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
 import com.oolonghoo.holograms.nms.versions.EntityMetadataBuilder;
 import com.oolonghoo.holograms.nms.versions.EntityPacketsBuilder;
+import com.oolonghoo.holograms.util.ColorUtil;
+import com.oolonghoo.holograms.util.Profiler;
 import net.minecraft.network.syncher.SynchedEntityData;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -104,6 +106,10 @@ public class PageTextRenderer {
     public void render(Player player, Location baseLocation) {
         if (destroyed) return;
 
+        Profiler profiler = Profiler.getInstance();
+        if (profiler.isEnabled()) profiler.start("渲染");
+        try {
+
         Hologram hologram = page.getParent();
         if (hologram == null) return;
 
@@ -150,7 +156,8 @@ public class PageTextRenderer {
                     .withBillboard(billboard)
                     .withTextAlignment(alignment)
                     .withTextBackgroundColor(backgroundColor)
-                    .withTextLineWidth(lineWidth);
+                    .withTextLineWidth(lineWidth)
+                    .withDisplayProperties(group.lines.get(0), hologram);
 
             List<SynchedEntityData.DataItem<?>> metadata = metadataBuilder.toWatchableObjects();
 
@@ -171,10 +178,15 @@ public class PageTextRenderer {
         }
 
         lastTextPerPlayerGroup.put(player.getUniqueId(), playerGroupTexts);
+
+        } finally {
+            if (profiler.isEnabled()) profiler.stop("渲染");
+        }
     }
 
     /**
      * 更新所有文本行组的文本（增量更新，仅发送变化的组）
+     * Chroma 启用时，即使文本未变化也会更新元数据以实现动态颜色
      */
     public void updateText(Player player) {
         if (destroyed) return;
@@ -188,11 +200,23 @@ public class PageTextRenderer {
         int backgroundColor = (hologram.getBackgroundAlpha() << 24) | hologram.getBackgroundColor();
         int lineWidth = hologram.getLineWidth();
 
+        // 计算 Chroma 颜色（基于系统时间）
+        long chromaStep = System.currentTimeMillis() / 50; // 每50ms一步
+
         Map<Integer, String> playerGroupTexts = lastTextPerPlayerGroup.computeIfAbsent(
                 player.getUniqueId(), k -> new HashMap<>());
 
         for (int gi = 0; gi < textGroups.size(); gi++) {
             TextGroup group = textGroups.get(gi);
+
+            // 检查该组是否有 Chroma 效果
+            boolean groupChromaBg = false;
+            boolean groupChromaGlow = false;
+            for (HologramLine line : group.lines) {
+                if (line.isChromaBackground()) groupChromaBg = true;
+                if (line.isChromaGlow()) groupChromaGlow = true;
+            }
+            boolean hasChroma = groupChromaBg || groupChromaGlow;
 
             // 收集文本行
             List<String> textLines = new ArrayList<>();
@@ -201,10 +225,18 @@ public class PageTextRenderer {
             }
             String textKey = String.join("\n", textLines);
 
-            // 检查文本是否变化
+            // 检查文本是否变化，Chroma 启用时始终更新
             String lastText = playerGroupTexts.get(gi);
-            if (textKey.equals(lastText)) continue;
+            boolean textChanged = !textKey.equals(lastText);
+            if (!textChanged && !hasChroma) continue;
             playerGroupTexts.put(gi, textKey);
+
+            // 计算 Chroma 颜色
+            int effectiveBgColor = backgroundColor;
+            if (groupChromaBg) {
+                int chromaRgb = ColorUtil.chromaColor(chromaStep) & 0x00FFFFFF; // 去掉 alpha
+                effectiveBgColor = (backgroundColor & 0xFF000000) | chromaRgb; // 保留原 alpha
+            }
 
             EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()
                     .withInvisible()
@@ -212,8 +244,14 @@ public class PageTextRenderer {
                     .withTextDisplayText(textLines)
                     .withBillboard(billboard)
                     .withTextAlignment(alignment)
-                    .withTextBackgroundColor(backgroundColor)
-                    .withTextLineWidth(lineWidth);
+                    .withTextBackgroundColor(effectiveBgColor)
+                    .withTextLineWidth(lineWidth)
+                    .withDisplayProperties(group.lines.get(0), hologram, groupChromaGlow);
+
+            // Chroma 发光色：覆盖 glowColor（仅在 skipGlowColor 时需要手动设置）
+            if (groupChromaGlow) {
+                metadataBuilder.withGlowColor(ColorUtil.chromaColor(chromaStep));
+            }
 
             List<SynchedEntityData.DataItem<?>> metadata = metadataBuilder.toWatchableObjects();
 

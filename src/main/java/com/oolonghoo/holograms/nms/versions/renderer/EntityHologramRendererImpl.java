@@ -77,10 +77,26 @@ public class EntityHologramRendererImpl implements NmsEntityHologramRenderer {
 
     @Override
     public void updateText(Player player, HologramLine line) {
+        if (destroyed || line == null) return;
+        EntityType newType = line.getEntityType();
+        if (newType != null && newType != this.entityType) {
+            destroy(player);
+            this.entityType = newType;
+            render(player, line.getLocation(), line);
+        }
     }
 
     @Override
     public void updateText(Collection<Player> players, HologramLine line) {
+        if (destroyed || line == null) return;
+        EntityType newType = line.getEntityType();
+        if (newType != null && newType != this.entityType) {
+            this.entityType = newType;
+            for (Player player : players) {
+                destroy(player);
+                render(player, line.getLocation(), line);
+            }
+        }
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.oolonghoo.holograms.nms.renderer.NmsClickableHologramRenderer;
 import com.oolonghoo.holograms.nms.util.DecentPosition;
 import com.oolonghoo.holograms.storage.HologramStorage;
 import com.oolonghoo.holograms.util.LocationUtil;
+import com.oolonghoo.holograms.util.Profiler;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -46,6 +47,21 @@ public class Hologram {
     private int backgroundAlpha;
     private int backgroundColor;
     private int lineWidth;
+
+    // Display Entity 全局默认属性
+    private float scaleX = 1.0f;
+    private float scaleY = 1.0f;
+    private float scaleZ = 1.0f;
+    private double translationX;
+    private double translationY;
+    private double translationZ;
+    private float shadowRadius;
+    private float shadowStrength = 1.0f;
+    private int glowColor = -1; // -1 表示不覆盖
+
+    // Chroma 彩虹色
+    private boolean chromaBackground = false;
+    private boolean chromaGlow = false;
 
     // 全息图类型和显示属性
     private HologramType type;
@@ -114,6 +130,18 @@ public class Hologram {
         this.lineWidth = plugin.getConfigManager().getDefaultLineWidth();
         this.updateInterval = plugin.getConfigManager().getDefaultUpdateInterval();
         this.lineHeight = plugin.getConfigManager().getDefaultLineHeight();
+        
+        this.scaleX = plugin.getConfigManager().getDefaultScaleX();
+        this.scaleY = plugin.getConfigManager().getDefaultScaleY();
+        this.scaleZ = plugin.getConfigManager().getDefaultScaleZ();
+        this.translationX = plugin.getConfigManager().getDefaultTranslationX();
+        this.translationY = plugin.getConfigManager().getDefaultTranslationY();
+        this.translationZ = plugin.getConfigManager().getDefaultTranslationZ();
+        this.shadowRadius = plugin.getConfigManager().getDefaultShadowRadius();
+        this.shadowStrength = plugin.getConfigManager().getDefaultShadowStrength();
+        this.glowColor = plugin.getConfigManager().getDefaultGlowColor();
+        this.chromaBackground = plugin.getConfigManager().isDefaultChromaBackground();
+        this.chromaGlow = plugin.getConfigManager().isDefaultChromaGlow();
         
         this.facing = 0.0f;
         this.type = HologramType.TEXT;
@@ -393,6 +421,105 @@ public class Hologram {
     public void setLineWidth(int lineWidth) {
         synchronized (visibilityMutex) {
             this.lineWidth = Math.max(1, lineWidth);
+            refreshAllViewers();
+        }
+    }
+
+    // ==================== Display Entity 全局属性方法 ====================
+
+    public float getScaleX() {
+        return scaleX;
+    }
+
+    public float getScaleY() {
+        return scaleY;
+    }
+
+    public float getScaleZ() {
+        return scaleZ;
+    }
+
+    public void setScale(float x, float y, float z) {
+        synchronized (visibilityMutex) {
+            this.scaleX = x;
+            this.scaleY = y;
+            this.scaleZ = z;
+            refreshAllViewers();
+        }
+    }
+
+    public double getTranslationX() {
+        return translationX;
+    }
+
+    public double getTranslationY() {
+        return translationY;
+    }
+
+    public double getTranslationZ() {
+        return translationZ;
+    }
+
+    public void setTranslation(double x, double y, double z) {
+        synchronized (visibilityMutex) {
+            this.translationX = x;
+            this.translationY = y;
+            this.translationZ = z;
+            refreshAllViewers();
+        }
+    }
+
+    public float getShadowRadius() {
+        return shadowRadius;
+    }
+
+    public void setShadowRadius(float shadowRadius) {
+        synchronized (visibilityMutex) {
+            this.shadowRadius = shadowRadius;
+            refreshAllViewers();
+        }
+    }
+
+    public float getShadowStrength() {
+        return shadowStrength;
+    }
+
+    public void setShadowStrength(float shadowStrength) {
+        synchronized (visibilityMutex) {
+            this.shadowStrength = shadowStrength;
+            refreshAllViewers();
+        }
+    }
+
+    public int getGlowColor() {
+        return glowColor;
+    }
+
+    public void setGlowColor(int glowColor) {
+        synchronized (visibilityMutex) {
+            this.glowColor = glowColor;
+            refreshAllViewers();
+        }
+    }
+
+    public boolean isChromaBackground() {
+        return chromaBackground;
+    }
+
+    public void setChromaBackground(boolean chromaBackground) {
+        synchronized (visibilityMutex) {
+            this.chromaBackground = chromaBackground;
+            refreshAllViewers();
+        }
+    }
+
+    public boolean isChromaGlow() {
+        return chromaGlow;
+    }
+
+    public void setChromaGlow(boolean chromaGlow) {
+        synchronized (visibilityMutex) {
+            this.chromaGlow = chromaGlow;
             refreshAllViewers();
         }
     }
@@ -1265,6 +1392,9 @@ public class Hologram {
      * @param player 玩家
      */
     private void performUpdate(boolean force, Player player) {
+        Profiler profiler = Profiler.getInstance();
+        if (profiler.isEnabled()) profiler.start("更新");
+        try {
         // 1. 检查玩家是否正在查看
         if (!isVisible(player)) {
             return;
@@ -1296,6 +1426,9 @@ public class Hologram {
             if (line.getType() != HologramType.TEXT) {
                 line.update(force, player);
             }
+        }
+        } finally {
+            if (profiler.isEnabled()) profiler.stop("更新");
         }
     }
 
@@ -1381,6 +1514,9 @@ public class Hologram {
      * @param player 玩家
      */
     private void performUpdateAnimations(Player player) {
+        Profiler profiler = Profiler.getInstance();
+        if (profiler.isEnabled()) profiler.start("动画");
+        try {
         // 1. 检查玩家是否正在查看
         if (!isVisible(player)) {
             return;
@@ -1413,6 +1549,9 @@ public class Hologram {
             if (line.getType() != HologramType.TEXT) {
                 line.updateAnimations(player);
             }
+        }
+        } finally {
+            if (profiler.isEnabled()) profiler.stop("动画");
         }
     }
 
@@ -1968,7 +2107,8 @@ public class Hologram {
         }
 
         // 4. 检查 entityId 是否属于此全息图
-        if (!page.hasEntity(entityId)) {
+        // ClickableHologramRenderer 的实体 ID 不在 page.hasEntity() 中，需要额外检查
+        if (!page.hasEntity(entityId) && !hasEntity(entityId)) {
             return false;
         }
 
@@ -2144,6 +2284,13 @@ public class Hologram {
         hologram.setBillboard(this.billboard);
         hologram.setDoubleSided(this.doubleSided);
         hologram.setLineHeight(this.lineHeight);
+        hologram.setScale(this.scaleX, this.scaleY, this.scaleZ);
+        hologram.setTranslation(this.translationX, this.translationY, this.translationZ);
+        hologram.setShadowRadius(this.shadowRadius);
+        hologram.setShadowStrength(this.shadowStrength);
+        hologram.setGlowColor(this.glowColor);
+        hologram.setChromaBackground(this.chromaBackground);
+        hologram.setChromaGlow(this.chromaGlow);
         hologram.addFlags(this.flags.toArray(new EnumFlag[this.flags.size()]));
         hologram.setDefaultVisibleState(this.defaultVisibleState);
         hologram.showPlayers.addAll(this.showPlayers);
@@ -2187,6 +2334,17 @@ public class Hologram {
         map.put("background-color", backgroundColor);
         map.put("line-width", lineWidth);
         map.put("double-sided", doubleSided);
+        map.put("scale-x", scaleX);
+        map.put("scale-y", scaleY);
+        map.put("scale-z", scaleZ);
+        map.put("translation-x", translationX);
+        map.put("translation-y", translationY);
+        map.put("translation-z", translationZ);
+        map.put("shadow-radius", shadowRadius);
+        map.put("shadow-strength", shadowStrength);
+        map.put("glow-color", glowColor);
+        map.put("chroma-background", chromaBackground);
+        map.put("chroma-glow", chromaGlow);
         map.put("pages", pages.stream().map(HologramPage::serializeToMap).collect(Collectors.toList()));
         return map;
     }

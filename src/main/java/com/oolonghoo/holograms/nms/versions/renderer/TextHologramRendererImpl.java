@@ -68,7 +68,8 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withBillboard(billboard)
                 .withTextAlignment(alignment)
                 .withTextBackgroundColor(backgroundColor)
-                .withTextLineWidth(lineWidth);
+                .withTextLineWidth(lineWidth)
+                .withDisplayProperties(line, hologram);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
             metadataBuilder.withDisplayBrightness(line.getBrightness());
@@ -144,7 +145,8 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withBillboard(billboard)
                 .withTextAlignment(alignment)
                 .withTextBackgroundColor(backgroundColor)
-                .withTextLineWidth(lineWidth);
+                .withTextLineWidth(lineWidth)
+                .withDisplayProperties(line, hologram);
 
         if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
             metadataBuilder.withDisplayBrightness(line.getBrightness());

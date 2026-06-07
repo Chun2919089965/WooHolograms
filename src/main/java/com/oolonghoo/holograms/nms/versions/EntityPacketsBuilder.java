@@ -180,7 +180,7 @@ public class EntityPacketsBuilder {
      * @return this
      */
     public EntityPacketsBuilder withRemovePassenger(int entityId) {
-        return updatePassenger(entityId, -1);
+        return updatePassenger(entityId, new int[0]);
     }
 
     private EntityPacketsBuilder updatePassenger(int entityId, int... passengers) {

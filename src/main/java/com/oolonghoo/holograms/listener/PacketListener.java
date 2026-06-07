@@ -230,11 +230,21 @@ public class PacketListener {
             return;
         }
 
+        // 检查是否禁用动作
+        if (hologram.hasFlag(com.oolonghoo.holograms.hologram.EnumFlag.DISABLE_ACTIONS)) {
+            return;
+        }
+
         if (plugin.getHologramManager().checkAndSetCooldown(player)) {
             return;
         }
 
         HologramPage page = hologram.getPageByEntityId(entityId);
+        // 当 page 为 null 时，entityId 可能属于 ClickableHologramRenderer（HEAD/SMALLHEAD/ICON/ENTITY 类型行）
+        // ClickableHologramRenderer 的实体 ID 不在 HologramPage.hasEntity() 中，但在 Hologram.hasEntity() 中
+        if (page == null && hologram.hasEntity(entityId)) {
+            page = hologram.getPage(player);
+        }
         HologramClickEvent event = new HologramClickEvent(hologram, page, player, clickType, entityId);
         Bukkit.getPluginManager().callEvent(event);
 
@@ -248,6 +258,9 @@ public class PacketListener {
                 line.executeActions(player, clickType);
                 return;
             }
+            // ClickableHologramRenderer 无法映射到具体行，执行页面级动作
+            page.executeActions(player, clickType);
+            return;
         }
 
         hologram.executeActions(player, clickType);

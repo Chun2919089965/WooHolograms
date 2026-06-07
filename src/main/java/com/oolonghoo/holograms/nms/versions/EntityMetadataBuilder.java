@@ -3,11 +3,14 @@ package com.oolonghoo.holograms.nms.versions;
 import com.oolonghoo.holograms.hologram.Brightness;
 import com.oolonghoo.holograms.hologram.TextAlignment;
 import com.oolonghoo.holograms.hologram.Billboard;
+import com.oolonghoo.holograms.hologram.Hologram;
+import com.oolonghoo.holograms.hologram.HologramLine;
 import net.minecraft.core.Rotations;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.ItemStack;
@@ -60,6 +63,17 @@ public class EntityMetadataBuilder {
     }
 
     /**
+     * 设置实体发光效果（0x40 标志位）
+     * 用于 ItemDisplay 附魔光效等场景
+     *
+     * @return this
+     */
+    public EntityMetadataBuilder withGlow() {
+        mergeEntityProperties((byte) 0x40);
+        return this;
+    }
+
+    /**
      * 设置盔甲架属性
      *
      * @param small  是否小型
@@ -95,6 +109,17 @@ public class EntityMetadataBuilder {
      */
     public EntityMetadataBuilder withItemStack(ItemStack itemStack) {
         watchableObjects.add(EntityMetadataType.ITEM_STACK.construct(CraftItemStack.asNMSCopy(itemStack)));
+        return this;
+    }
+
+    /**
+     * 设置 ItemDisplay Entity 的物品
+     *
+     * @param itemStack 物品
+     * @return this
+     */
+    public EntityMetadataBuilder withItemDisplayItem(org.bukkit.inventory.ItemStack itemStack) {
+        watchableObjects.add(EntityMetadataType.ITEM_DISPLAY_ITEM_STACK.construct(CraftItemStack.asNMSCopy(itemStack)));
         return this;
     }
 
@@ -322,6 +347,166 @@ public class EntityMetadataBuilder {
      */
     public EntityMetadataBuilder withTextOpacity(byte opacity) {
         watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_OPACITY.construct(opacity));
+        return this;
+    }
+
+    /**
+     * 设置 Display Entity 的缩放
+     *
+     * @param x X 轴缩放
+     * @param y Y 轴缩放
+     * @param z Z 轴缩放
+     * @return this
+     */
+    public EntityMetadataBuilder withScale(float x, float y, float z) {
+        watchableObjects.add(EntityMetadataType.DISPLAY_SCALE.construct(new org.joml.Vector3f(x, y, z)));
+        return this;
+    }
+
+    /**
+     * 设置 Display Entity 的平移
+     *
+     * @param x X 轴平移
+     * @param y Y 轴平移
+     * @param z Z 轴平移
+     * @return this
+     */
+    public EntityMetadataBuilder withTranslation(double x, double y, double z) {
+        watchableObjects.add(EntityMetadataType.DISPLAY_TRANSLATION.construct(new net.minecraft.world.phys.Vec3(x, y, z)));
+        return this;
+    }
+
+    /**
+     * 设置 Display Entity 的阴影半径
+     *
+     * @param radius 阴影半径
+     * @return this
+     */
+    public EntityMetadataBuilder withShadowRadius(float radius) {
+        watchableObjects.add(EntityMetadataType.DISPLAY_SHADOW_RADIUS.construct(radius));
+        return this;
+    }
+
+    /**
+     * 设置 Display Entity 的阴影强度
+     *
+     * @param strength 阴影强度
+     * @return this
+     */
+    public EntityMetadataBuilder withShadowStrength(float strength) {
+        watchableObjects.add(EntityMetadataType.DISPLAY_SHADOW_STRENGTH.construct(strength));
+        return this;
+    }
+
+    /**
+     * 设置 Display Entity 的发光颜色覆盖
+     *
+     * @param argb ARGB 颜色值
+     * @return this
+     */
+    public EntityMetadataBuilder withGlowColor(int argb) {
+        watchableObjects.add(EntityMetadataType.DISPLAY_GLOW_COLOR_OVERRIDE.construct(argb));
+        return this;
+    }
+
+    /**
+     * 应用 Display Entity 高级属性（缩放、平移、阴影、发光颜色）
+     * 行级别属性优先，未设置时继承全息图级别属性
+     *
+     * @param line 全息图行（可为 null）
+     * @param hologram 全息图（可为 null）
+     * @return this
+     */
+    public EntityMetadataBuilder withDisplayProperties(HologramLine line, Hologram hologram) {
+        return withDisplayProperties(line, hologram, false);
+    }
+
+    /**
+     * 应用 Display Entity 高级属性（缩放、平移、阴影、发光颜色）
+     * 行级别属性优先，未设置时继承全息图级别属性
+     *
+     * @param line 全息图行（可为 null）
+     * @param hologram 全息图（可为 null）
+     * @param skipGlowColor 是否跳过发光颜色设置（当后续会由 Chroma 覆盖时使用）
+     * @return this
+     */
+    public EntityMetadataBuilder withDisplayProperties(HologramLine line, Hologram hologram, boolean skipGlowColor) {
+        // 缩放：行级别优先，否则继承全息图
+        float sx = 1.0f, sy = 1.0f, sz = 1.0f;
+        if (hologram != null) {
+            sx = hologram.getScaleX();
+            sy = hologram.getScaleY();
+            sz = hologram.getScaleZ();
+        }
+        if (line != null) {
+            if (line.getScaleX() != null) sx = line.getScaleX();
+            if (line.getScaleY() != null) sy = line.getScaleY();
+            if (line.getScaleZ() != null) sz = line.getScaleZ();
+        }
+        // 仅在非默认值时写入，减少网络包大小
+        if (sx != 1.0f || sy != 1.0f || sz != 1.0f) {
+            withScale(sx, sy, sz);
+        }
+
+        // 平移
+        double tx = 0, ty = 0, tz = 0;
+        if (hologram != null) {
+            tx = hologram.getTranslationX();
+            ty = hologram.getTranslationY();
+            tz = hologram.getTranslationZ();
+        }
+        if (line != null) {
+            if (line.getTranslationX() != null) tx = line.getTranslationX();
+            if (line.getTranslationY() != null) ty = line.getTranslationY();
+            if (line.getTranslationZ() != null) tz = line.getTranslationZ();
+        }
+        if (tx != 0 || ty != 0 || tz != 0) {
+            withTranslation(tx, ty, tz);
+        }
+
+        // 阴影半径
+        float sRadius = 0;
+        if (hologram != null) sRadius = hologram.getShadowRadius();
+        if (line != null && line.getShadowRadius() != null) sRadius = line.getShadowRadius();
+        if (sRadius != 0) {
+            withShadowRadius(sRadius);
+        }
+
+        // 阴影强度
+        float sStrength = 1.0f;
+        if (hologram != null) sStrength = hologram.getShadowStrength();
+        if (line != null && line.getShadowStrength() != null) sStrength = line.getShadowStrength();
+        if (sStrength != 1.0f) {
+            withShadowStrength(sStrength);
+        }
+
+        // 发光颜色
+        if (!skipGlowColor) {
+            int gc = -1;
+            if (hologram != null) gc = hologram.getGlowColor();
+            if (line != null && line.getGlowColor() != null) gc = line.getGlowColor();
+            if (gc != -1) {
+                withGlowColor(gc);
+            }
+        }
+
+        return this;
+    }
+
+    /**
+     * 设置 BlockDisplay Entity 的方块状态
+     *
+     * @param material Bukkit Material（必须是方块类型）
+     * @return this
+     */
+    public EntityMetadataBuilder withBlockState(org.bukkit.Material material) {
+        if (material == null || !material.isBlock()) {
+            return this;
+        }
+        org.bukkit.block.data.BlockData blockData = material.createBlockData();
+        if (blockData instanceof CraftBlockData craftBlockData) {
+            watchableObjects.add(EntityMetadataType.BLOCK_DISPLAY_BLOCK_STATE.construct(craftBlockData.getState()));
+        }
         return this;
     }
 

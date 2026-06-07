@@ -145,9 +145,58 @@ animation:
   gradient: "渐变"
   custom: "自定义"
 
+# 数据转换相关
+convert:
+  usage: "&c用法: /wh convert <holographicdisplays|hd>"
+  unknown-source: "&c未知的转换源: {source}"
+  hd-not-found: "&c未找到 HolographicDisplays 插件数据目录！"
+  hd-v3-unsupported: "&c暂不支持 HolographicDisplays 3.x（数据库存储）的导入！"
+  hd-no-data: "&cHolographicDisplays 目录下未找到可导入的数据！"
+  hd-start: "&e开始从 HolographicDisplays 导入数据，共 {count} 个文件..."
+  hd-result: "&a导入完成！成功: {imported}，跳过: {skipped}，失败: {failed}"
+
 # 调试消息
 debug:
   enabled: "&e调试模式已启用"
   disabled: "&e调试模式已禁用"
   hologram-info: "&e全息图信息: {info}"
   viewer-count: "&e当前观看者数量: {count}"
+
+# 标志相关
+flag:
+  invalid-flag: "&c无效的标志: {flag}！可用标志: disable_placeholders, disable_updating, disable_animations, disable_actions, always_face_player, clickable"
+  invalid-line: "&c无效的行号: {line}！"
+  already-has-flag: "&c第 {line} 行已有标志 {flag}！"
+  already-has-flag-holo: "&c全息图 {name} 已有标志 {flag}！"
+  not-has-flag: "&c第 {line} 行没有标志 {flag}！"
+  not-has-flag-holo: "&c全息图 {name} 没有标志 {flag}！"
+  added-holo: "&a已为全息图 {name} 添加标志 {flag}！"
+  added-line: "&a已为第 {line} 行添加标志 {flag}！"
+  removed-holo: "&a已从全息图 {name} 移除标志 {flag}！"
+  removed-line: "&a已从第 {line} 行移除标志 {flag}！"
+
+# 性能分析器
+profiler:
+  header: "&e========== 性能分析 =========="
+  no-data: "&7暂无数据"
+  not-enabled: "&e性能分析器未启用，使用 /wh profiler on 启用"
+  enabled: "&a性能分析器已启用"
+  disabled: "&e性能分析器已禁用，统计数据已清除"
+  reset: "&a性能统计数据已重置"
+  usage: "&c用法: /wh profiler [on|off|reset]"
+
+# Display Entity 属性
+display:
+  scale-set: "&a已设置缩放为 ({x}, {y}, {z})！"
+  scale-set-line: "&a已设置第 {line} 行的缩放为 ({x}, {y}, {z})！"
+  shadow-set: "&a已设置阴影为 (半径: {radius}, 强度: {strength})！"
+  shadow-set-line: "&a已设置第 {line} 行的阴影为 (半径: {radius}, 强度: {strength})！"
+  glow-color-set: "&a已设置发光颜色为 {color}！"
+  glow-color-set-line: "&a已设置第 {line} 行的发光颜色为 {color}！"
+  glow-color-reset: "&a已重置发光颜色！"
+  glow-color-reset-line: "&a已重置第 {line} 行的发光颜色！"
+  invalid-color: "&c无效的颜色格式！使用 #RRGGBB 或颜色名称(red, green, blue 等)"
+  chroma-background-set: "&a已设置 Chroma 背景为 {value}！"
+  chroma-background-set-line: "&a已设置第 {line} 行的 Chroma 背景为 {value}！"
+  chroma-glow-set: "&a已设置 Chroma 发光为 {value}！"
+  chroma-glow-set-line: "&a已设置第 {line} 行的 Chroma 发光为 {value}！"

@@ -32,8 +32,8 @@ public class HologramRendererFactoryImpl implements NmsHologramRendererFactory {
     }
 
     @Override
-    public NmsIconHologramRenderer createIconRenderer() {
-        return new IconHologramRendererImpl(entityIdGenerator);
+    public NmsItemDisplayRenderer createIconRenderer() {
+        return new ItemDisplayRendererImpl(entityIdGenerator);
     }
 
     @Override
@@ -44,6 +44,11 @@ public class HologramRendererFactoryImpl implements NmsHologramRendererFactory {
     @Override
     public NmsSmallHeadHologramRenderer createSmallHeadRenderer() {
         return new SmallHeadHologramRendererImpl(entityIdGenerator);
+    }
+
+    @Override
+    public NmsBlockHologramRenderer createBlockRenderer() {
+        return new BlockHologramRendererImpl(entityIdGenerator);
     }
 
     @Override

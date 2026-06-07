@@ -38,6 +38,19 @@ public class ConfigManager {
     private int defaultBackgroundColor;
     private int defaultLineWidth;
 
+    // Display Entity 默认值
+    private float defaultScaleX;
+    private float defaultScaleY;
+    private float defaultScaleZ;
+    private double defaultTranslationX;
+    private double defaultTranslationY;
+    private double defaultTranslationZ;
+    private float defaultShadowRadius;
+    private float defaultShadowStrength;
+    private int defaultGlowColor;
+    private boolean defaultChromaBackground;
+    private boolean defaultChromaGlow;
+
     // 性能设置
     private long renderInterval;
     private long placeholderInterval;
@@ -97,6 +110,19 @@ public class ConfigManager {
         defaultBackgroundAlpha = config.getInt("defaults.default-background-alpha", 128);
         defaultBackgroundColor = config.getInt("defaults.default-background-color", 0);
         defaultLineWidth = config.getInt("defaults.default-line-width", 300);
+
+        // Display Entity 默认值
+        defaultScaleX = (float) config.getDouble("defaults.default-scale-x", 1.0);
+        defaultScaleY = (float) config.getDouble("defaults.default-scale-y", 1.0);
+        defaultScaleZ = (float) config.getDouble("defaults.default-scale-z", 1.0);
+        defaultTranslationX = config.getDouble("defaults.default-translation-x", 0.0);
+        defaultTranslationY = config.getDouble("defaults.default-translation-y", 0.0);
+        defaultTranslationZ = config.getDouble("defaults.default-translation-z", 0.0);
+        defaultShadowRadius = (float) config.getDouble("defaults.default-shadow-radius", 0.0);
+        defaultShadowStrength = (float) config.getDouble("defaults.default-shadow-strength", 1.0);
+        defaultGlowColor = config.getInt("defaults.default-glow-color", -1);
+        defaultChromaBackground = config.getBoolean("defaults.default-chroma-background", false);
+        defaultChromaGlow = config.getBoolean("defaults.default-chroma-glow", false);
 
         // 性能设置
         renderInterval = config.getLong("performance.render-interval", 2L);
@@ -206,6 +232,50 @@ public class ConfigManager {
 
     public int getDefaultLineWidth() {
         return defaultLineWidth;
+    }
+
+    public float getDefaultScaleX() {
+        return defaultScaleX;
+    }
+
+    public float getDefaultScaleY() {
+        return defaultScaleY;
+    }
+
+    public float getDefaultScaleZ() {
+        return defaultScaleZ;
+    }
+
+    public double getDefaultTranslationX() {
+        return defaultTranslationX;
+    }
+
+    public double getDefaultTranslationY() {
+        return defaultTranslationY;
+    }
+
+    public double getDefaultTranslationZ() {
+        return defaultTranslationZ;
+    }
+
+    public float getDefaultShadowRadius() {
+        return defaultShadowRadius;
+    }
+
+    public float getDefaultShadowStrength() {
+        return defaultShadowStrength;
+    }
+
+    public int getDefaultGlowColor() {
+        return defaultGlowColor;
+    }
+
+    public boolean isDefaultChromaBackground() {
+        return defaultChromaBackground;
+    }
+
+    public boolean isDefaultChromaGlow() {
+        return defaultChromaGlow;
     }
 
     public long getRenderInterval() {

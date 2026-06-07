@@ -50,23 +50,31 @@ public class PlaceholderUtil {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        
+
+        Profiler profiler = Profiler.getInstance();
+        if (profiler.isEnabled()) profiler.start("占位符");
+        try {
+
         Matcher matcher = PLACEHOLDER_PATTERN.matcher(text);
         StringBuilder result = new StringBuilder();
-        
+
         while (matcher.find()) {
             String placeholder = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
             String replacement = resolvePlaceholder(placeholder.toLowerCase(), player);
             matcher.appendReplacement(result, replacement != null ? Matcher.quoteReplacement(replacement) : Matcher.quoteReplacement(matcher.group()));
         }
-        
+
         matcher.appendTail(result);
-        
+
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI") && player != null) {
             return me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, result.toString());
         }
-        
+
         return result.toString();
+
+        } finally {
+            if (profiler.isEnabled()) profiler.stop("占位符");
+        }
     }
     
     /**

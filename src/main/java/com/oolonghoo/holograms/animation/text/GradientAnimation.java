@@ -47,33 +47,45 @@ public class GradientAnimation extends TextAnimation {
             return string;
         }
 
+        String[] frames = getPrecompiledFrames(string, args);
+        if (frames == null || frames.length == 0) return string;
+        int index = getCurrentStep(step, frames.length);
+        return frames[index];
+    }
+
+    @Override
+    protected String[] precompile(String text, String... args) {
         if (args == null || args.length < 2) {
-            return string;
+            return new String[]{text};
         }
 
         List<Color> colors = parseColors(args);
         if (colors.size() < 2) {
-            return string;
+            return new String[]{text};
         }
 
-        String stripped = stripSpecialColors(string);
+        String stripped = stripSpecialColors(text);
         int length = stripped.length();
 
         if (length == 0) {
-            return string;
+            return new String[]{text};
         }
 
+        // 总帧数 = length * 2，与原始逻辑一致
         int totalFrames = length * 2;
-        int currentFrame = getCurrentStep(step, totalFrames);
+        String[] frames = new String[totalFrames];
 
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            double position = (double) (i + currentFrame % length) / length;
-            Color color = getGradientColor(colors, position);
-            result.append(colorToHex(color)).append(stripped.charAt(i));
+        for (int currentFrame = 0; currentFrame < totalFrames; currentFrame++) {
+            StringBuilder result = new StringBuilder();
+            for (int i = 0; i < length; i++) {
+                double position = (double) (i + currentFrame % length) / length;
+                Color color = getGradientColor(colors, position);
+                result.append(colorToHex(color)).append(stripped.charAt(i));
+            }
+            frames[currentFrame] = result.toString();
         }
 
-        return result.toString();
+        return frames;
     }
 
     private List<Color> parseColors(String... args) {

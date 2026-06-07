@@ -68,7 +68,8 @@ public class WooHolograms extends JavaPlugin {
             try {
                 int major = Integer.parseInt(parts[0]);
                 int minor = Integer.parseInt(parts[1]);
-                if (major == 1 && minor >= 21) supported = true;
+                // 1.21+ (旧格式) 或 26+ (新格式)
+                if ((major == 1 && minor >= 21) || major >= 26) supported = true;
             } catch (NumberFormatException ignored) {}
         }
         if (!supported) {

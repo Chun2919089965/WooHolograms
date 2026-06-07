@@ -13,6 +13,7 @@ import com.oolonghoo.holograms.listener.PacketListener;
 import com.oolonghoo.holograms.listener.PlayerListener;
 import com.oolonghoo.holograms.listener.WorldListener;
 import com.oolonghoo.holograms.nms.NmsHologramRendererFactory;
+import org.bstats.bukkit.Metrics;
 import com.oolonghoo.holograms.nms.HologramRendererPool;
 import com.oolonghoo.holograms.nms.versions.EntityIdGenerator;
 import com.oolonghoo.holograms.nms.versions.HologramRendererFactoryImpl;
@@ -156,6 +157,10 @@ public class WooHolograms extends JavaPlugin {
         } else {
             getLogger().info("DecentHolograms 兼容层已激活（依赖 DH 的插件将使用 WooHolograms）");
         }
+
+        // bStats 统计
+        Metrics metrics = new Metrics(this, 31848);
+        metrics.addCustomChart(new Metrics.SimplePie("hologram_count", () -> String.valueOf(hologramManager.getHologramCount())));
 
         pluginEnabled = true;
         String version = getPluginMeta().getVersion();

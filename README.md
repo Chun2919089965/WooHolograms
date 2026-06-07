@@ -51,6 +51,8 @@
 | 始终面向玩家 | `always_face_player` | 始终面向观看的玩家 |
 | 可点击 | `clickable` | 全息图可被玩家点击 |
 
+行级未设置时继承页级，页级未设置时继承全息图级。
+
 ### 🔧 技术特性
 - **Display Entity**：基于 1.21+ TextDisplay/ItemDisplay/BlockDisplay 实体，性能优异
 - **Folia 支持**：完整兼容 Folia 区域化多线程调度
@@ -273,6 +275,39 @@
 | gold / orange | #FFAA00 | | |
 
 也支持十六进制格式：`#FF0000`、`#00FF00` 等
+
+### Chroma 彩虹色
+
+背景色和发光色沿 HSL 色轮动态渐变，每帧更新：
+
+```
+/wh setchroma <名称> background true     # 全息图级：背景色彩虹渐变
+/wh setchroma <名称> glow true           # 全息图级：发光色彩虹渐变
+/wh setchroma <名称> 2 background true   # 行级：第2行背景色彩虹渐变
+/wh setchroma <名称> 2 glow true         # 行级：第2行发光色彩虹渐变
+```
+
+## 标志系统
+
+通过标志精细控制全息图行为，支持行级 → 页级 → 全息图级继承：
+
+| 标志 | ID | 描述 |
+|------|------|------|
+| 禁用占位符 | `disable_placeholders` | 不解析 PlaceholderAPI 占位符 |
+| 禁用更新 | `disable_updating` | 不自动更新内容 |
+| 禁用动画 | `disable_animations` | 不播放动画效果 |
+| 禁用动作 | `disable_actions` | 点击不触发任何动作 |
+| 始终面向玩家 | `always_face_player` | 始终面向观看的玩家 |
+| 可点击 | `clickable` | 全息图可被玩家点击 |
+
+```
+/wh addflag <名称> disable_actions           # 全息图级：禁止点击触发动作
+/wh addflag <名称> 2 disable_animations      # 行级：第2行不播放动画
+/wh removeflag <名称> disable_actions         # 移除全息图级标志
+/wh removeflag <名称> 2 disable_animations    # 移除行级标志
+```
+
+行级未设置时继承页级，页级未设置时继承全息图级。
 
 ## 动作类型
 

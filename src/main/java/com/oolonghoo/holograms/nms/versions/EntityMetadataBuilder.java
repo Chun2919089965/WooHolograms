@@ -182,7 +182,7 @@ public class EntityMetadataBuilder {
     /**
      * 合并实体属性标志位，如果已存在 ENTITY_PROPERTIES 条目则合并，否则新增
      */
-    private void mergeEntityProperties(byte flags) {
+    public void mergeEntityProperties(byte flags) {
         EntityDataAccessor<Byte> targetAccessor = EntityMetadataType.ENTITY_PROPERTIES_OBJECT;
         for (int i = 0; i < watchableObjects.size(); i++) {
             SynchedEntityData.DataItem<?> item = watchableObjects.get(i);
@@ -405,7 +405,8 @@ public class EntityMetadataBuilder {
      * @return this
      */
     public EntityMetadataBuilder withGlowColor(int argb) {
-        watchableObjects.add(EntityMetadataType.DISPLAY_GLOW_COLOR_OVERRIDE.construct(argb));
+        watchableObjects.add(EntityMetadataType.DISPLAY_GLOW_COLOR_OVERRIDE.construct(argb | 0xFF000000));
+        withGlow(); // 自动启用发光标志，使颜色可见
         return this;
     }
 
@@ -488,6 +489,14 @@ public class EntityMetadataBuilder {
             if (gc != -1) {
                 withGlowColor(gc);
             }
+        }
+
+        // 亮度覆盖：行级别优先，否则继承全息图级别
+        Brightness effectiveBrightness = null;
+        if (hologram != null) effectiveBrightness = hologram.getBrightness();
+        if (line != null && line.getBrightness() != null) effectiveBrightness = line.getBrightness();
+        if (effectiveBrightness != null && !effectiveBrightness.isDefault()) {
+            withDisplayBrightness(effectiveBrightness);
         }
 
         return this;

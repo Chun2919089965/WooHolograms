@@ -165,19 +165,6 @@ debug:
   hologram-info: "&eHologram info: {info}"
   viewer-count: "&eCurrent viewer count: {count}"
 
-# Flag related
-flag:
-  invalid-flag: "&cInvalid flag: {flag}! Available flags: disable_placeholders, disable_updating, disable_animations, disable_actions, always_face_player, clickable"
-  invalid-line: "&cInvalid line number: {line}!"
-  already-has-flag: "&cLine {line} already has flag {flag}!"
-  already-has-flag-holo: "&cHologram {name} already has flag {flag}!"
-  not-has-flag: "&cLine {line} does not have flag {flag}!"
-  not-has-flag-holo: "&cHologram {name} does not have flag {flag}!"
-  added-holo: "&aAdded flag {flag} to hologram {name}!"
-  added-line: "&aAdded flag {flag} to line {line}!"
-  removed-holo: "&aRemoved flag {flag} from hologram {name}!"
-  removed-line: "&aRemoved flag {flag} from line {line}!"
-
 # Profiler
 profiler:
   header: "&e========== Profiler =========="

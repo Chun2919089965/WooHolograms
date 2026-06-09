@@ -18,7 +18,18 @@ import java.util.Locale;
 /**
  * 行编辑 GUI
  * 用于编辑单行的属性
- * TEXT 行使用紧凑布局（27格），非 TEXT 行使用完整布局（36格）
+ *
+ * TEXT 行布局（27格 = 3行），GRAY 背景：
+ * Row 1 (0-8):   [0返回] [_] [_] [_] [4内容] [_] [_] [_] [_]
+ * Row 2 (9-17):  [9设置文本] [_] [_] [_] [13动作管理] [_] [_] [_] [_]
+ * Row 3 (18-26): [18上移] [_] [_] [_] [22删除行] [_] [_] [_] [26下移]
+ *
+ * 非 TEXT 行布局（45格 = 5行），GRAY 背景：
+ * Row 1 (0-8):   [0返回] [_] [_] [_] [4内容] [_] [_] [_] [_]
+ * Row 2 (9-17):  [9设置文本] [_] [11类型按钮] [_] [13缩放] [_] [15发光颜色] [_] [_]
+ * Row 3 (18-26): [18偏移] [_] [20高度] [_] [22朝向] [_] [24Billboard] [_] [_]
+ * Row 4 (27-35): [27亮度] [_] [29阴影] [_] [31彩虹渐变] [_] [33动作管理] [_] [_]
+ * Row 5 (36-44): [36上移] [_] [_] [_] [40删除行] [_] [_] [_] [44下移]
  */
 public class LineEditGui extends GuiScreen {
 
@@ -53,7 +64,7 @@ public class LineEditGui extends GuiScreen {
                 }
             }
         }
-        return 36;
+        return 45;
     }
 
     private void render() {
@@ -97,23 +108,20 @@ public class LineEditGui extends GuiScreen {
         HologramType lineType = line.getType();
 
         if (lineType == HologramType.TEXT) {
-            renderTextLine(line, page);
+            renderTextLine(line, hologram, page);
         } else {
-            renderNonTextLine(line, lineType, page);
+            renderNonTextLine(line, lineType, hologram, page);
         }
     }
 
     /**
      * TEXT 行的紧凑布局（27格 = 3行）
-     * TEXT 行合并为单个 TextDisplay，只有文本编辑和动作管理有意义
-     *
-     * 布局：
-     * [0返回] [1] [2] [3] [4内容] [5] [6] [7] [8删除行]
-     * [9] [10] [11设置文本] [12] [13动作管理] [14] [15下移] [16] [17]
-     * [18] [19] [20] [21] [22] [23] [24] [25] [26]
+     * [0返回] [_] [_] [_] [4内容] [_] [_] [_] [_]
+     * [9设置文本] [_] [_] [_] [13动作管理] [_] [_] [_] [_]
+     * [18上移] [_] [_] [_] [22删除行] [_] [_] [_] [26下移]
      */
-    private void renderTextLine(HologramLine line, HologramPage page) {
-        // 第一行：返回 | 内容 | 删除行
+    private void renderTextLine(HologramLine line, Hologram hologram, HologramPage page) {
+        // Row 1: 返回 | 内容
         setButton(0, GuiButton.builder(Material.BOOK)
                 .name("&f返回")
                 .lore(Arrays.asList(
@@ -135,151 +143,7 @@ public class LineEditGui extends GuiScreen {
                 ))
                 .build());
 
-        setButton(8, GuiButton.builder(Material.BARRIER)
-                .name("&f删除行")
-                .lore(Arrays.asList(
-                        "&7删除此行",
-                        "",
-                        "&e点击删除"
-                ))
-                .onClick(context -> {
-                    Player player = context.getPlayer();
-                    guiManager.openGui(player, ConfirmGui.createDeleteLineConfirm(hologramName, lineIndex + 1, confirmed -> {
-                        if (confirmed) {
-                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                            if (h != null) {
-                                HologramPage p = h.getPage(pageIndex);
-                                if (p != null && lineIndex < p.size()) {
-                                    p.removeLine(lineIndex);
-                                    h.save();
-                                    h.refreshAllViewers();
-                                    player.sendMessage(ColorUtil.colorize("&a已删除第 " + (lineIndex + 1) + " 行！"));
-                                }
-                            }
-                            guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, pageIndex));
-                        } else {
-                            guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
-                        }
-                    }));
-                })
-                .build());
-
-        // 第二行：设置文本 | 动作管理 | 下移
-        setButton(11, GuiButton.builder(Material.OAK_SIGN)
-                .name("&f设置文本")
-                .lore(Arrays.asList(
-                        "&7设置此行的文本内容",
-                        "&7支持颜色代码",
-                        "",
-                        "&e点击设置"
-                ))
-                .onClick(context -> {
-                    Player player = context.getPlayer();
-                    player.closeInventory();
-
-                    chatInputManager.requestInput(player, "&a请输入行文本 (支持颜色代码):",
-                            ChatInputManager.InputType.LINE_TEXT, hologramName, lineIndex, pageIndex, input -> {
-                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                                if (h != null) {
-                                    HologramPage p = h.getPage(pageIndex);
-                                    if (p != null && lineIndex < p.size()) {
-                                        p.setLine(lineIndex, input);
-                                        h.save();
-                                        h.refreshAllViewers();
-                                        player.sendMessage(ColorUtil.colorize("&a已更新行文本！"));
-                                    }
-                                }
-                                guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
-                            });
-                })
-                .build());
-
-        boolean hasActions = line.hasActions();
-        setButton(13, GuiButton.builder(Material.COMMAND_BLOCK)
-                .name("&f动作管理")
-                .lore(Arrays.asList(
-                        "&7管理此行的点击动作",
-                        "&7当前: " + (hasActions ? "&a已设置动作" : "&c未设置动作"),
-                        "",
-                        "&7可以为行添加点击动作",
-                        "&7如执行命令、发送消息、翻页等",
-                        "",
-                        "&e点击管理"
-                ))
-                .onClick(context -> {
-                    guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
-                })
-                .build());
-
-        if (lineIndex < page.size() - 1) {
-            setButton(15, GuiButton.builder(Material.ARROW)
-                    .name("&f下移")
-                    .lore(Arrays.asList(
-                            "&7将此行向下移动",
-                            "",
-                            "&e点击移动"
-                    ))
-                    .onClick(context -> {
-                        Player player = context.getPlayer();
-                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                        if (h != null) {
-                            HologramPage p = h.getPage(pageIndex);
-                            if (p != null && lineIndex < p.size() - 1) {
-                                p.swapLines(lineIndex, lineIndex + 1);
-                                h.save();
-                                h.refreshAllViewers();
-                                player.sendMessage(ColorUtil.colorize("&a已下移！"));
-                            }
-                        }
-                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex + 1));
-                    })
-                    .build());
-        }
-
-        fillTextLineBackground();
-    }
-
-    private void fillTextLineBackground() {
-        GuiButton background = GuiButton.builder(Material.LIME_STAINED_GLASS_PANE)
-                .name(" ")
-                .build();
-
-        for (int i = 0; i < 27; i++) {
-            if (getButton(i) == null) {
-                setButton(i, background);
-            }
-        }
-    }
-
-    /**
-     * 非 TEXT 行的完整布局（36格 = 4行）
-     * 保留偏移、高度、亮度、朝向、Billboard、头颅材质等行级设置
-     */
-    private void renderNonTextLine(HologramLine line, HologramType lineType, HologramPage page) {
-        // 返回按钮
-        setButton(0, GuiButton.builder(Material.BOOK)
-                .name("&f返回")
-                .lore(Arrays.asList(
-                        "&7返回全息图详情",
-                        "",
-                        "&e点击返回"
-                ))
-                .onClick(context -> {
-                    guiManager.openGui(context.getPlayer(), new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, pageIndex));
-                })
-                .build());
-
-        // 当前内容显示
-        setButton(4, GuiButton.builder(Material.PAPER)
-                .name("&f当前内容")
-                .lore(Arrays.asList(
-                        "",
-                        "&r" + line.getContent(),
-                        ""
-                ))
-                .build());
-
-        // 设置文本
+        // Row 2: 设置文本 | 动作管理
         setButton(9, GuiButton.builder(Material.OAK_SIGN)
                 .name("&f设置文本")
                 .lore(Arrays.asList(
@@ -309,8 +173,256 @@ public class LineEditGui extends GuiScreen {
                 })
                 .build());
 
-        // 设置偏移
-        setButton(10, GuiButton.builder(Material.STICK)
+        // 动作管理按钮 (slot 13)
+        boolean hasActions = line.hasActions();
+        setButton(13, GuiButton.builder(Material.COMMAND_BLOCK)
+                .name("&f动作管理")
+                .lore(Arrays.asList(
+                        "&7管理此行的点击动作",
+                        "&7当前: " + (hasActions ? "&a已设置动作" : "&c未设置动作"),
+                        "",
+                        "&7可以为行添加点击动作",
+                        "&7如执行命令、发送消息、翻页等",
+                        "",
+                        "&e点击管理"
+                ))
+                .onClick(context -> {
+                    guiManager.openGui(context.getPlayer(), new LineActionManageGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                })
+                .build());
+
+        // Row 3: 上移 | 删除行 | 下移
+        if (lineIndex > 0) {
+            setButton(18, GuiButton.builder(Material.ARROW)
+                    .name("&f上移")
+                    .lore(Arrays.asList(
+                            "&7将此行向上移动",
+                            "",
+                            "&e点击移动"
+                    ))
+                    .onClick(context -> {
+                        Player player = context.getPlayer();
+                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                        if (h != null) {
+                            HologramPage p = h.getPage(pageIndex);
+                            if (p != null && lineIndex > 0) {
+                                p.swapLines(lineIndex, lineIndex - 1);
+                                h.save();
+                                h.refreshAllViewers();
+                                player.sendMessage(ColorUtil.colorize("&a已上移！"));
+                            }
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex - 1));
+                    })
+                    .build());
+        }
+
+        setButton(22, GuiButton.builder(Material.BARRIER)
+                .name("&f删除行")
+                .lore(Arrays.asList(
+                        "&7删除此行",
+                        "",
+                        "&e点击删除"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    guiManager.openGui(player, ConfirmGui.createDeleteLineConfirm(hologramName, lineIndex + 1, confirmed -> {
+                        if (confirmed) {
+                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                            if (h != null) {
+                                HologramPage p = h.getPage(pageIndex);
+                                if (p != null && lineIndex < p.size()) {
+                                    p.removeLine(lineIndex);
+                                    h.save();
+                                    h.refreshAllViewers();
+                                    player.sendMessage(ColorUtil.colorize("&a已删除第 " + (lineIndex + 1) + " 行！"));
+                                }
+                            }
+                            guiManager.openGui(player, new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, pageIndex));
+                        } else {
+                            guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                        }
+                    }));
+                })
+                .build());
+
+        if (lineIndex < page.size() - 1) {
+            setButton(26, GuiButton.builder(Material.ARROW)
+                    .name("&f下移")
+                    .lore(Arrays.asList(
+                            "&7将此行向下移动",
+                            "",
+                            "&e点击移动"
+                    ))
+                    .onClick(context -> {
+                        Player player = context.getPlayer();
+                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                        if (h != null) {
+                            HologramPage p = h.getPage(pageIndex);
+                            if (p != null && lineIndex < p.size() - 1) {
+                                p.swapLines(lineIndex, lineIndex + 1);
+                                h.save();
+                                h.refreshAllViewers();
+                                player.sendMessage(ColorUtil.colorize("&a已下移！"));
+                            }
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex + 1));
+                    })
+                    .build());
+        }
+
+        fillTextLineBackground();
+    }
+
+    private void fillTextLineBackground() {
+        GuiButton background = GuiButton.builder(Material.GRAY_STAINED_GLASS_PANE)
+                .name(" ")
+                .build();
+
+        for (int i = 0; i < 27; i++) {
+            if (getButton(i) == null) {
+                setButton(i, background);
+            }
+        }
+    }
+
+    /**
+     * 非 TEXT 行的完整布局（45格 = 5行）
+     *
+     * Row 1 (0-8):   [0返回] [_] [_] [_] [4内容] [_] [_] [_] [_]
+     * Row 2 (9-17):  [9设置文本] [_] [11类型按钮] [_] [13缩放] [_] [15发光颜色] [_] [_]
+     * Row 3 (18-26): [18偏移] [_] [20高度] [_] [22朝向] [_] [24Billboard] [_] [_]
+     * Row 4 (27-35): [27亮度] [_] [29阴影] [_] [31彩虹渐变] [_] [33动作管理] [_] [_]
+     * Row 5 (36-44): [36上移] [_] [_] [_] [40删除行] [_] [_] [_] [44下移]
+     */
+    private void renderNonTextLine(HologramLine line, HologramType lineType, Hologram hologram, HologramPage page) {
+        // === Row 1: Navigation & Info ===
+        setButton(0, GuiButton.builder(Material.BOOK)
+                .name("&f返回")
+                .lore(Arrays.asList(
+                        "&7返回全息图详情",
+                        "",
+                        "&e点击返回"
+                ))
+                .onClick(context -> {
+                    guiManager.openGui(context.getPlayer(), new HologramDetailGui(plugin, guiManager, chatInputManager, hologramName, pageIndex));
+                })
+                .build());
+
+        setButton(4, GuiButton.builder(Material.PAPER)
+                .name("&f当前内容")
+                .lore(Arrays.asList(
+                        "",
+                        "&r" + line.getContent(),
+                        ""
+                ))
+                .build());
+
+        // === Row 2: Content & Management ===
+        setButton(9, GuiButton.builder(Material.OAK_SIGN)
+                .name("&f设置文本")
+                .lore(Arrays.asList(
+                        "&7设置此行的文本内容",
+                        "&7支持颜色代码",
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    player.closeInventory();
+
+                    chatInputManager.requestInput(player, "&a请输入行文本 (支持颜色代码):",
+                            ChatInputManager.InputType.LINE_TEXT, hologramName, lineIndex, pageIndex, input -> {
+                                Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                if (h != null) {
+                                    HologramPage p = h.getPage(pageIndex);
+                                    if (p != null && lineIndex < p.size()) {
+                                        p.setLine(lineIndex, input);
+                                        h.save();
+                                        h.refreshAllViewers();
+                                        player.sendMessage(ColorUtil.colorize("&a已更新行文本！"));
+                                    }
+                                }
+                                guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                            });
+                })
+                .build());
+
+        // 类型特定按钮 (slot 11)
+        renderTypeSpecificButton(line, lineType);
+
+        // 缩放按钮 (slot 13) - 非 TEXT 行支持 x y z
+        setButton(13, GuiButton.builder(Material.SLIME_BALL)
+                .name("&f缩放")
+                .lore(Arrays.asList(
+                        "&7设置Display的缩放比例",
+                        "&7当前: &f" + String.format("%.2f, %.2f, %.2f",
+                                line.getScaleX() != null ? line.getScaleX() : hologram.getScaleX(),
+                                line.getScaleY() != null ? line.getScaleY() : hologram.getScaleY(),
+                                line.getScaleZ() != null ? line.getScaleZ() : hologram.getScaleZ()),
+                        "",
+                        "&7左键: &e输入缩放值 (x y z)",
+                        "&7右键: &c重置为继承",
+                        "",
+                        "&7null 时继承全息图级别值"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    if (context.getClickType() == ClickType.RIGHT || context.getClickType() == ClickType.SHIFT_RIGHT) {
+                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                        if (h != null) {
+                            HologramPage p = h.getPage(pageIndex);
+                            if (p != null && lineIndex < p.size()) {
+                                HologramLine l = p.getLine(lineIndex);
+                                if (l != null) {
+                                    l.setScale(null, null, null);
+                                    h.save();
+                                    h.refreshAllViewers();
+                                    player.sendMessage(ColorUtil.colorize("&a已重置缩放为继承！"));
+                                }
+                            }
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    } else {
+                        player.closeInventory();
+                        chatInputManager.requestInput(player, "&a请输入缩放值 (x y z):",
+                                ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
+                                    try {
+                                        String[] parts = input.split(" ");
+                                        if (parts.length == 3) {
+                                            float x = Float.parseFloat(parts[0]);
+                                            float y = Float.parseFloat(parts[1]);
+                                            float z = Float.parseFloat(parts[2]);
+                                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                            if (h != null) {
+                                                HologramPage p = h.getPage(pageIndex);
+                                                if (p != null && lineIndex < p.size()) {
+                                                    HologramLine l = p.getLine(lineIndex);
+                                                    if (l != null) {
+                                                        l.setScale(x, y, z);
+                                                        h.save();
+                                                        h.refreshAllViewers();
+                                                        player.sendMessage(ColorUtil.colorize("&a已设置缩放为 (" + x + ", " + y + ", " + z + ")！"));
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            player.sendMessage(ColorUtil.colorize("&c请输入三个数字，用空格分隔！"));
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                                    }
+                                    guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                });
+                    }
+                })
+                .build());
+
+        // 发光颜色按钮 (slot 15)
+        addGlowColorButton(15, line, hologram);
+
+        // === Row 3: Position & Orientation ===
+        setButton(18, GuiButton.builder(Material.STICK)
                 .name("&f设置偏移")
                 .lore(Arrays.asList(
                         "&7设置此行的位置偏移",
@@ -357,64 +469,10 @@ public class LineEditGui extends GuiScreen {
                 })
                 .build());
 
-        // 设置高度
-        setButton(11, GuiButton.builder(Material.RAIL)
-                .name("&f设置高度")
-                .lore(Arrays.asList(
-                        "&7设置此行的高度",
-                        "&7当前: &f" + line.getHeight(),
-                        "",
-                        "&e点击设置"
-                ))
-                .onClick(context -> {
-                    Player player = context.getPlayer();
-                    player.closeInventory();
+        // 高度按钮 (slot 20)
+        addHeightButton(20, line);
 
-                    chatInputManager.requestInput(player, "&a请输入高度值:",
-                            ChatInputManager.InputType.LINE_HEIGHT, hologramName, lineIndex, pageIndex, input -> {
-                                try {
-                                    double height = Double.parseDouble(input);
-
-                                    Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                                    if (h != null) {
-                                        HologramPage p = h.getPage(pageIndex);
-                                        if (p != null && lineIndex < p.size()) {
-                                            HologramLine l = p.getLine(lineIndex);
-                                            if (l != null) {
-                                                l.setHeight(height);
-                                                h.save();
-                                                h.realignLines();
-                                                player.sendMessage(ColorUtil.colorize("&a已设置高度为 " + height + "！"));
-                                            }
-                                        }
-                                    }
-                                } catch (NumberFormatException e) {
-                                    player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
-                                }
-                                guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
-                            });
-                })
-                .build());
-
-        // 亮度设置
-        Brightness brightness = line.getBrightness();
-        String brightnessDisplay = brightness != null && !brightness.isDefault()
-                ? brightness.getSkyLight() + "/" + brightness.getBlockLight()
-                : "默认";
-        setButton(18, GuiButton.builder(Material.GLOWSTONE)
-                .name("&f亮度设置")
-                .lore(Arrays.asList(
-                        "&7设置此行的亮度等级",
-                        "&7当前: &f" + brightnessDisplay,
-                        "",
-                        "&e点击设置"
-                ))
-                .onClick(context -> {
-                    guiManager.openGui(context.getPlayer(), new BrightnessSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex, true));
-                })
-                .build());
-
-        // 朝向设置
+        // 朝向设置 (slot 22, SPYGLASS)
         Float customYaw = line.getCustomYaw();
         Float customPitch = line.getCustomPitch();
         String facingDisplay;
@@ -426,7 +484,7 @@ public class LineEditGui extends GuiScreen {
             facingDisplay = "跟随整体";
         }
 
-        setButton(20, GuiButton.builder(Material.COMPASS)
+        setButton(22, GuiButton.builder(Material.SPYGLASS)
                 .name("&f朝向设置")
                 .lore(Arrays.asList(
                         "&7设置此行的独立朝向",
@@ -499,67 +557,15 @@ public class LineEditGui extends GuiScreen {
                 })
                 .build());
 
-        // 头颅材质设置 (仅当行类型为HEAD或SMALLHEAD时显示)
-        if (lineType == HologramType.HEAD || lineType == HologramType.SMALLHEAD) {
-            HeadTexture headTexture = line.getHeadTexture();
-            String textureDisplay = "未设置";
-            if (headTexture != null) {
-                textureDisplay = switch (headTexture.getType()) {
-                    case BASE64 -> "URL材质";
-                    case PLAYER -> "玩家: " + headTexture.getValue();
-                    case HDB -> "HDB: " + headTexture.getValue();
-                };
-            }
-
-            setButton(21, GuiButton.builder(Material.PLAYER_HEAD)
-                    .name("&f头颅材质设置")
-                    .lore(Arrays.asList(
-                            "&7设置头颅的材质",
-                            "&7当前: &f" + textureDisplay,
-                            "",
-                            "&7支持格式:",
-                            "&7- URL:Base64字符串",
-                            "&7- PLAYER:玩家名称",
-                            "&7- HDB:头颅数据库ID",
-                            "",
-                            "&e点击设置"
-                    ))
-                    .onClick(context -> {
-                        Player player = context.getPlayer();
-                        player.closeInventory();
-
-                        chatInputManager.requestInput(player, "&a请输入头颅材质 (URL:xxx 或 PLAYER:xxx 或 HDB:xxx):",
-                                ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
-                                    Hologram h = plugin.getHologramManager().getHologram(hologramName);
-                                    if (h != null) {
-                                        HologramPage p = h.getPage(pageIndex);
-                                        if (p != null && lineIndex < p.size()) {
-                                            HologramLine l = p.getLine(lineIndex);
-                                            if (l != null) {
-                                                String prefix = lineType == HologramType.HEAD ? "#HEAD:" : "#SMALLHEAD:";
-                                                String newContent = prefix.toUpperCase(Locale.ROOT) + input;
-                                                l.setContent(newContent);
-                                                h.save();
-                                                h.refreshAllViewers();
-                                                player.sendMessage(ColorUtil.colorize("&a已设置头颅材质！"));
-                                            }
-                                        }
-                                    }
-                                    guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
-                                });
-                    })
-                    .build());
-        }
-
-        // 独立朝向模式 (Billboard)
-        setButton(22, GuiButton.builder(Material.COMPASS)
-                .name("&f独立朝向模式")
+        // 独立朝向模式 Billboard (slot 24, COMPASS)
+        setButton(24, GuiButton.builder(Material.COMPASS)
+                .name("&f独立 Billboard")
                 .lore(Arrays.asList(
                         "&7设置此行的独立Billboard模式",
                         "&7当前: &f" + (line.getBillboard() != null ? line.getBillboard().getDisplayName() : "跟随整体"),
                         "",
-                        "&e点击设置",
-                        "&7右键: &c重置为跟随整体"
+                        "&e左键 &7选择模式",
+                        "&e右键 &7重置为跟随整体"
                 ))
                 .onClick(context -> {
                     Player player = context.getPlayer();
@@ -585,9 +591,108 @@ public class LineEditGui extends GuiScreen {
                 })
                 .build());
 
-        // 动作管理按钮
+        // === Row 4: Visual & Actions ===
+        // 亮度设置 (slot 27)
+        Brightness brightness = line.getBrightness();
+        String brightnessDisplay = brightness != null && !brightness.isDefault()
+                ? brightness.getSkyLight() + "/" + brightness.getBlockLight()
+                : "默认";
+        setButton(27, GuiButton.builder(Material.GLOWSTONE)
+                .name("&f亮度设置")
+                .lore(Arrays.asList(
+                        "&7设置此行的亮度等级",
+                        "&7当前: &f" + brightnessDisplay,
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    guiManager.openGui(context.getPlayer(), new BrightnessSelectGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex, true));
+                })
+                .build());
+
+        // 阴影按钮 (slot 29)
+        Float shadowRadius = line.getShadowRadius();
+        Float shadowStrength = line.getShadowStrength();
+        String shadowDisplay;
+        if (shadowRadius != null || shadowStrength != null) {
+            shadowDisplay = String.format("%.2f / %.2f &a(自定义)",
+                    shadowRadius != null ? shadowRadius : hologram.getShadowRadius(),
+                    shadowStrength != null ? shadowStrength : hologram.getShadowStrength());
+        } else {
+            shadowDisplay = String.format("&7继承 &f(%.2f / %.2f)",
+                    hologram.getShadowRadius(), hologram.getShadowStrength());
+        }
+
+        setButton(29, GuiButton.builder(Material.GRAY_DYE)
+                .name("&f阴影")
+                .lore(Arrays.asList(
+                        "&7设置Display的阴影属性",
+                        "&7当前: &f" + shadowDisplay,
+                        "",
+                        "&7左键: &e输入阴影值 (半径 强度)",
+                        "&7右键: &c重置为继承",
+                        "",
+                        "&7null 时继承全息图级别值"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    if (context.getClickType() == ClickType.RIGHT || context.getClickType() == ClickType.SHIFT_RIGHT) {
+                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                        if (h != null) {
+                            HologramPage p = h.getPage(pageIndex);
+                            if (p != null && lineIndex < p.size()) {
+                                HologramLine l = p.getLine(lineIndex);
+                                if (l != null) {
+                                    l.setShadowRadius(null);
+                                    l.setShadowStrength(null);
+                                    h.save();
+                                    h.refreshAllViewers();
+                                    player.sendMessage(ColorUtil.colorize("&a已重置阴影为继承！"));
+                                }
+                            }
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    } else {
+                        player.closeInventory();
+                        chatInputManager.requestInput(player, "&a请输入阴影值 (半径 强度):",
+                                ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
+                                    try {
+                                        String[] parts = input.split(" ");
+                                        if (parts.length == 2) {
+                                            float radius = Float.parseFloat(parts[0]);
+                                            float strength = Float.parseFloat(parts[1]);
+                                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                            if (h != null) {
+                                                HologramPage p = h.getPage(pageIndex);
+                                                if (p != null && lineIndex < p.size()) {
+                                                    HologramLine l = p.getLine(lineIndex);
+                                                    if (l != null) {
+                                                        l.setShadowRadius(radius);
+                                                        l.setShadowStrength(strength);
+                                                        h.save();
+                                                        h.refreshAllViewers();
+                                                        player.sendMessage(ColorUtil.colorize("&a已设置阴影为 (" + radius + " / " + strength + ")！"));
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            player.sendMessage(ColorUtil.colorize("&c请输入两个数字，用空格分隔！"));
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                                    }
+                                    guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                });
+                    }
+                })
+                .build());
+
+        // 彩虹渐变按钮 (slot 31)
+        addChromaToggleButton(31, line);
+
+        // 动作管理按钮 (slot 33)
         boolean hasActions = line.hasActions();
-        setButton(23, GuiButton.builder(Material.COMMAND_BLOCK)
+        setButton(33, GuiButton.builder(Material.COMMAND_BLOCK)
                 .name("&f动作管理")
                 .lore(Arrays.asList(
                         "&7管理此行的点击动作",
@@ -603,9 +708,9 @@ public class LineEditGui extends GuiScreen {
                 })
                 .build());
 
-        // 上移按钮
+        // === Row 5: Movement ===
         if (lineIndex > 0) {
-            setButton(27, GuiButton.builder(Material.ARROW)
+            setButton(36, GuiButton.builder(Material.ARROW)
                     .name("&f上移")
                     .lore(Arrays.asList(
                             "&7将此行向上移动",
@@ -629,8 +734,8 @@ public class LineEditGui extends GuiScreen {
                     .build());
         }
 
-        // 删除行按钮
-        setButton(31, GuiButton.builder(Material.BARRIER)
+        // 删除行按钮 (slot 40)
+        setButton(40, GuiButton.builder(Material.BARRIER)
                 .name("&f删除行")
                 .lore(Arrays.asList(
                         "&7删除此行",
@@ -659,9 +764,8 @@ public class LineEditGui extends GuiScreen {
                 })
                 .build());
 
-        // 下移按钮
         if (lineIndex < page.size() - 1) {
-            setButton(35, GuiButton.builder(Material.ARROW)
+            setButton(44, GuiButton.builder(Material.ARROW)
                     .name("&f下移")
                     .lore(Arrays.asList(
                             "&7将此行向下移动",
@@ -688,16 +792,398 @@ public class LineEditGui extends GuiScreen {
         fillNonTextLineBackground();
     }
 
+    /**
+     * 渲染类型特定按钮 (slot 11)
+     * BLOCK -> STONE 方块类型
+     * ICON -> NETHER_STAR 附魔光效
+     * HEAD/SMALLHEAD -> PLAYER_HEAD 头颅材质
+     * ENTITY -> GRAY_STAINED_GLASS_PANE (无类型特定按钮)
+     */
+    private void renderTypeSpecificButton(HologramLine line, HologramType lineType) {
+        switch (lineType) {
+            case BLOCK -> {
+                Material blockMat = line.getBlockMaterial();
+                setButton(11, GuiButton.builder(Material.STONE)
+                        .name("&f方块类型")
+                        .lore(Arrays.asList(
+                                "&7设置方块显示的材质类型",
+                                "&7当前: &f" + (blockMat != null ? blockMat.name() : "STONE"),
+                                "",
+                                "&e点击设置"
+                        ))
+                        .onClick(context -> {
+                            Player player = context.getPlayer();
+                            player.closeInventory();
+
+                            chatInputManager.requestInput(player, "&a请输入方块材质名称 (如 STONE, DIAMOND_BLOCK):",
+                                    ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
+                                        Material material = Material.matchMaterial(input.toUpperCase(Locale.ROOT));
+                                        if (material == null || !material.isBlock()) {
+                                            player.sendMessage(ColorUtil.colorize("&c无效的方块材质名称！"));
+                                        } else {
+                                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                            if (h != null) {
+                                                HologramPage p = h.getPage(pageIndex);
+                                                if (p != null && lineIndex < p.size()) {
+                                                    HologramLine l = p.getLine(lineIndex);
+                                                    if (l != null) {
+                                                        l.setContent("#BLOCK:" + input.toUpperCase(Locale.ROOT));
+                                                        h.save();
+                                                        h.refreshAllViewers();
+                                                        player.sendMessage(ColorUtil.colorize("&a已设置方块类型为 " + input.toUpperCase(Locale.ROOT) + "！"));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                    });
+                        })
+                        .build());
+            }
+            case ICON -> {
+                boolean hasGlow = line.getContent() != null &&
+                        line.getContent().toLowerCase(Locale.ROOT).contains(":glow") ||
+                        line.getContent() != null &&
+                        line.getContent().toLowerCase(Locale.ROOT).contains(" glow");
+                setButton(11, GuiButton.builder(Material.NETHER_STAR)
+                        .name("&f附魔光效")
+                        .lore(Arrays.asList(
+                                "&7设置物品的附魔光效",
+                                "&7当前: &f" + (hasGlow ? "&a启用" : "&c禁用"),
+                                "",
+                                "&e点击切换"
+                        ))
+                        .onClick(context -> {
+                            Player player = context.getPlayer();
+                            Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                            if (h != null) {
+                                HologramPage p = h.getPage(pageIndex);
+                                if (p != null && lineIndex < p.size()) {
+                                    HologramLine l = p.getLine(lineIndex);
+                                    if (l != null) {
+                                        String content = l.getContent();
+                                        String newContent;
+                                        if (content.toLowerCase(Locale.ROOT).contains(":glow")) {
+                                            newContent = content.replaceAll("(?i):glow", "");
+                                        } else if (content.toLowerCase(Locale.ROOT).contains(" glow")) {
+                                            newContent = content.replaceAll("(?i) glow", "");
+                                        } else {
+                                            newContent = content + ":glow";
+                                        }
+                                        l.setContent(newContent);
+                                        h.save();
+                                        h.refreshAllViewers();
+                                        player.sendMessage(ColorUtil.colorize("&a已" + (hasGlow ? "禁用" : "启用") + "附魔光效！"));
+                                    }
+                                }
+                            }
+                            guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                        })
+                        .build());
+            }
+            case HEAD, SMALLHEAD -> {
+                HeadTexture headTexture = line.getHeadTexture();
+                String textureDisplay = "未设置";
+                if (headTexture != null) {
+                    textureDisplay = switch (headTexture.getType()) {
+                        case BASE64 -> "URL材质";
+                        case PLAYER -> "玩家: " + headTexture.getValue();
+                        case HDB -> "HDB: " + headTexture.getValue();
+                    };
+                }
+
+                setButton(11, GuiButton.builder(Material.PLAYER_HEAD)
+                        .name("&f头颅材质设置")
+                        .lore(Arrays.asList(
+                                "&7设置头颅的材质",
+                                "&7当前: &f" + textureDisplay,
+                                "",
+                                "&7支持格式:",
+                                "&7- URL:Base64字符串",
+                                "&7- PLAYER:玩家名称",
+                                "&7- HDB:头颅数据库ID",
+                                "",
+                                "&e点击设置"
+                        ))
+                        .onClick(context -> {
+                            Player player = context.getPlayer();
+                            player.closeInventory();
+
+                            chatInputManager.requestInput(player, "&a请输入头颅材质 (URL:xxx 或 PLAYER:xxx 或 HDB:xxx):",
+                                    ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
+                                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                        if (h != null) {
+                                            HologramPage p = h.getPage(pageIndex);
+                                            if (p != null && lineIndex < p.size()) {
+                                                HologramLine l = p.getLine(lineIndex);
+                                                if (l != null) {
+                                                    String prefix = lineType == HologramType.HEAD ? "#HEAD:" : "#SMALLHEAD:";
+                                                    String newContent = prefix.toUpperCase(Locale.ROOT) + input;
+                                                    l.setContent(newContent);
+                                                    h.save();
+                                                    h.refreshAllViewers();
+                                                    player.sendMessage(ColorUtil.colorize("&a已设置头颅材质！"));
+                                                }
+                                            }
+                                        }
+                                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                    });
+                        })
+                        .build());
+            }
+            default -> {
+                // ENTITY 或其他类型，不显示类型特定按钮
+            }
+        }
+    }
+
     private void fillNonTextLineBackground() {
-        GuiButton background = GuiButton.builder(Material.LIME_STAINED_GLASS_PANE)
+        GuiButton background = GuiButton.builder(Material.GRAY_STAINED_GLASS_PANE)
                 .name(" ")
                 .build();
 
-        int[] backgroundSlots = {1, 2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 20, 22, 24, 25, 26, 28, 29, 30, 32, 33, 34};
-        for (int slot : backgroundSlots) {
-            if (getButton(slot) == null) {
-                setButton(slot, background);
+        for (int i = 0; i < 45; i++) {
+            if (getButton(i) == null) {
+                setButton(i, background);
             }
         }
+    }
+
+    // ==================== 共享按钮构建方法 ====================
+
+    /**
+     * 发光颜色按钮
+     */
+    private void addGlowColorButton(int slot, HologramLine line, Hologram hologram) {
+        Integer glowColor = line.getGlowColor();
+        String glowColorDisplay;
+        if (glowColor != null) {
+            if (glowColor == -1) {
+                glowColorDisplay = "&c无发光";
+            } else {
+                glowColorDisplay = String.format("#%06X &a(自定义)", glowColor & 0xFFFFFF);
+            }
+        } else {
+            int holoGlowColor = hologram.getGlowColor();
+            if (holoGlowColor == -1) {
+                glowColorDisplay = "&7继承 &f(无发光)";
+            } else {
+                glowColorDisplay = String.format("&7继承 &f(#%06X)", holoGlowColor & 0xFFFFFF);
+            }
+        }
+
+        setButton(slot, GuiButton.builder(Material.GLOWSTONE_DUST)
+                .name("&f发光颜色")
+                .lore(Arrays.asList(
+                        "&7设置Display的发光颜色",
+                        "&7当前: &f" + glowColorDisplay,
+                        "",
+                        "&7左键: &e输入颜色值",
+                        "&7右键: &c重置为继承",
+                        "",
+                        "&7支持颜色名称、#RRGGBB 格式",
+                        "&7输入 reset 清除发光效果"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    if (context.getClickType() == ClickType.RIGHT || context.getClickType() == ClickType.SHIFT_RIGHT) {
+                        Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                        if (h != null) {
+                            HologramPage p = h.getPage(pageIndex);
+                            if (p != null && lineIndex < p.size()) {
+                                HologramLine l = p.getLine(lineIndex);
+                                if (l != null) {
+                                    l.setGlowColor(null);
+                                    h.save();
+                                    h.refreshAllViewers();
+                                    player.sendMessage(ColorUtil.colorize("&a已重置发光颜色为继承！"));
+                                }
+                            }
+                        }
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                    } else {
+                        player.closeInventory();
+                        chatInputManager.requestInput(player, "&a请输入发光颜色 (颜色名称/#RRGGBB/reset):",
+                                ChatInputManager.InputType.GENERIC, hologramName, lineIndex, pageIndex, input -> {
+                                    Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                    if (h != null) {
+                                        HologramPage p = h.getPage(pageIndex);
+                                        if (p != null && lineIndex < p.size()) {
+                                            HologramLine l = p.getLine(lineIndex);
+                                            if (l != null) {
+                                                input = input.trim();
+                                                if (input.equalsIgnoreCase("reset")) {
+                                                    l.setGlowColor(-1);
+                                                    h.save();
+                                                    h.refreshAllViewers();
+                                                    player.sendMessage(ColorUtil.colorize("&a已清除发光效果！"));
+                                                } else {
+                                                    Integer color = parseGlowColorInput(input);
+                                                    if (color != null) {
+                                                        l.setGlowColor(color);
+                                                        h.save();
+                                                        h.refreshAllViewers();
+                                                        if (color == -1) {
+                                                            player.sendMessage(ColorUtil.colorize("&a已清除发光效果！"));
+                                                        } else {
+                                                            player.sendMessage(ColorUtil.colorize("&a已设置发光颜色为 #" + String.format("%06X", color & 0xFFFFFF) + "！"));
+                                                        }
+                                                    } else {
+                                                        player.sendMessage(ColorUtil.colorize("&c无效的颜色格式！支持颜色名称、#RRGGBB 或 reset"));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                                });
+                    }
+                })
+                .build());
+    }
+
+    /**
+     * 彩虹渐变切换按钮
+     */
+    private void addChromaToggleButton(int slot, HologramLine line) {
+        boolean chromaEnabled = line.isChromaBackground();
+        setButton(slot, GuiButton.builder(Material.PRISMARINE_CRYSTALS)
+                .name("&f彩虹渐变")
+                .lore(Arrays.asList(
+                        "&7彩虹渐变效果",
+                        "&7当前: &f" + (chromaEnabled ? "&a启用" : "&c禁用"),
+                        "",
+                        "&7左键: &e切换启用/禁用",
+                        "&7右键: &c重置为继承"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                    if (h == null) {
+                        guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, 0));
+                        return;
+                    }
+                    HologramPage p = h.getPage(pageIndex);
+                    if (p == null || lineIndex >= p.size()) {
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                        return;
+                    }
+                    HologramLine l = p.getLine(lineIndex);
+                    if (l == null) {
+                        guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                        return;
+                    }
+                    if (context.getClickType() == ClickType.RIGHT || context.getClickType() == ClickType.SHIFT_RIGHT) {
+                        l.setChromaBackground(null);
+                        l.setChromaGlow(null);
+                        h.save();
+                        h.refreshAllViewers();
+                        player.sendMessage(ColorUtil.colorize("&a已重置彩虹渐变为继承！"));
+                    } else {
+                        boolean newState = !l.isChromaBackground();
+                        l.setChromaBackground(newState);
+                        l.setChromaGlow(newState);
+                        h.save();
+                        h.refreshAllViewers();
+                        player.sendMessage(ColorUtil.colorize("&a已" + (newState ? "启用" : "禁用") + "彩虹渐变！"));
+                    }
+                    guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                })
+                .build());
+    }
+
+    /**
+     * 高度按钮
+     */
+    private void addHeightButton(int slot, HologramLine line) {
+        setButton(slot, GuiButton.builder(Material.RAIL)
+                .name("&f设置高度")
+                .lore(Arrays.asList(
+                        "&7设置此行的高度",
+                        "&7当前: &f" + line.getHeight(),
+                        "",
+                        "&e点击设置"
+                ))
+                .onClick(context -> {
+                    Player player = context.getPlayer();
+                    player.closeInventory();
+
+                    chatInputManager.requestInput(player, "&a请输入高度值:",
+                            ChatInputManager.InputType.LINE_HEIGHT, hologramName, lineIndex, pageIndex, input -> {
+                                try {
+                                    double height = Double.parseDouble(input);
+
+                                    Hologram h = plugin.getHologramManager().getHologram(hologramName);
+                                    if (h != null) {
+                                        HologramPage p = h.getPage(pageIndex);
+                                        if (p != null && lineIndex < p.size()) {
+                                            HologramLine l = p.getLine(lineIndex);
+                                            if (l != null) {
+                                                l.setHeight(height);
+                                                h.save();
+                                                h.realignLines();
+                                                player.sendMessage(ColorUtil.colorize("&a已设置高度为 " + height + "！"));
+                                            }
+                                        }
+                                    }
+                                } catch (NumberFormatException e) {
+                                    player.sendMessage(ColorUtil.colorize("&c请输入有效的数字！"));
+                                }
+                                guiManager.openGui(player, new LineEditGui(plugin, guiManager, chatInputManager, hologramName, pageIndex, lineIndex));
+                            });
+                })
+                .build());
+    }
+
+    // ==================== 工具方法 ====================
+
+    private Integer parseGlowColorInput(String input) {
+        if (input == null || input.isEmpty()) return null;
+        String trimmed = input.trim();
+        if (trimmed.startsWith("#") && trimmed.length() == 7) {
+            try {
+                int rgb = Integer.parseInt(trimmed.substring(1), 16);
+                return rgb & 0xFFFFFF;
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        if (trimmed.length() == 6) {
+            try {
+                int rgb = Integer.parseInt(trimmed, 16);
+                return rgb & 0xFFFFFF;
+            } catch (NumberFormatException e) {
+                // might be color name
+            }
+        }
+        org.bukkit.Color bukkitColor = matchColorByName(trimmed);
+        if (bukkitColor != null) {
+            return (bukkitColor.getRed() << 16) | (bukkitColor.getGreen() << 8) | bukkitColor.getBlue();
+        }
+        return null;
+    }
+
+    private org.bukkit.Color matchColorByName(String name) {
+        return switch (name.toLowerCase()) {
+            case "white" -> org.bukkit.Color.WHITE;
+            case "silver", "light_gray" -> org.bukkit.Color.SILVER;
+            case "gray" -> org.bukkit.Color.GRAY;
+            case "dark_gray" -> org.bukkit.Color.GRAY;
+            case "black" -> org.bukkit.Color.BLACK;
+            case "red" -> org.bukkit.Color.RED;
+            case "dark_red", "maroon" -> org.bukkit.Color.MAROON;
+            case "yellow" -> org.bukkit.Color.YELLOW;
+            case "olive" -> org.bukkit.Color.OLIVE;
+            case "lime" -> org.bukkit.Color.LIME;
+            case "green" -> org.bukkit.Color.GREEN;
+            case "aqua", "teal" -> org.bukkit.Color.TEAL;
+            case "cyan" -> org.bukkit.Color.AQUA;
+            case "blue" -> org.bukkit.Color.BLUE;
+            case "navy" -> org.bukkit.Color.NAVY;
+            case "purple" -> org.bukkit.Color.PURPLE;
+            case "fuchsia", "magenta" -> org.bukkit.Color.FUCHSIA;
+            case "orange" -> org.bukkit.Color.ORANGE;
+            default -> null;
+        };
     }
 }

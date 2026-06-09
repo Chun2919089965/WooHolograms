@@ -165,19 +165,6 @@ debug:
   hologram-info: "&e全息图信息: {info}"
   viewer-count: "&e当前观看者数量: {count}"
 
-# 标志相关
-flag:
-  invalid-flag: "&c无效的标志: {flag}！可用标志: disable_placeholders, disable_updating, disable_animations, disable_actions, always_face_player, clickable"
-  invalid-line: "&c无效的行号: {line}！"
-  already-has-flag: "&c第 {line} 行已有标志 {flag}！"
-  already-has-flag-holo: "&c全息图 {name} 已有标志 {flag}！"
-  not-has-flag: "&c第 {line} 行没有标志 {flag}！"
-  not-has-flag-holo: "&c全息图 {name} 没有标志 {flag}！"
-  added-holo: "&a已为全息图 {name} 添加标志 {flag}！"
-  added-line: "&a已为第 {line} 行添加标志 {flag}！"
-  removed-holo: "&a已从全息图 {name} 移除标志 {flag}！"
-  removed-line: "&a已从第 {line} 行移除标志 {flag}！"
-
 # 性能分析器
 profiler:
   header: "&e========== 性能分析 =========="

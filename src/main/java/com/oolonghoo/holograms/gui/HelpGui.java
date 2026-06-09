@@ -324,6 +324,76 @@ public class HelpGui extends GuiScreen {
                         "&7需安装 PlaceholderAPI"
                 ))
                 .build());
+
+        setButton(27, GuiButton.builder(Material.ENDER_EYE)
+                .name("&eDisplay 属性")
+                .lore(Arrays.asList(
+                        "&7Display Entity 高级属性：",
+                        "",
+                        "&f缩放 (Scale)",
+                        "&7调整行的大小比例",
+                        "&7例: /wh display scale <名称> <x> <y> <z>",
+                        "",
+                        "&f平移 (Translation)",
+                        "&7调整行的位置偏移",
+                        "",
+                        "&f阴影 (Shadow)",
+                        "&7设置阴影半径和强度",
+                        "",
+                        "&f发光颜色 (Glow Color)",
+                        "&7设置发光轮廓颜色",
+                        "&7例: /wh display glow <名称> #FF0000"
+                ))
+                .build());
+
+        setButton(28, GuiButton.builder(Material.CYAN_DYE)
+                .name("&e彩虹渐变")
+                .lore(Arrays.asList(
+                        "&7使用彩虹渐变效果：",
+                        "",
+                        "&f彩虹渐变背景",
+                        "&7设置文本的彩虹背景色",
+                        "&7例: /wh display chroma-bg <名称> true",
+                        "",
+                        "&f彩虹渐变发光",
+                        "&7设置发光的彩虹色效果",
+                        "&7例: /wh display chroma-glow <名称> true",
+                        "",
+                        "&7彩虹渐变效果会让颜色",
+                        "&7随时间自动变化"
+                ))
+                .build());
+
+        setButton(30, GuiButton.builder(Material.GRASS_BLOCK)
+                .name("&e#BLOCK 行类型")
+                .lore(Arrays.asList(
+                        "&7使用 #BLOCK 显示方块：",
+                        "",
+                        "&f#BLOCK:<材质>",
+                        "&7显示方块模型",
+                        "&7例: #BLOCK:DIAMOND_BLOCK",
+                        "",
+                        "&7支持所有 Minecraft 方块材质",
+                        "&7方块将以 3D 形式展示"
+                ))
+                .build());
+
+        setButton(31, GuiButton.builder(Material.HOPPER)
+                .name("&e数据导入")
+                .lore(Arrays.asList(
+                        "&7从其他插件导入数据：",
+                        "",
+                        "&fHolographicDisplays",
+                        "&7导入 HD 的全息图数据",
+                        "&7命令: /wh convert hd",
+                        "",
+                        "&fCMI",
+                        "&7导入 CMI 的全息图数据",
+                        "&7命令: /wh convert cmi",
+                        "",
+                        "&7也可在 GUI 中点击导入"
+                ))
+                .build());
         
         fillLastRow();
     }

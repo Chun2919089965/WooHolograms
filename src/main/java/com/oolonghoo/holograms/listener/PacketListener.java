@@ -166,8 +166,15 @@ public class PacketListener {
 
     /**
      * 处理实体交互数据包
-     * 使用 STREAM_CODEC 解码数据包获取实体 ID 和动作类型
+     * 使用 STREAM_CODEC 解码数据包获取实体 ID、动作类型和交互坐标
      * 仅在 Netty 线程提取数据，所有 Bukkit API 调用调度到主线程
+     *
+     * 数据包格式:
+     *   VarInt entityId
+     *   VarInt actionOrdinal (0=INTERACT, 1=ATTACK, 2=INTERACT_AT)
+     *   [Float targetX, Float targetY, Float targetZ] — 仅 INTERACT_AT
+     *   [VarInt hand] — 仅 INTERACT 和 INTERACT_AT
+     *   Boolean sneaking
      *
      * @param player 玩家
      * @param packet 交互数据包
@@ -185,10 +192,19 @@ public class PacketListener {
                 return false;
             }
 
+            // INTERACT_AT (2) 包含相对于实体原点的点击坐标
+            Float hitY = null;
+            if (actionOrdinal == 2) {
+                buf.readFloat(); // targetX - 暂不使用
+                hitY = buf.readFloat();
+                buf.readFloat(); // targetZ - 暂不使用
+            }
+
             // 切换到主线程处理点击逻辑（mapActionToClickType 需要调用 Bukkit API）
+            final Float finalHitY = hitY;
             SchedulerUtil.runTask(player, () -> {
                 ClickType clickType = mapActionToClickType(player, actionOrdinal);
-                handleClick(player, entityId, clickType);
+                handleClick(player, entityId, clickType, finalHitY);
             });
 
             return false;
@@ -219,8 +235,13 @@ public class PacketListener {
     /**
      * 处理全息图点击
      * 在主线程执行
+     *
+     * @param player    玩家
+     * @param entityId  实体 ID
+     * @param clickType 点击类型
+     * @param hitY      点击位置相对于实体原点的 Y 坐标（仅 INTERACT_AT 时有值）
      */
-    private void handleClick(Player player, int entityId, ClickType clickType) {
+    private void handleClick(Player player, int entityId, ClickType clickType, Float hitY) {
         if (!player.isOnline()) {
             return;
         }
@@ -253,7 +274,8 @@ public class PacketListener {
         }
 
         if (page != null) {
-            HologramLine line = page.getLineByEntityId(entityId);
+            // 优先使用 Y 坐标路由（合并 TextDisplay 组的场景）
+            HologramLine line = page.getLineByEntityId(entityId, hitY);
             if (line != null && line.hasActions()) {
                 line.executeActions(player, clickType);
                 return;

@@ -30,19 +30,7 @@ public enum EnumFlag {
      * 禁用动作
      * 设置后点击不会触发任何动作
      */
-    DISABLE_ACTIONS("disable_actions", "禁用动作"),
-
-    /**
-     * 始终面向玩家
-     * 设置后全息图会始终面向观看的玩家
-     */
-    ALWAYS_FACE_PLAYER("always_face_player", "始终面向玩家"),
-
-    /**
-     * 可点击
-     * 设置后全息图可以被玩家点击
-     */
-    CLICKABLE("clickable", "可点击");
+    DISABLE_ACTIONS("disable_actions", "禁用动作");
 
     private final String id;
     private final String description;

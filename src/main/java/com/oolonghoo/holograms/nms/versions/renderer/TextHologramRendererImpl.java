@@ -71,10 +71,6 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withTextLineWidth(lineWidth)
                 .withDisplayProperties(line, hologram);
 
-        if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
-            metadataBuilder.withDisplayBrightness(line.getBrightness());
-        }
-
         List<SynchedEntityData.DataItem<?>> metadata = metadataBuilder.toWatchableObjects();
 
         float pitch;
@@ -147,10 +143,6 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
                 .withTextBackgroundColor(backgroundColor)
                 .withTextLineWidth(lineWidth)
                 .withDisplayProperties(line, hologram);
-
-        if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
-            metadataBuilder.withDisplayBrightness(line.getBrightness());
-        }
 
         List<SynchedEntityData.DataItem<?>> metadata = metadataBuilder.toWatchableObjects();
 

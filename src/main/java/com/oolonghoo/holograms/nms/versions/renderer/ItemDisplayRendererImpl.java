@@ -97,11 +97,6 @@ public class ItemDisplayRendererImpl implements NmsItemDisplayRenderer {
             metadataBuilder.withGlow();
         }
 
-        // 亮度覆盖
-        if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
-            metadataBuilder.withDisplayBrightness(line.getBrightness());
-        }
-
         DecentPosition position = DecentPosition.fromLocation(location);
 
         EntityPacketsBuilder.create()
@@ -144,10 +139,6 @@ public class ItemDisplayRendererImpl implements NmsItemDisplayRenderer {
 
         if (hasGlow(line.getContent())) {
             metadataBuilder.withGlow();
-        }
-
-        if (line.getBrightness() != null && !line.getBrightness().isDefault()) {
-            metadataBuilder.withDisplayBrightness(line.getBrightness());
         }
 
         EntityPacketsBuilder.create()

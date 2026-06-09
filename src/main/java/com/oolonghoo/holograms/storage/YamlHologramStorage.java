@@ -47,7 +47,7 @@ public class YamlHologramStorage implements HologramStorage {
     }
 
     private File getHologramFile(String id) {
-        if (id.contains("..") || id.contains("/") || id.contains("\\") || !id.matches("[a-zA-Z0-9_\\-]+")) {
+        if (id.contains("..") || id.contains("/") || id.contains("\\") || !id.matches("[\\w\\-\\p{L}]+")) {
             throw new IllegalArgumentException("Invalid hologram ID: " + id);
         }
         return new File(hologramsDir, id + ".yml");
@@ -98,6 +98,11 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("shadow-radius", hologram.getShadowRadius());
             yaml.set("shadow-strength", hologram.getShadowStrength());
             yaml.set("glow-color", hologram.getGlowColor());
+            if (hologram.getBrightness() != null) {
+                yaml.set("brightness", hologram.getBrightness().getSkyLight() + "," + hologram.getBrightness().getBlockLight());
+            } else {
+                yaml.set("brightness", null);
+            }
             yaml.set("chroma-background", hologram.isChromaBackground());
             yaml.set("chroma-glow", hologram.isChromaGlow());
 
@@ -366,6 +371,11 @@ public class YamlHologramStorage implements HologramStorage {
             yaml.set("shadow-radius", hologram.getShadowRadius());
             yaml.set("shadow-strength", hologram.getShadowStrength());
             yaml.set("glow-color", hologram.getGlowColor());
+            if (hologram.getBrightness() != null) {
+                yaml.set("brightness", hologram.getBrightness().getSkyLight() + "," + hologram.getBrightness().getBlockLight());
+            } else {
+                yaml.set("brightness", null);
+            }
             yaml.set("chroma-background", hologram.isChromaBackground());
             yaml.set("chroma-glow", hologram.isChromaGlow());
 
@@ -604,6 +614,23 @@ public class YamlHologramStorage implements HologramStorage {
         hologram.setGlowColor(getCompatInt(section, "glow-color", "glowColor", -1));
         hologram.setChromaBackground(getCompatBoolean(section, "chroma-background", "chromaBackground", false));
         hologram.setChromaGlow(getCompatBoolean(section, "chroma-glow", "chromaGlow", false));
+
+        // 亮度覆盖
+        String brightnessStr = section.contains("brightness") ? section.getString("brightness") : null;
+        if (brightnessStr != null && !brightnessStr.isEmpty()) {
+            String[] parts = brightnessStr.split(",");
+            if (parts.length == 2) {
+                try {
+                    int sky = Integer.parseInt(parts[0].trim());
+                    int block = Integer.parseInt(parts[1].trim());
+                    hologram.setBrightness(Brightness.of(sky, block));
+                } catch (NumberFormatException e) {
+                    if (plugin.getConfigManager().isDebug()) {
+                        plugin.getLogger().warning(() -> "Invalid brightness format for hologram " + hologram.getName() + ": " + brightnessStr);
+                    }
+                }
+            }
+        }
 
         String permission = section.getString("permission");
         if (permission != null && !permission.isEmpty()) {
@@ -903,15 +930,15 @@ public class YamlHologramStorage implements HologramStorage {
         line.setFacing((float) section.getDouble("facing", 0));
 
         if (section.contains("custom-yaw")) {
-            line.setCustomYaw((float) section.getDouble("custom-yaw"));
+            line.setCustomYaw((float) section.getDouble("custom-yaw", 0));
         } else if (section.contains("customYaw")) {
-            line.setCustomYaw((float) section.getDouble("customYaw"));
+            line.setCustomYaw((float) section.getDouble("customYaw", 0));
         }
 
         if (section.contains("custom-pitch")) {
-            line.setCustomPitch((float) section.getDouble("custom-pitch"));
+            line.setCustomPitch((float) section.getDouble("custom-pitch", 0));
         } else if (section.contains("customPitch")) {
-            line.setCustomPitch((float) section.getDouble("customPitch"));
+            line.setCustomPitch((float) section.getDouble("customPitch", 0));
         }
 
         if (section.contains("brightness")) {
@@ -942,24 +969,24 @@ public class YamlHologramStorage implements HologramStorage {
         if (section.contains("scale-x") || section.contains("scaleX") ||
                 section.contains("scale-y") || section.contains("scaleY") ||
                 section.contains("scale-z") || section.contains("scaleZ")) {
-            Float sx = section.contains("scale-x") ? (float) section.getDouble("scale-x") :
-                    section.contains("scaleX") ? (float) section.getDouble("scaleX") : null;
-            Float sy = section.contains("scale-y") ? (float) section.getDouble("scale-y") :
-                    section.contains("scaleY") ? (float) section.getDouble("scaleY") : null;
-            Float sz = section.contains("scale-z") ? (float) section.getDouble("scale-z") :
-                    section.contains("scaleZ") ? (float) section.getDouble("scaleZ") : null;
+            Float sx = section.contains("scale-x") ? (float) section.getDouble("scale-x", 1.0) :
+                    section.contains("scaleX") ? (float) section.getDouble("scaleX", 1.0) : null;
+            Float sy = section.contains("scale-y") ? (float) section.getDouble("scale-y", 1.0) :
+                    section.contains("scaleY") ? (float) section.getDouble("scaleY", 1.0) : null;
+            Float sz = section.contains("scale-z") ? (float) section.getDouble("scale-z", 1.0) :
+                    section.contains("scaleZ") ? (float) section.getDouble("scaleZ", 1.0) : null;
             line.setScale(sx, sy, sz);
         }
 
         if (section.contains("translation-x") || section.contains("translationX") ||
                 section.contains("translation-y") || section.contains("translationY") ||
                 section.contains("translation-z") || section.contains("translationZ")) {
-            Double tx = section.contains("translation-x") ? section.getDouble("translation-x") :
-                    section.contains("translationX") ? section.getDouble("translationX") : null;
-            Double ty = section.contains("translation-y") ? section.getDouble("translation-y") :
-                    section.contains("translationY") ? section.getDouble("translationY") : null;
-            Double tz = section.contains("translation-z") ? section.getDouble("translation-z") :
-                    section.contains("translationZ") ? section.getDouble("translationZ") : null;
+            Double tx = section.contains("translation-x") ? section.getDouble("translation-x", 0) :
+                    section.contains("translationX") ? section.getDouble("translationX", 0) : null;
+            Double ty = section.contains("translation-y") ? section.getDouble("translation-y", 0) :
+                    section.contains("translationY") ? section.getDouble("translationY", 0) : null;
+            Double tz = section.contains("translation-z") ? section.getDouble("translation-z", 0) :
+                    section.contains("translationZ") ? section.getDouble("translationZ", 0) : null;
             line.setTranslation(tx, ty, tz);
         }
 

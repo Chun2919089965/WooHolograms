@@ -39,7 +39,7 @@ public class CreateCommand extends Subcommand {
 
         String name = args[0];
 
-        if (!name.matches("[a-zA-Z0-9_\\-]+")) {
+        if (!name.matches("[\\w\\-\\p{L}]+")) {
             player.sendMessage(ColorUtil.colorize(plugin.getMessages().getWithPrefix("create.invalid-name", "name", name)));
             return true;
         }

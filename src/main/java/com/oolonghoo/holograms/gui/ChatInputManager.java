@@ -217,8 +217,8 @@ public class ChatInputManager implements Listener {
         // 根据类型进行特定验证
         switch (type) {
             case HOLOGRAM_NAME -> {
-                if (!input.matches("^[a-zA-Z0-9_\\-]+$")) {
-                    return "&c名称只能包含字母、数字、下划线和连字符！";
+                if (!input.matches("^[\\w\\-\\p{L}]+$")) {
+                    return "&c名称只能包含字母、数字、下划线、连字符和Unicode字符！";
                 }
             }
             case DISPLAY_RANGE, UPDATE_INTERVAL -> {

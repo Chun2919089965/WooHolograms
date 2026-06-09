@@ -248,7 +248,7 @@ public class PageTextRenderer {
                     .withTextLineWidth(lineWidth)
                     .withDisplayProperties(group.lines.get(0), hologram, groupChromaGlow);
 
-            // Chroma 发光色：覆盖 glowColor（仅在 skipGlowColor 时需要手动设置）
+            // Chroma 发光色：覆盖 glowColor（withGlowColor 内部自动启用发光标志）
             if (groupChromaGlow) {
                 metadataBuilder.withGlowColor(ColorUtil.chromaColor(chromaStep));
             }
@@ -331,6 +331,38 @@ public class PageTextRenderer {
         for (TextGroup group : textGroups) {
             if (group.frontEntityId == entityId || group.backEntityId == entityId) {
                 return group.lines.isEmpty() ? null : group.lines.get(0);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 根据实体ID和点击Y坐标查找对应的行（用于合并 TextDisplay 的行路由）
+     *
+     * TextDisplay 实体位置在文本顶部，hitY 是相对于实体位置的 Y 偏移（Y 向上为正）。
+     * 文本从实体位置向下渲染：第一行在顶部（hitY ≈ 0），最后一行在底部（hitY 为负值）。
+     * 因此：lineIndex = (int)(-hitY / lineHeight)
+     *
+     * @param entityId 实体 ID
+     * @param hitY     点击位置相对于实体位置的 Y 偏移，null 表示无法确定（退回到第一行）
+     * @return 对应的行，如果不存在返回 null
+     */
+    public HologramLine getLineByEntityId(int entityId, Float hitY) {
+        for (TextGroup group : textGroups) {
+            if (group.frontEntityId == entityId || group.backEntityId == entityId) {
+                if (group.lines.isEmpty()) {
+                    return null;
+                }
+                // 单行组或无 Y 坐标时无需路由
+                if (group.lines.size() == 1 || hitY == null) {
+                    return group.lines.get(0);
+                }
+                double lineHeight = page.getParent() != null ? page.getParent().getLineHeight() : 0.25;
+                // hitY 从顶部(0)到底部(负值)，取反后除以行高得到行索引
+                int lineIndex = (int) (-hitY / lineHeight);
+                // 边界保护
+                lineIndex = Math.max(0, Math.min(lineIndex, group.lines.size() - 1));
+                return group.lines.get(lineIndex);
             }
         }
         return null;

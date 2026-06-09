@@ -811,20 +811,32 @@ public class HologramPage {
     
     /**
      * 根据实体 ID 获取行
-     * 
+     *
      * @param entityId 实体 ID
      * @return 行，如果不存在返回 null
      */
     public HologramLine getLineByEntityId(int entityId) {
-        // 先检查 PageTextRenderer 的实体
+        return getLineByEntityId(entityId, null);
+    }
+
+    /**
+     * 根据实体 ID 和点击 Y 坐标获取行
+     * 对于合并的 TextDisplay 实体，使用 Y 坐标路由到具体行
+     *
+     * @param entityId 实体 ID
+     * @param hitY     点击位置相对于实体原点的 Y 坐标，null 表示无法确定
+     * @return 行，如果不存在返回 null
+     */
+    public HologramLine getLineByEntityId(int entityId, Float hitY) {
+        // 先检查 PageTextRenderer 的实体（支持 Y 坐标路由）
         if (pageTextRenderer != null) {
-            HologramLine line = pageTextRenderer.getLineByEntityId(entityId);
+            HologramLine line = pageTextRenderer.getLineByEntityId(entityId, hitY);
             if (line != null) {
                 return line;
             }
         }
 
-        // 检查非TEXT行的实体
+        // 检查非TEXT行的实体（非TEXT行是独立实体，无需 Y 坐标路由）
         for (HologramLine line : lines) {
             if (line.getType() != HologramType.TEXT) {
                 for (int id : line.getEntityIds()) {

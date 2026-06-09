@@ -65,6 +65,24 @@ public class FriendlyByteBufWrapper {
     }
 
     /**
+     * 读取 Float
+     *
+     * @return 值
+     */
+    public float readFloat() {
+        return serializer.readFloat();
+    }
+
+    /**
+     * 读取 Boolean
+     *
+     * @return 值
+     */
+    public boolean readBoolean() {
+        return serializer.readBoolean();
+    }
+
+    /**
      * 获取线程本地实例
      *
      * @return FriendlyByteBufWrapper 实例

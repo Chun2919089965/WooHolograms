@@ -126,22 +126,22 @@ public class SetGlowColorCommand extends Subcommand {
                 throw new IllegalArgumentException("Invalid hex color length: expected 6 digits after #, got " + hex.length());
             }
             int rgb = Integer.parseInt(hex, 16);
-            return 0xFF000000 | rgb; // 添加完全不透明 alpha
+            return rgb & 0xFFFFFF;
         }
 
         // 颜色名称
         return switch (colorStr.toLowerCase()) {
-            case "red" -> 0xFFFF0000;
-            case "green" -> 0xFF00FF00;
-            case "blue" -> 0xFF0000FF;
-            case "yellow" -> 0xFFFFFF00;
-            case "white" -> 0xFFFFFFFF;
-            case "black" -> 0xFF000000;
-            case "aqua", "cyan" -> 0xFF00FFFF;
-            case "purple" -> 0xFFAA00FF;
-            case "gold" -> 0xFFFFAA00;
-            case "pink" -> 0xFFFF00FF;
-            case "orange" -> 0xFFFF8800;
+            case "red" -> 0xFF0000;
+            case "green" -> 0x00FF00;
+            case "blue" -> 0x0000FF;
+            case "yellow" -> 0xFFFF00;
+            case "white" -> 0xFFFFFF;
+            case "black" -> 0x000000;
+            case "aqua", "cyan" -> 0x00FFFF;
+            case "purple" -> 0xAA00FF;
+            case "gold" -> 0xFFAA00;
+            case "pink" -> 0xFF00FF;
+            case "orange" -> 0xFF8800;
             default -> throw new IllegalArgumentException("Unknown color: " + colorStr);
         };
     }

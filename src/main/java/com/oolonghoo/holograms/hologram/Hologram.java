@@ -58,6 +58,7 @@ public class Hologram {
     private float shadowRadius;
     private float shadowStrength = 1.0f;
     private int glowColor = -1; // -1 表示不覆盖
+    private Brightness brightness; // null 表示不覆盖（继承默认）
 
     // Chroma 彩虹色
     private boolean chromaBackground = false;
@@ -502,6 +503,17 @@ public class Hologram {
         }
     }
 
+    public Brightness getBrightness() {
+        return brightness;
+    }
+
+    public void setBrightness(Brightness brightness) {
+        synchronized (visibilityMutex) {
+            this.brightness = brightness;
+            refreshAllViewers();
+        }
+    }
+
     public boolean isChromaBackground() {
         return chromaBackground;
     }
@@ -520,6 +532,19 @@ public class Hologram {
     public void setChromaGlow(boolean chromaGlow) {
         synchronized (visibilityMutex) {
             this.chromaGlow = chromaGlow;
+            refreshAllViewers();
+        }
+    }
+
+    /**
+     * 同时设置 Chroma 背景和发光
+     *
+     * @param enabled 是否启用
+     */
+    public void setChroma(boolean enabled) {
+        synchronized (visibilityMutex) {
+            this.chromaBackground = enabled;
+            this.chromaGlow = enabled;
             refreshAllViewers();
         }
     }
@@ -2291,6 +2316,7 @@ public class Hologram {
         hologram.setGlowColor(this.glowColor);
         hologram.setChromaBackground(this.chromaBackground);
         hologram.setChromaGlow(this.chromaGlow);
+        hologram.setBrightness(this.brightness);
         hologram.addFlags(this.flags.toArray(new EnumFlag[this.flags.size()]));
         hologram.setDefaultVisibleState(this.defaultVisibleState);
         hologram.showPlayers.addAll(this.showPlayers);
@@ -2345,6 +2371,9 @@ public class Hologram {
         map.put("glow-color", glowColor);
         map.put("chroma-background", chromaBackground);
         map.put("chroma-glow", chromaGlow);
+        if (brightness != null) {
+            map.put("brightness", brightness.getSkyLight() + "," + brightness.getBlockLight());
+        }
         map.put("pages", pages.stream().map(HologramPage::serializeToMap).collect(Collectors.toList()));
         return map;
     }

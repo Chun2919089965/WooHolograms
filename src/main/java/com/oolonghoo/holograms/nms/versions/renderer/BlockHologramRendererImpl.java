@@ -69,10 +69,6 @@ public class BlockHologramRendererImpl implements NmsBlockHologramRenderer {
                 .withBlockState(blockMaterial)
                 .withDisplayProperties(line, hologram);
 
-        if (line != null && line.getBrightness() != null && !line.getBrightness().isDefault()) {
-            metadataBuilder.withDisplayBrightness(line.getBrightness());
-        }
-
         float yaw;
         float pitch;
 

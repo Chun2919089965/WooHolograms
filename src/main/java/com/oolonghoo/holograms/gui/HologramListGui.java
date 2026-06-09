@@ -4,6 +4,7 @@ import com.oolonghoo.holograms.WooHolograms;
 import com.oolonghoo.holograms.hologram.Hologram;
 import com.oolonghoo.holograms.hologram.HologramPage;
 import com.oolonghoo.holograms.util.ColorUtil;
+import com.oolonghoo.holograms.util.Profiler;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -70,7 +71,22 @@ public class HologramListGui extends GuiScreen {
                     guiManager.openGui(player, new HologramListGui(plugin, guiManager, chatInputManager, currentPage, sortType, viewer));
                 })
                 .build());
-        
+
+        setButton(2, GuiButton.builder(Material.COMPARATOR)
+                .name("&f性能分析")
+                .lore(Arrays.asList(
+                        "&7查看性能分析数据",
+                        "&7状态: " + (Profiler.getInstance().isEnabled() ? "&a启用" : "&c禁用"),
+                        "",
+                        "&e点击查看"
+                ))
+                .onClick(context -> {
+                    guiManager.openGui(context.getPlayer(), new ProfilerGui(plugin, guiManager, chatInputManager));
+                })
+                .build());
+
+        // slot 3 由 fillFirstRow 填充为背景
+
         setButton(4, GuiButton.builder(Material.EMERALD)
                 .name("&f创建全息图")
                 .lore(Arrays.asList(
@@ -195,6 +211,19 @@ public class HologramListGui extends GuiScreen {
                         "",
                         "&7共 &f" + holograms.size() + " &7个全息图"
                 ))
+                .build());
+
+        setButton(51, GuiButton.builder(Material.ENDER_CHEST)
+                .name("&f数据导入")
+                .lore(Arrays.asList(
+                        "&7从其他插件导入数据",
+                        "&7支持: HD, CMI, DH",
+                        "",
+                        "&e点击导入"
+                ))
+                .onClick(context -> {
+                    guiManager.openGui(context.getPlayer(), new ConvertGui(plugin, guiManager, chatInputManager));
+                })
                 .build());
         
         if (currentPage < totalPages - 1) {

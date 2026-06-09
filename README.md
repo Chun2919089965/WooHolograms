@@ -20,8 +20,8 @@
 - **Billboard 模式**：固定、垂直、水平、中心四种朝向模式
 - **渐变动画**：流畅的颜色渐变效果
 - **双面显示**：文本可双面渲染
-- **Chroma 彩虹色**：背景色和发光色沿 HSL 色轮动态渐变
-- **Display 属性**：缩放、平移、阴影半径、阴影强度、发光颜色，行级继承全息图级默认值
+- **彩虹渐变**：背景色和发光色沿 HSL 色轮动态渐变
+- **Display 属性**：缩放（TEXT 行 X/Y，非 TEXT 行 X/Y/Z）、阴影、发光颜色、亮度，全息图级统一设置（非 TEXT 行可单独覆盖）
 
 ### 🎭 动画系统
 - **波浪动画**：`<#ANIM:wave>文本</#ANIM>`，支持自定义颜色参数
@@ -38,20 +38,6 @@
 - **页面动作**：全息图级别的点击动作
 - **动作类型**：命令、消息、音效、传送、翻页等
 - **点击冷却**：防止快速点击刷动作，可配置冷却时间
-
-### 🏴 标志系统
-通过标志控制全息图行为，支持行级 → 页级 → 全息图级继承：
-
-| 标志 | ID | 描述 |
-|------|------|------|
-| 禁用占位符 | `disable_placeholders` | 不解析 PlaceholderAPI 占位符 |
-| 禁用更新 | `disable_updating` | 不自动更新内容 |
-| 禁用动画 | `disable_animations` | 不播放动画效果 |
-| 禁用动作 | `disable_actions` | 点击不触发任何动作 |
-| 始终面向玩家 | `always_face_player` | 始终面向观看的玩家 |
-| 可点击 | `clickable` | 全息图可被玩家点击 |
-
-行级未设置时继承页级，页级未设置时继承全息图级。
 
 ### 🔧 技术特性
 - **Display Entity**：基于 1.21+ TextDisplay/ItemDisplay/BlockDisplay 实体，性能优异
@@ -127,16 +113,9 @@
 | `/wh setscale <名称> [行号] <x> <y> <z>` | 设置缩放 | `wooholograms.command.setscale` |
 | `/wh setshadow <名称> [行号] <半径> <强度>` | 设置阴影 | `wooholograms.command.setshadow` |
 | `/wh setglowcolor <名称> [行号] <颜色\|#RRGGBB\|reset>` | 设置发光颜色 | `wooholograms.command.setglowcolor` |
-| `/wh setchroma <名称> [行号] background\|glow <true\|false>` | 设置 Chroma 彩虹色 | `wooholograms.command.setchroma` |
+| `/wh setchroma <名称> [行号] background\|glow <true\|false>` | 设置彩虹渐变 | `wooholograms.command.setchroma` |
 | `/wh enable <名称>` | 启用全息图 | `wooholograms.command.enable` |
 | `/wh disable <名称>` | 禁用全息图 | `wooholograms.command.disable` |
-
-### 标志命令
-
-| 命令 | 描述 | 权限 |
-|------|------|------|
-| `/wh addflag <名称> [行号] <标志>` | 添加标志 | `wooholograms.command.addflag` |
-| `/wh removeflag <名称> [行号] <标志>` | 移除标志 | `wooholograms.command.removeflag` |
 
 ### 动作管理命令
 
@@ -276,7 +255,7 @@
 
 也支持十六进制格式：`#FF0000`、`#00FF00` 等
 
-### Chroma 彩虹色
+### 彩虹渐变
 
 背景色和发光色沿 HSL 色轮动态渐变，每帧更新：
 
@@ -286,28 +265,6 @@
 /wh setchroma <名称> 2 background true   # 行级：第2行背景色彩虹渐变
 /wh setchroma <名称> 2 glow true         # 行级：第2行发光色彩虹渐变
 ```
-
-## 标志系统
-
-通过标志精细控制全息图行为，支持行级 → 页级 → 全息图级继承：
-
-| 标志 | ID | 描述 |
-|------|------|------|
-| 禁用占位符 | `disable_placeholders` | 不解析 PlaceholderAPI 占位符 |
-| 禁用更新 | `disable_updating` | 不自动更新内容 |
-| 禁用动画 | `disable_animations` | 不播放动画效果 |
-| 禁用动作 | `disable_actions` | 点击不触发任何动作 |
-| 始终面向玩家 | `always_face_player` | 始终面向观看的玩家 |
-| 可点击 | `clickable` | 全息图可被玩家点击 |
-
-```
-/wh addflag <名称> disable_actions           # 全息图级：禁止点击触发动作
-/wh addflag <名称> 2 disable_animations      # 行级：第2行不播放动画
-/wh removeflag <名称> disable_actions         # 移除全息图级标志
-/wh removeflag <名称> 2 disable_animations    # 移除行级标志
-```
-
-行级未设置时继承页级，页级未设置时继承全息图级。
 
 ## 动作类型
 
@@ -368,29 +325,28 @@ holo.getPage(0).addLine("#ICON:DIAMOND");
 holo.getPage(0).addLine("#BLOCK:GOLD_BLOCK");
 holo.getPage(0).addLine("#NEXT 下一页");
 
-// 设置行级别 Display 属性
-HologramLine line = holo.getPage(0).getLine(0);
-line.setScaleX(1.5f);
-line.setScaleY(1.5f);
-line.setShadowRadius(0.5f);
-line.setGlowColor(0xFF0000);
+// 设置全息图级别 Display 属性
+holo.setScaleX(1.5f);
+holo.setScaleY(1.5f);
+holo.setGlowColor(0xFF0000);  // 纯 RGB 格式
 
-// 设置 Chroma 彩虹色
+// 非 TEXT 行可单独覆盖
+HologramLine iconLine = holo.getPage(0).getLine(1);
+iconLine.setScaleX(2.0f);
+iconLine.setShadowRadius(0.5f);
+
+// 设置彩虹渐变
 holo.setChromaBackground(true);
 holo.setChromaGlow(true);
 
-// 添加标志
-holo.addFlag(EnumFlag.DISABLE_PLACEHOLDERS);
-line.addFlag(EnumFlag.DISABLE_ANIMATIONS);
-
-// 设置行独立朝向
-line.setCustomYaw(90);
-line.setCustomPitch(0);
-line.setBillboard(Billboard.FIXED_ANGLE);
+// 设置行独立朝向（非 TEXT 行）
+iconLine.setCustomYaw(90);
+iconLine.setCustomPitch(0);
+iconLine.setBillboard(Billboard.FIXED_ANGLE);
 
 // 添加行级别动作
 Action action = new Action(ActionType.COMMAND, "spawn");
-line.addAction(ClickType.LEFT, action);
+iconLine.addAction(ClickType.LEFT, action);
 
 // 添加页面级别动作
 holo.getPage(0).addAction(ClickType.RIGHT, new Action(ActionType.MESSAGE, "&a点击了！"));
@@ -452,14 +408,12 @@ public void onHologramClick(HologramClickEvent event) {
 | `wooholograms.command.setpage` | 设置页面 |
 | `wooholograms.command.gui` | 打开GUI |
 | `wooholograms.command.help` | 查看帮助 |
-| `wooholograms.command.addflag` | 添加标志 |
-| `wooholograms.command.removeflag` | 移除标志 |
 | `wooholograms.command.convert` | 导入数据 |
 | `wooholograms.command.profiler` | 性能分析器 |
 | `wooholograms.command.setscale` | 设置缩放 |
 | `wooholograms.command.setshadow` | 设置阴影 |
 | `wooholograms.command.setglowcolor` | 设置发光颜色 |
-| `wooholograms.command.setchroma` | 设置 Chroma |
+| `wooholograms.command.setchroma` | 设置彩虹渐变 |
 
 ## DecentHolograms 配置兼容
 
@@ -532,8 +486,6 @@ billboard: CENTER
 double-sided: false
 line-height: 0.3
 permission: null
-flags:
-  - disable_placeholders
 scale-x: 1.0
 scale-y: 1.0
 scale-z: 1.0

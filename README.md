@@ -314,51 +314,69 @@
 ## API 使用示例
 
 ```java
-WooHologramsAPI api = WooHologramsAPI.getInstance();
+import com.oolonghoo.holograms.api.WooHologramsAPI;
+import com.oolonghoo.holograms.api.event.HologramClickEvent;
+import com.oolonghoo.holograms.hologram.Billboard;
+import com.oolonghoo.holograms.hologram.Brightness;
+import com.oolonghoo.holograms.hologram.Hologram;
+import com.oolonghoo.holograms.hologram.HologramLine;
+import com.oolonghoo.holograms.hologram.HologramPage;
+import com.oolonghoo.holograms.action.Action;
+import com.oolonghoo.holograms.action.ActionType;
+import com.oolonghoo.holograms.action.ClickType;
 
-// 创建全息图
-Hologram holo = api.createHologram("test", player.getLocation());
+// 检查 API 是否可用
+if (!WooHologramsAPI.isLoaded()) {
+    return;
+}
+
+// 创建全息图（返回 Optional）
+Optional<Hologram> opt = WooHologramsAPI.createHologram("test", player.getLocation());
+if (opt.isEmpty()) {
+    player.sendMessage("创建失败，名称可能已存在");
+    return;
+}
+Hologram holo = opt.get();
 
 // 添加行
-holo.getPage(0).addLine("&a欢迎！");
-holo.getPage(0).addLine("#ICON:DIAMOND");
-holo.getPage(0).addLine("#BLOCK:GOLD_BLOCK");
-holo.getPage(0).addLine("#NEXT 下一页");
+HologramPage page = holo.getPage(0);
+page.addLine("&a欢迎！");
+page.addLine("#ICON:DIAMOND");
+page.addLine("#BLOCK:GOLD_BLOCK");
+page.addLine("#NEXT 下一页");
 
 // 设置全息图级别 Display 属性
-holo.setScaleX(1.5f);
-holo.setScaleY(1.5f);
-holo.setGlowColor(0xFF0000);  // 纯 RGB 格式
+holo.setScale(1.5f, 1.5f, 1.0f);           // 缩放
+holo.setGlowColor(0xFF0000);                 // 发光颜色（纯 RGB）
+holo.setBrightness(new Brightness(15, 15));  // 亮度（天空光, 方块光）
+holo.setChromaBackground(true);              // 彩虹渐变背景
+holo.setChromaGlow(true);                    // 彩虹渐变发光
 
 // 非 TEXT 行可单独覆盖
-HologramLine iconLine = holo.getPage(0).getLine(1);
-iconLine.setScaleX(2.0f);
+HologramLine iconLine = page.getLine(1);
+iconLine.setScale(2.0f, 2.0f, 2.0f);
 iconLine.setShadowRadius(0.5f);
-
-// 设置彩虹渐变
-holo.setChromaBackground(true);
-holo.setChromaGlow(true);
-
-// 设置行独立朝向（非 TEXT 行）
-iconLine.setCustomYaw(90);
-iconLine.setCustomPitch(0);
 iconLine.setBillboard(Billboard.FIXED_ANGLE);
+iconLine.setCustomYaw(90f);
+iconLine.setCustomPitch(0f);
 
-// 添加行级别动作
-Action action = new Action(ActionType.COMMAND, "spawn");
-iconLine.addAction(ClickType.LEFT, action);
-
-// 添加页面级别动作
-holo.getPage(0).addAction(ClickType.RIGHT, new Action(ActionType.MESSAGE, "&a点击了！"));
+// 添加动作
+iconLine.addAction(ClickType.LEFT, new Action(ActionType.COMMAND, "spawn"));
+page.addAction(ClickType.RIGHT, new Action(ActionType.MESSAGE, "&a点击了！"));
 
 // 显示给玩家
 holo.show(player);
+
+// 获取已有全息图
+Optional<Hologram> existing = WooHologramsAPI.getHologram("test");
+existing.ifPresent(h -> h.show(player));
 
 // 监听点击事件
 @EventHandler
 public void onHologramClick(HologramClickEvent event) {
     Player player = event.getPlayer();
     Hologram hologram = event.getHologram();
+    HologramPage page = event.getPage();
     ClickType clickType = event.getClickType();
 }
 ```

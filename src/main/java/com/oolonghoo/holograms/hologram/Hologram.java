@@ -43,7 +43,7 @@ public class Hologram {
     private Billboard billboard = Billboard.CENTER;
     private float facing;
     private boolean doubleSided = false;
-    private TextAlignment alignment = TextAlignment.LEFT;
+    private TextAlignment alignment = TextAlignment.CENTER;
     private int backgroundAlpha;
     private int backgroundColor;
     private int lineWidth;

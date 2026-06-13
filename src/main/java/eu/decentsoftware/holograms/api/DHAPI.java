@@ -153,6 +153,14 @@ public final class DHAPI {
 		return holoPage.setLine(index, line);
 	}
 
+	public static void setHologramLine(HologramLine line, String content) {
+		if (!com.oolonghoo.holograms.api.WooHologramsAPI.isLoaded()) return;
+		if (line == null || content == null) return;
+		line.getHandle().setContent(content);
+		com.oolonghoo.holograms.hologram.Hologram holo = line.getHandle().getHologram();
+		if (holo != null) holo.save();
+	}
+
 	public static boolean removeHologramLine(Hologram hologram, int page, int index) {
 		if (!com.oolonghoo.holograms.api.WooHologramsAPI.isLoaded()) return false;
 		if (hologram == null) return false;
@@ -177,6 +185,14 @@ public final class DHAPI {
 		if (hologram != null) {
 			hologram.teleport(location);
 		}
+	}
+
+	public static void moveHologram(Hologram hologram, Location location) {
+		if (!com.oolonghoo.holograms.api.WooHologramsAPI.isLoaded()) return;
+		if (hologram == null || location == null) return;
+		hologram.getHandle().setLocation(location);
+		hologram.getHandle().realignLines();
+		hologram.getHandle().save();
 	}
 
 	// ===== 显示/隐藏 =====

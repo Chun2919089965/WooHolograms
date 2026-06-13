@@ -27,6 +27,10 @@ public class Hologram {
 		return handle.getLocation();
 	}
 
+	public void setLocation(Location location) {
+		handle.setLocation(location);
+	}
+
 	public void teleport(Location location) {
 		handle.teleport(location);
 	}

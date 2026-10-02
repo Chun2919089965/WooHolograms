@@ -63,6 +63,13 @@ interaction:
   # 点击冷却（tick，20 tick = 1 秒），防止连点刷动作
   click-cooldown: 10
 
+# 文本渲染设置
+text:
+  # 是否使用 Component 直通渲染（推荐，/wh reload 生效）
+  # true: 完整保留渐变/彩虹/点击/悬浮/字体等 MiniMessage 标签，网络包更小
+  # false: 回退为传统 § 代码渲染（兼容旧版行为，交互/字体标签会丢失）
+  component-render: true
+
 # 限制设置
 limits:
   # 每个世界最大全息图数量

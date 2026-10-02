@@ -6,28 +6,35 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.ChatColor;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 颜色工具类
- * 处理颜色代码转换，支持传统颜色代码、十六进制颜色和 MiniMessage 格式
- * 
+ * 颜色工具类（三段式管线的②③段）
+ *
+ * <p>管线结构：{@link SyntaxNormalizer} 归一化 → 本类统一 MiniMessage 解析 → Component。</p>
+ *
+ * <p>支持全部主流颜色语法：&amp;/§ 传统代码、&amp;#RRGGBB、{#RRGGBB}、[#RRGGBB]、
+ * Iridium/DH 渐变与彩虹、CMI 渐变与彩虹、§x 长十六进制，以及 MiniMessage 全标签
+ * （渐变/彩虹/过渡/点击/悬浮/字体等）。</p>
  */
 public class ColorUtil {
 
     // MiniMessage 实例，支持所有标准标签
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
-    // 支持渐变的 MiniMessage 实例
+    // 支持渐变/彩虹/过渡的 MiniMessage 实例（全标签）
     private static final MiniMessage MINI_MESSAGE_WITH_GRADIENT = MiniMessage.builder()
             .tags(TagResolver.builder()
                     .resolver(StandardTags.color())
                     .resolver(StandardTags.decorations())
                     .resolver(StandardTags.gradient())
                     .resolver(StandardTags.rainbow())
+                    .resolver(StandardTags.transition())
                     .resolver(StandardTags.reset())
                     .resolver(StandardTags.newline())
                     .resolver(StandardTags.translatable())
@@ -46,7 +53,7 @@ public class ColorUtil {
                     .hexColors()
                     .build();
 
-    // 十六进制颜色模式：&#RRGGBB 与 §#RRGGBB（DH 兼容层的 IridiumColorAPI 输出）
+    // 十六进制颜色模式：&#RRGGBB 与 §#RRGGBB（stripColor 用；解析侧由 SyntaxNormalizer 处理）
     private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("[&§]#([0-9a-fA-F]{6})");
 
     // adventure 序列化输出的紧凑十六进制 §#RRGGBB（CraftChatMessage 不识别，需展开为 §x 长格式）
@@ -57,39 +64,118 @@ public class ColorUtil {
     // MiniMessage 标签模式：覆盖 <#hex>、<gradient:...>、<color:...>、</close>、<!negation> 等带参数形式
     private static final Pattern MINI_MESSAGE_TAG_PATTERN = Pattern.compile("<[!?/#]?[a-zA-Z#][^<>]*>");
 
+    /** format() 的组件级 LRU 缓存（key = 归一化+legacy 转换后的 MiniMessage 串） */
+    private static final Map<String, Component> FORMAT_CACHE = Collections.synchronizedMap(
+            new LinkedHashMap<>(128, 0.75f, false) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Component> eldest) {
+                    return size() > 256;
+                }
+            });
+
+    /** 合法 legacy 代码字符表（translateAmpersand 用） */
+    private static final String LEGACY_CODE_CHARS = "0123456789AaBbCcDdEeFfKkLlMmNnOoRr";
+
     /**
-     * 将颜色代码转换为实际颜色
-     * 支持 & 和 § 颜色代码、十六进制颜色和 MiniMessage 格式
-     * 
-     * @param text 原始文本
-     * @return 转换后的文本
+     * 统一格式化入口：任意颜色语法 → Adventure Component
+     *
+     * <p>管线：\n 展开 → {@link SyntaxNormalizer} 归一化 → 纯 legacy 快路径或
+     * MiniMessage 解析（带 LRU 缓存）。MiniMessage 解析失败时降级为 legacy 翻译，
+     * 任何输入都不会抛出异常或丢字。</p>
+     *
+     * @param raw 原始文本（任意颜色语法混写）
+     * @return 解析后的 Component；null/空文本返回 Component.empty()
      */
-    public static String colorize(String text) {
-        if (text == null || text.isEmpty()) {
+    public static Component format(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return Component.empty();
+        }
+
+        String text = raw.replace("\\n", "\n");
+
+        // 纯文本快路径：无任何语法特征字符
+        if (text.indexOf('&') < 0 && text.indexOf('§') < 0 && text.indexOf('<') < 0
+                && text.indexOf('{') < 0 && text.indexOf('[') < 0) {
+            return Component.text(text);
+        }
+
+        String normalized = SyntaxNormalizer.normalize(text);
+
+        // 纯 legacy 快路径：归一化后无 MiniMessage 标签 → 直接 § 翻译反序列化
+        if (normalized.indexOf('<') < 0) {
+            return SECTION_SERIALIZER.deserialize(translateAmpersand(normalized));
+        }
+
+        String mini = legacyToMiniMessage(normalized);
+        Component cached = FORMAT_CACHE.get(mini);
+        if (cached != null) {
+            return cached;
+        }
+
+        try {
+            Component component = MINI_MESSAGE_WITH_GRADIENT.deserialize(mini);
+            FORMAT_CACHE.put(mini, component);
+            return component;
+        } catch (Exception e) {
+            // MiniMessage 解析失败（异常标签等）时降级为 legacy 翻译，保留原文
+            return SECTION_SERIALIZER.deserialize(translateAmpersand(normalized));
+        }
+    }
+
+    /**
+     * 统一格式化为 § legacy 字符串（需要传统格式的出口用，如 CraftChatMessage 回退路径）
+     *
+     * @param raw 原始文本（任意颜色语法）
+     * @return § 格式字符串（十六进制为 §x 长格式）
+     */
+    public static String formatLegacy(String raw) {
+        if (raw == null || raw.isEmpty()) {
             return "";
         }
+        return serializeLegacy(format(raw));
+    }
 
-        text = text.replace("\\n", "\n");
+    /**
+     * 将颜色代码转换为实际颜色
+     * 支持 & 和 § 颜色代码、十六进制颜色（&#/{#/[# 前缀）、Iridium/CMI 渐变与彩虹、MiniMessage 格式
+     *
+     * @param text 原始文本
+     * @return 转换后的 § 格式文本
+     * @deprecated 内部请改用 {@link #format(String)}（Component 直通）或
+     *             {@link #formatLegacy(String)}（§ 字符串）；本方法保留为兼容别名
+     */
+    @Deprecated
+    public static String colorize(String text) {
+        return formatLegacy(text);
+    }
 
-        // &#RRGGBB / §#RRGGBB 统一转换为 MiniMessage 颜色标签
-        if (text.indexOf('#') >= 0) {
-            text = HEX_COLOR_PATTERN.matcher(text).replaceAll("<color:#$1>");
+    /**
+     * & → § 翻译（等价 ChatColor.translateAlternateColorCodes，纯实现无 bukkit 依赖，代码字符统一小写）
+     */
+    private static String translateAmpersand(String text) {
+        if (text.indexOf('&') < 0) {
+            return text;
         }
-
-        if (containsMiniMessageTags(text)) {
-            return processMiniMessage(text);
+        char[] chars = text.toCharArray();
+        for (int i = 0; i < chars.length - 1; i++) {
+            if (chars[i] == '&' && LEGACY_CODE_CHARS.indexOf(chars[i + 1]) >= 0) {
+                chars[i] = '§';
+                chars[i + 1] = Character.toLowerCase(chars[i + 1]);
+            }
         }
+        return new String(chars);
+    }
 
-        if (text.indexOf('&') >= 0 || text.indexOf('§') >= 0) {
-            return ChatColor.translateAlternateColorCodes('&', text);
-        }
-
-        return text;
+    /**
+     * 清空 format 组件缓存（reload 时调用，语言/标签集变化后生效）
+     */
+    public static void clearFormatCache() {
+        FORMAT_CACHE.clear();
     }
 
     /**
      * 检查文本是否包含 MiniMessage 标签
-     * 
+     *
      * @param text 文本
      * @return 是否包含 MiniMessage 标签
      */
@@ -98,28 +184,6 @@ public class ColorUtil {
             return false;
         }
         return MINI_MESSAGE_TAG_PATTERN.matcher(text).find();
-    }
-
-    /**
-     * 处理 MiniMessage 格式文本
-     * 
-     * @param text 原始文本
-     * @return 转换后的文本
-     */
-    private static String processMiniMessage(String text) {
-        try {
-            // & 颜色代码先转为 MiniMessage 标签（MiniMessage 不解析 § 遗留代码）
-            text = legacyToMiniMessage(text);
-
-            // 解析 MiniMessage 为 Component
-            Component component = MINI_MESSAGE_WITH_GRADIENT.deserialize(text);
-
-            // 序列化为 Legacy 格式
-            return serializeLegacy(component);
-        } catch (Exception e) {
-            // 如果 MiniMessage 解析失败，回退到传统处理
-            return ChatColor.translateAlternateColorCodes('&', text);
-        }
     }
 
     /**
@@ -187,18 +251,13 @@ public class ColorUtil {
 
     /**
      * 将文本转换为 Adventure Component
-     * 支持 MiniMessage 格式
-     * 
+     * 任意颜色语法（等价 {@link #format(String)}）
+     *
      * @param text 原始文本
      * @return Component
      */
     public static Component toComponent(String text) {
-        if (text == null || text.isEmpty()) {
-            return Component.empty();
-        }
-
-        // colorize 统一处理全部颜色格式后输出 § 格式，再用 section 序列化器解析
-        return SECTION_SERIALIZER.deserialize(colorize(text));
+        return format(text);
     }
 
     /**

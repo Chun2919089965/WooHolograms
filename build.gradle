@@ -28,6 +28,7 @@ dependencies {
     implementation project(':wooholograms-api')
     compileOnly 'me.clip:placeholderapi:2.11.6'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 
@@ -40,6 +41,10 @@ processResources {
     filesMatching('plugin.yml') {
         expand 'project': [version: version]
     }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 jar {

@@ -58,6 +58,9 @@ public class ConfigManager {
     private boolean interactionEnabled;
     private int clickCooldownTicks;
 
+    // 文本渲染设置
+    private boolean textComponentRender;
+
     // 限制设置
     private int maxHologramsPerWorld;
     private int maxLinesPerHologram;
@@ -125,6 +128,9 @@ public class ConfigManager {
         interactionEnabled = config.getBoolean("interaction.enabled", true);
         // 点击冷却按 tick 配置（20 tick = 1 秒），消费方使用毫秒
         clickCooldownTicks = Math.max(0, config.getInt("interaction.click-cooldown", 10));
+
+        // 文本渲染设置
+        textComponentRender = config.getBoolean("text.component-render", true);
 
         // 限制设置
         maxHologramsPerWorld = Math.max(1, config.getInt("limits.max-holograms-per-world", 100));
@@ -278,6 +284,13 @@ public class ConfigManager {
      */
     public long getClickCooldownMs() {
         return clickCooldownTicks * 50L;
+    }
+
+    /**
+     * 是否启用文本 Component 直通渲染（渐变/点击/悬浮/字体标签完整保留，网络包更小）
+     */
+    public boolean isTextComponentRender() {
+        return textComponentRender;
     }
 
     public int getMaxHologramsPerWorld() {

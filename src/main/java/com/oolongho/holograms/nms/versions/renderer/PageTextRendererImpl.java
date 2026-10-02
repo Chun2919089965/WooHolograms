@@ -295,10 +295,10 @@ public class PageTextRendererImpl {
         for (int gi = 0; gi < textGroups.size(); gi++) {
             TextGroup group = textGroups.get(gi);
 
-            // 收集该组所有TEXT行的文本
+            // 收集该组所有TEXT行的文本（raw：占位符/动画已解析，颜色语法保留，由渲染层统一处理）
             List<String> textLines = new ArrayList<>();
             for (HologramLine line : group.lines) {
-                textLines.add(line.getDisplayText(player));
+                textLines.add(line.getDisplayTextRaw(player));
             }
             String textKey = String.join("\n", textLines);
             playerGroupTexts.put(gi, textKey);
@@ -376,10 +376,10 @@ public class PageTextRendererImpl {
             }
             boolean hasChroma = groupChromaBg || groupChromaGlow;
 
-            // 收集文本行
+            // 收集文本行（raw：颜色语法保留，由渲染层统一处理）
             List<String> textLines = new ArrayList<>();
             for (HologramLine line : group.lines) {
-                textLines.add(line.getDisplayText(player));
+                textLines.add(line.getDisplayTextRaw(player));
             }
             String textKey = String.join("\n", textLines);
 
@@ -445,7 +445,7 @@ public class PageTextRendererImpl {
 
             List<String> textLines = new ArrayList<>();
             for (HologramLine line : group.lines) {
-                textLines.add(line.getDisplayText(player));
+                textLines.add(line.getDisplayTextRaw(player));
             }
 
             EntityMetadataBuilder metadataBuilder = EntityMetadataBuilder.create()

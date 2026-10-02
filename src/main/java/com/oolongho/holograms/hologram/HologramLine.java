@@ -649,17 +649,13 @@ public class HologramLine implements com.oolongho.holograms.api.hologram.Hologra
     }
 
     /**
-     * 获取玩家的文本
-     * 
+     * 构建展示文本（占位符与动画已解析，未着色）
+     *
      * @param player 玩家
-     * @param update 是否更新缓存
-     * @return 处理后的文本
+     * @param update 是否更新占位符缓存
+     * @return 未着色的展示文本
      */
-    private String getText(Player player, boolean update) {
-        if (type != HologramType.TEXT) {
-            return "";
-        }
-
+    private String buildDisplayText(Player player, boolean update) {
         UUID uuid = player.getUniqueId();
         String baseText = playerTextCache.get(uuid);
 
@@ -676,12 +672,37 @@ public class HologramLine implements com.oolongho.holograms.api.hologram.Hologra
         }
 
         // 动画每次都要重新解析（不使用缓存）
-        String result = baseText;
         if (containsAnimations && !hasFlag(EnumFlag.DISABLE_ANIMATIONS)) {
-            result = parseAnimations(baseText);
+            return parseAnimations(baseText);
         }
 
-        return ColorUtil.colorize(result);
+        return baseText;
+    }
+
+    /**
+     * 获取玩家的文本
+     *
+     * @param player 玩家
+     * @param update 是否更新缓存
+     * @return 着色后的 § 格式文本
+     */
+    private String getText(Player player, boolean update) {
+        if (type != HologramType.TEXT) {
+            return "";
+        }
+
+        return ColorUtil.colorize(buildDisplayText(player, update));
+    }
+
+    /**
+     * 获取未着色的展示文本（Component 渲染路径用）
+     * 占位符与动画已解析，颜色语法保留原样，由渲染层 ColorUtil.format 统一处理
+     *
+     * @param player 玩家
+     * @return 未着色的展示文本
+     */
+    public String getDisplayTextRaw(Player player) {
+        return buildDisplayText(player, true);
     }
 
     /**

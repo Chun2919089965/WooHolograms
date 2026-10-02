@@ -5,6 +5,7 @@ import com.oolongho.holograms.api.hologram.TextAlignment;
 import com.oolongho.holograms.api.hologram.Billboard;
 import com.oolongho.holograms.hologram.Hologram;
 import com.oolongho.holograms.hologram.HologramLine;
+import com.oolongho.holograms.util.ColorUtil;
 import net.minecraft.core.Rotations;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -285,14 +286,54 @@ public class EntityMetadataBuilder {
 
 
     /**
+     * 将文本行转换为 NMS Component
+     *
+     * <p>双模式（config.yml text.component-render）：</p>
+     * <ul>
+     *   <li><b>Component 直通（默认）</b>：ColorUtil.format 全语法解析后经
+     *       PaperAdventure.asVanilla 直转，渐变/点击/悬浮/字体标签完整保留，
+     *       且避免 §x 长格式膨胀网络包</li>
+     *   <li><b>§ 回退</b>：formatLegacy 降级为 § 字符串再经 CraftChatMessage 解析，
+     *       与旧版行为一致（渐进变仍可用，交互/字体标签丢失）</li>
+     * </ul>
+     *
+     * @param line 文本行（占位符/动画已解析，颜色语法保留）
+     * @return NMS Component
+     */
+    private static Component toNmsComponent(String line) {
+        if (line == null || line.isEmpty()) {
+            return Component.empty();
+        }
+        if (isTextComponentRender()) {
+            try {
+                return io.papermc.paper.adventure.PaperAdventure.asVanilla(ColorUtil.format(line));
+            } catch (Exception e) {
+                // 直通异常时回退 § 路径，保证渲染不中断
+            }
+        }
+        Component legacy = CraftChatMessage.fromStringOrNull(ColorUtil.formatLegacy(line));
+        return legacy != null ? legacy : Component.empty();
+    }
+
+    /** 文本 Component 直通渲染开关（config.yml text.component-render，实时读取支持 /wh reload） */
+    private static boolean isTextComponentRender() {
+        try {
+            return com.oolongho.holograms.WooHolograms.getInstance()
+                    .getConfigManager().isTextComponentRender();
+        } catch (Exception e) {
+            // 配置不可用（极早期调用/异常环境）时默认启用直通
+            return true;
+        }
+    }
+
+    /**
      * 设置 TextDisplay Entity 的文本内容
      *
      * @param text 文本内容
      * @return this
      */
     public EntityMetadataBuilder withTextDisplayText(String text) {
-        Component component = CraftChatMessage.fromStringOrNull(text);
-        watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_TEXT.construct(component != null ? component : Component.empty()));
+        watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_TEXT.construct(toNmsComponent(text)));
         return this;
     }
 
@@ -319,8 +360,7 @@ public class EntityMetadataBuilder {
             if (i > 0) {
                 root.append(Component.literal("\n"));
             }
-            Component lineComponent = CraftChatMessage.fromStringOrNull(lines.get(i));
-            root.append(lineComponent != null ? lineComponent : Component.empty());
+            root.append(toNmsComponent(lines.get(i)));
         }
 
         watchableObjects.add(EntityMetadataType.TEXT_DISPLAY_TEXT.construct(root));

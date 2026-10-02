@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * DH 兼容层 - 渐变色/十六进制颜色解析
@@ -22,11 +20,6 @@ import java.util.regex.Pattern;
 public class IridiumColorAPI {
 
     public static final List<String> SPECIAL_COLORS = Arrays.asList("&l", "&n", "&o", "&k", "&m");
-
-    private static final Pattern GRADIENT_PATTERN = Pattern.compile(
-            "[<{]#([A-Fa-f0-9]{6})[}>](((?![<{]#[A-Fa-f0-9]{6}[}>]).)*)[<{]/#([A-Fa-f0-9]{6})[}>]");
-    private static final Pattern SOLID_PATTERN = Pattern.compile("[<{]#([A-Fa-f0-9]{6})[}>]|[&§]?#([A-Fa-f0-9]{6})");
-    private static final Pattern RAINBOW_PATTERN = Pattern.compile("<RAINBOW([0-9]{1,3})>(.*?)</RAINBOW>");
 
     /** processCached 的 LRU 缓存（容量 100，与原版默认一致） */
     private static final Map<String, String> CACHE = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, false) {
@@ -75,12 +68,13 @@ public class IridiumColorAPI {
 
     /**
      * 处理字符串中的渐变、纯色、彩虹标签与 & 颜色代码。
+     *
+     * <p>内部委托 WooHolograms 统一颜色管线（ColorUtil.formatLegacy）：
+     * 在保持 DH 输出格式（§ 字符串）兼容的前提下，额外支持 CMI 系语法
+     * 与 MiniMessage 标签，是 DH 原版解析能力的超集。</p>
      */
     public static String process(String string) {
-        string = processGradients(string);
-        string = processSolid(string);
-        string = processRainbow(string);
-        return ChatColor.translateAlternateColorCodes('&', string);
+        return com.oolongho.holograms.util.ColorUtil.formatLegacy(string);
     }
 
     /**
@@ -224,48 +218,5 @@ public class IridiumColorAPI {
                     start.getBlue() + ((stepB * i) * direction[2]));
         }
         return colors;
-    }
-
-    private static String processGradients(String string) {
-        if (string.indexOf('#') == -1) {
-            return string;
-        }
-        Matcher matcher = GRADIENT_PATTERN.matcher(string);
-        while (matcher.find()) {
-            String start = matcher.group(1);
-            String content = matcher.group(2);
-            String end = matcher.group(4);
-            string = string.replace(matcher.group(),
-                    color(content, new Color(Integer.parseInt(start, 16)), new Color(Integer.parseInt(end, 16))));
-        }
-        return string;
-    }
-
-    private static String processSolid(String string) {
-        if (string.indexOf('#') == -1) {
-            return string;
-        }
-        Matcher matcher = SOLID_PATTERN.matcher(string);
-        while (matcher.find()) {
-            String color = matcher.group(1);
-            if (color == null) {
-                color = matcher.group(2);
-            }
-            string = string.replace(matcher.group(), "§#" + color);
-        }
-        return string;
-    }
-
-    private static String processRainbow(String string) {
-        if (string.indexOf('<') == -1) {
-            return string;
-        }
-        Matcher matcher = RAINBOW_PATTERN.matcher(string);
-        while (matcher.find()) {
-            String saturation = matcher.group(1);
-            String content = matcher.group(2);
-            string = string.replace(matcher.group(), rainbow(content, Float.parseFloat(saturation)));
-        }
-        return string;
     }
 }

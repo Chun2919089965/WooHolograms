@@ -51,7 +51,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
             return;
         }
 
-        String text = line.getDisplayText(player);
+        String text = line.getDisplayTextRaw(player);
 
         Hologram hologram = line.getHologram();
         Billboard billboard = line.getBillboard() != null ? line.getBillboard() : (hologram != null ? hologram.getBillboard() : Billboard.CENTER);
@@ -125,7 +125,7 @@ public class TextHologramRendererImpl implements NmsTextHologramRenderer {
             return;
         }
 
-        String text = line.getDisplayText(player);
+        String text = line.getDisplayTextRaw(player);
         lastTextPerPlayer.put(player.getUniqueId(), text);
 
         Hologram hologram = line.getHologram();
